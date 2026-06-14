@@ -1,0 +1,19 @@
+name = "healthstats-backend"
+main = "src/index.ts"
+compatibility_date = "2026-06-15"
+
+[vars]
+JWT_SECRET = "healthstats-dev-secret"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "healthstats"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "00000000000000000000000000000000"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "healthstats-files"

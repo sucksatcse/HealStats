@@ -1,0 +1,59 @@
+{
+  "app": {
+    "name": "HealthStats",
+    "tagline": "Offline-first EHR for rural hospitals"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "patients": "Patients",
+    "newPatient": "Register Patient",
+    "newEncounter": "New Encounter",
+    "surveillance": "Surveillance",
+    "audit": "Audit Log"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Log out",
+    "username": "Username",
+    "password": "Password",
+    "role": "Role",
+    "facility": "Facility",
+    "language": "Language"
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Monitor care delivery, offline sync, and caseload at a glance."
+    },
+    "patients": {
+      "title": "Patients",
+      "description": "Search and manage patient records stored locally first."
+    },
+    "patientDetail": {
+      "title": "Patient Details",
+      "description": "Review encounters, prescriptions, and recent updates."
+    },
+    "newPatient": {
+      "title": "Register Patient",
+      "description": "Create a new record that stays usable offline."
+    },
+    "newEncounter": {
+      "title": "New Encounter",
+      "description": "Document the visit and stage it for sync when online."
+    },
+    "surveillance": {
+      "title": "Surveillance",
+      "description": "Track notifiable conditions and clinical trends."
+    },
+    "audit": {
+      "title": "Audit Log",
+      "description": "Review sensitive actions and sync history."
+    }
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "syncing": "Syncing",
+    "pending": "Pending changes"
+  }
+}
