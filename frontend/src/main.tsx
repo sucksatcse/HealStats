@@ -7,15 +7,20 @@ import App from './App';
 import './i18n';
 import './styles/index.css';
 import { queryClient } from './lib/queryClient';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { ToastStack } from './components/shared/ToastStack';
 
 registerSW({ immediate: true });
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <App />
+          <ToastStack />
+        </BrowserRouter>
+      </ErrorBoundary>
     </QueryClientProvider>
   </React.StrictMode>
 );

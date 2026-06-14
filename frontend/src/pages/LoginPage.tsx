@@ -1,17 +1,17 @@
-import { FormEvent, useState } from 'react';
+import { type FormEvent, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
-import { useAppStore, type UserRole } from '../store';
 import { LanguageToggle } from '../components/LanguageToggle';
-
-const roles: UserRole[] = ['doctor', 'admin', 'nurse', 'staff'];
+import { useAppStore } from '../store';
 
 export function LoginPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const token = useAppStore((state) => state.token);
   const setAuth = useAppStore((state) => state.setAuth);
-  const [name, setName] = useState('Dr. Rahman');
-  const [role, setRole] = useState<UserRole>('doctor');
+  const [staffId, setStaffId] = useState('DEMO001');
+  const [pin, setPin] = useState('1234');
+  const [showPin, setShowPin] = useState(false);
 
   if (token) {
     return <Navigate to="/dashboard" replace />;
@@ -19,70 +19,91 @@ export function LoginPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     setAuth({
-      user: { id: 'demo-user', name, role },
-      facilityId: 'demo-facility',
+      userId: 'DEMO001',
+      user: { id: 'DEMO001', name: 'Dr. Rahman', role: 'doctor' },
+      facilityId: 'FAC001',
       token: 'demo-token'
     });
+    navigate('/dashboard', { replace: true });
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-center gap-6 lg:flex-row lg:items-center">
-        <section className="max-w-xl space-y-5 rounded-[2rem] bg-slate-950 p-8 text-white shadow-2xl shadow-sky-950/20">
-          <p className="text-sm uppercase tracking-[0.3em] text-sky-200">{t('app.name')}</p>
-          <h1 className="text-4xl font-semibold tracking-tight">{t('app.tagline')}</h1>
-          <p className="text-sm leading-6 text-slate-300">
-            Offline-first access for rural hospitals, with local storage, queued sync, and bilingual workflows.
-          </p>
-          <div className="flex gap-3">
-            <LanguageToggle />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dff5ff_0%,#f8fbff_32%,#eef6fb_100%)] px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-6xl flex-col items-stretch justify-center gap-6 lg:flex-row lg:items-center">
+        <div className="flex justify-end lg:absolute lg:right-6 lg:top-6">
+          <LanguageToggle />
+        </div>
+
+        <section className="rounded-[2rem] border border-sky-100 bg-white p-6 shadow-[0_24px_80px_rgba(14,165,233,0.12)] sm:p-8 lg:w-[44%]">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-sky-500 text-2xl font-black text-white shadow-soft">
+              H
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">{t('app.name')}</p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{t('app.tagline')}</h1>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-4 rounded-[1.75rem] bg-slate-50 p-5 ring-1 ring-slate-100">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{t('auth.demoTitle')}</p>
+              <p className="mt-2 text-sm text-slate-600">{t('auth.demoStaffId')}</p>
+              <p className="text-sm text-slate-600">{t('auth.demoPin')}</p>
+            </div>
+            <p className="text-sm leading-6 text-slate-600">Offline-first access for rural hospitals with local data capture, queued sync, and bilingual workflows.</p>
           </div>
         </section>
 
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-md space-y-5 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft"
-        >
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">{t('auth.username')}</label>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
-            />
+        <form onSubmit={handleSubmit} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8 lg:w-[40%]">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">{t('auth.welcome')}</p>
+            <h2 className="text-2xl font-semibold text-slate-900">{t('auth.signIn')}</h2>
+            <p className="text-sm text-slate-600">{t('auth.passwordHint')}</p>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">{t('auth.role')}</label>
-            <select
-              value={role}
-              onChange={(event) => setRole(event.target.value as UserRole)}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+          <div className="mt-6 space-y-5">
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">{t('auth.staffId')}</span>
+              <input
+                value={staffId}
+                onChange={(event) => setStaffId(event.target.value.toUpperCase())}
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                placeholder="DEMO001"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">{t('auth.pin')}</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100">
+                <input
+                  value={pin}
+                  onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  maxLength={6}
+                  type={showPin ? 'text' : 'password'}
+                  className="min-w-0 flex-1 border-0 bg-transparent text-base outline-none"
+                  placeholder="1234"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin((value) => !value)}
+                  className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                >
+                  {showPin ? t('auth.hidePin') : t('auth.showPin')}
+                </button>
+              </div>
+            </label>
+
+            <button
+              type="submit"
+              className="w-full rounded-2xl bg-primary px-4 py-3.5 text-base font-semibold text-white shadow-soft transition hover:bg-primary-600"
             >
-              {roles.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+              {t('auth.signIn')}
+            </button>
           </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">{t('auth.password')}</label>
-            <input
-              type="password"
-              defaultValue="offline-demo"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-2xl bg-primary px-4 py-3 font-semibold text-white shadow-soft transition hover:bg-sky-500"
-          >
-            {t('auth.login')}
-          </button>
         </form>
       </div>
     </div>

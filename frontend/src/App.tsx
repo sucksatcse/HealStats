@@ -12,6 +12,7 @@ import { PatientDetailPage } from './pages/PatientDetailPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { RegisterPatientPage } from './pages/RegisterPatientPage';
 import { SurveillancePage } from './pages/SurveillancePage';
+import { SettingsPage } from './pages/SettingsPage';
 
 function LanguageSync() {
   const language = useAppStore((state) => state.language);
@@ -41,12 +42,9 @@ export default function App() {
             <Route path="/patients/:id" element={<PatientDetailPage />} />
             <Route path="/patients/new" element={<RegisterPatientPage />} />
             <Route path="/encounters/new" element={<NewEncounterPage />} />
-            <Route element={<ProtectedRoute allowedRoles={[ 'doctor', 'admin' ]} />}> 
-              <Route path="/surveillance" element={<SurveillancePage />} />
-            </Route>
-            <Route element={<ProtectedRoute allowedRoles={[ 'admin' ]} />}> 
-              <Route path="/audit" element={<AuditLogPage />} />
-            </Route>
+            <Route path="/surveillance" element={<SurveillancePage />} />
+            <Route path="/audit" element={<AuditLogPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
 

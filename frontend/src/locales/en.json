@@ -9,51 +9,276 @@
     "newPatient": "Register Patient",
     "newEncounter": "New Encounter",
     "surveillance": "Surveillance",
-    "audit": "Audit Log"
+    "audit": "Audit Log",
+    "settings": "Settings"
   },
   "auth": {
-    "login": "Sign in",
+    "login": "Sign In",
     "logout": "Log out",
-    "username": "Username",
-    "password": "Password",
+    "staffId": "Staff ID",
+    "pin": "PIN",
+    "showPin": "Show PIN",
+    "hidePin": "Hide PIN",
+    "signIn": "Sign In",
     "role": "Role",
     "facility": "Facility",
-    "language": "Language"
+    "language": "Language",
+    "demoTitle": "Demo credentials",
+    "demoStaffId": "Staff ID: DEMO001",
+    "demoPin": "PIN: 1234",
+    "welcome": "Welcome back",
+    "passwordHint": "Use a 4-6 digit PIN"
+  },
+  "language": {
+    "en": "EN",
+    "bn": "বাং"
+  },
+  "layout": {
+    "menu": "Menu",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "searchPatients": "Search patients",
+    "sync": "Sync status",
+    "loggedInAs": "Logged in as",
+    "logout": "Log out"
+  },
+  "common": {
+    "accessDenied": "Access Denied",
+    "loading": "Loading...",
+    "somethingWentWrong": "Something went wrong",
+    "reload": "Reload",
+    "offlineBanner": "You are offline. Data is being saved locally.",
+    "surgeMode": "DISASTER SURGE MODE ACTIVE",
+    "queued": "queued",
+    "syncing": "Syncing...",
+    "synced": "Synced",
+    "failed": "Failed",
+    "offline": "Offline",
+    "unknown": "Unknown"
   },
   "pages": {
     "dashboard": {
       "title": "Dashboard",
-      "description": "Monitor care delivery, offline sync, and caseload at a glance."
+      "description": "Monitor care delivery, offline sync, and caseload at a glance.",
+      "stats": {
+        "patients": "Total Patients",
+        "encounters": "Encounters This Week",
+        "diagnosis": "Most Common Diagnosis",
+        "pendingSync": "Pending Sync"
+      },
+      "alerts": {
+        "title": "Outbreak alert",
+        "message": "Unusual spike in Dengue (A90) detected this week"
+      },
+      "charts": {
+        "diagnosisTrend": "Diagnosis trend (14 days)",
+        "ageSex": "Age and sex distribution",
+        "legendDengue": "Dengue",
+        "legendCholera": "Cholera",
+        "legendPneumonia": "Pneumonia",
+        "male": "Male",
+        "female": "Female"
+      }
     },
     "patients": {
       "title": "Patients",
-      "description": "Search and manage patient records stored locally first."
+      "description": "Search and manage patient records stored locally first.",
+      "search": "Search by name, ID, district, or upazila",
+      "register": "Register New Patient",
+      "empty": "No patients match your search.",
+      "lastVisit": "Last visit",
+      "age": "Age",
+      "sex": "Sex",
+      "district": "District",
+      "upazila": "Upazila"
     },
     "patientDetail": {
       "title": "Patient Details",
-      "description": "Review encounters, prescriptions, and recent updates."
+      "description": "Review encounters, prescriptions, and recent updates.",
+      "tabs": {
+        "history": "Visit History",
+        "prescriptions": "Prescriptions",
+        "demographics": "Demographics"
+      },
+      "newEncounter": "New Encounter",
+      "patientId": "Patient ID",
+      "districtUpazila": "District / Upazila",
+      "vitals": "Vitals",
+      "diagnosis": "Diagnosis",
+      "notes": "Notes",
+      "prescriptionsTable": {
+        "drug": "Drug Name",
+        "dosage": "Dosage",
+        "frequency": "Frequency",
+        "duration": "Duration"
+      },
+      "demographics": {
+        "fullName": "Full name",
+        "dob": "Date of birth",
+        "sex": "Sex",
+        "district": "District",
+        "upazila": "Upazila",
+        "union": "Union",
+        "phone": "Phone",
+        "photo": "Photo",
+        "refugeeMode": "Refugee mode",
+        "campName": "Camp name",
+        "shelterBlock": "Shelter block",
+        "nationality": "Nationality"
+      }
     },
     "newPatient": {
       "title": "Register Patient",
-      "description": "Create a new record that stays usable offline."
+      "description": "Create a new record that stays usable offline.",
+      "fullName": "Full name",
+      "dob": "Date of birth",
+      "sex": "Sex",
+      "district": "District",
+      "upazila": "Upazila",
+      "union": "Union",
+      "phone": "Phone (optional)",
+      "photo": "Photo (optional)",
+      "refugeeMode": "Refugee mode",
+      "campName": "Camp name",
+      "shelterBlock": "Shelter block",
+      "nationality": "Nationality",
+      "submit": "Save Patient",
+      "success": "Patient saved locally and marked dirty for sync.",
+      "validation": {
+        "fullName": "Full name is required.",
+        "sex": "Sex is required."
+      }
     },
     "newEncounter": {
       "title": "New Encounter",
-      "description": "Document the visit and stage it for sync when online."
+      "description": "Document the visit and stage it for sync when online.",
+      "step": "Step",
+      "stepOf": "of",
+      "steps": {
+        "vitals": "Vitals",
+        "complaint": "Chief Complaint",
+        "diagnosis": "Diagnosis",
+        "prescriptions": "Prescriptions"
+      },
+      "previous": "Previous",
+      "next": "Next",
+      "submit": "Save Encounter",
+      "success": "Encounter saved locally and marked dirty for sync.",
+      "patient": "Selected patient",
+      "noPatient": "No patient selected",
+      "vitals": {
+        "bp": "Blood pressure",
+        "temperature": "Temperature (°C)",
+        "pulse": "Pulse (bpm)",
+        "weight": "Weight (kg)",
+        "height": "Height (cm)"
+      },
+      "complaint": {
+        "title": "Chief complaint",
+        "chips": {
+          "Fever": "Fever",
+          "Cough": "Cough",
+          "Diarrhea": "Diarrhea",
+          "Headache": "Headache",
+          "Pain": "Pain",
+          "Vomiting": "Vomiting",
+          "Rash": "Rash"
+        }
+      },
+      "diagnosis": {
+        "title": "Diagnosis",
+        "search": "Search diagnosis",
+        "placeholder": "Type ICD-10 code or name",
+        "selected": "Selected diagnosis"
+      },
+      "prescriptions": {
+        "title": "Prescriptions",
+        "drug": "Drug name",
+        "dosage": "Dosage",
+        "frequency": "Frequency",
+        "duration": "Duration",
+        "add": "Add another drug"
+      }
     },
     "surveillance": {
       "title": "Surveillance",
-      "description": "Track notifiable conditions and clinical trends."
+      "description": "Track notifiable conditions and clinical trends.",
+      "accessDenied": "Access denied. Doctor or admin role required.",
+      "filters": {
+        "dateRange": "Date range",
+        "district": "District",
+        "upazila": "Upazila"
+      },
+      "export": "Export CSV",
+      "geography": {
+        "upazila": "Upazila",
+        "patientCount": "Patient Count",
+        "topDiagnosis": "Top Diagnosis",
+        "trend": "Trend"
+      },
+      "charts": {
+        "diagnosisTrend": "Diagnosis trend",
+        "ageSex": "Age and sex distribution"
+      }
     },
     "audit": {
       "title": "Audit Log",
-      "description": "Review sensitive actions and sync history."
+      "description": "Review sensitive actions and sync history.",
+      "accessDenied": "Access denied. Admin role required.",
+      "filters": {
+        "action": "Action",
+        "user": "User"
+      },
+      "columns": {
+        "timestamp": "Timestamp",
+        "user": "User",
+        "action": "Action",
+        "target": "Target",
+        "recordId": "Record ID"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageOf": "Page {{page}} of {{total}}"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Manage app preferences, sync demo controls, and offline behavior.",
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "offlineTools": "Offline tools",
+      "toggleSync": "Cycle sync status",
+      "toggleSurge": "Toggle surge mode",
+      "currentLanguage": "Current language",
+      "currentStatus": "Current sync status",
+      "surgeMode": "Surge mode"
     }
   },
   "status": {
     "online": "Online",
     "offline": "Offline",
     "syncing": "Syncing",
-    "pending": "Pending changes"
+    "pending": "Pending changes",
+    "queued": "queued",
+    "synced": "Synced",
+    "failed": "Failed"
+  },
+  "forms": {
+    "required": "Required",
+    "optional": "Optional",
+    "select": "Select",
+    "search": "Search"
+  },
+  "patient": {
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "adult": "Adult",
+    "child": "Child"
+  },
+  "toasts": {
+    "saved": "Saved successfully",
+    "updated": "Updated successfully"
   }
 }
