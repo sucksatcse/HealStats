@@ -82,28 +82,26 @@ export function RegisterPatientPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
+      <section className="card rounded-2xl">
         <div className="max-w-3xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t('pages.newPatient.title')}</h1>
-          <p className="text-sm leading-6 text-slate-600">{t('pages.newPatient.description')}</p>
+          <p className="text-label text-slate-500">{t('pages.newPatient.title')}</p>
+          <h1 className="mt-2 text-page-title">{t('pages.newPatient.title')}</h1>
+          <p className="text-body">{t('pages.newPatient.description')}</p>
         </div>
       </section>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
-        <div className="flex items-center justify-between gap-4 rounded-[1.5rem] bg-slate-50 px-4 py-4 ring-1 ring-slate-100">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-4 ring-1 ring-slate-200">
           <div>
-            <p className="text-sm font-semibold text-slate-900">{t('pages.newPatient.refugeeMode')}</p>
-            <p className="text-sm text-slate-500">Toggle for camp-based registrations</p>
+            <p className="text-section-title">{t('pages.newPatient.refugeeMode')}</p>
+            <p className="text-body">Toggle for camp-based registrations</p>
           </div>
           <button
             type="button"
             onClick={() => setRefugeeMode((value) => !value)}
-            className={[
-              'rounded-full px-4 py-2 text-sm font-semibold transition',
-              refugeeMode ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-700'
-            ].join(' ')}
+            className={['relative h-8 w-16 rounded-full transition', refugeeMode ? 'bg-blue-600' : 'bg-slate-300'].join(' ')}
           >
-            {refugeeMode ? 'On' : 'Off'}
+            <span className={['absolute top-1 h-6 w-6 rounded-full bg-white transition', refugeeMode ? 'left-9' : 'left-1'].join(' ')} />
           </button>
         </div>
 
@@ -115,41 +113,41 @@ export function RegisterPatientPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="md:col-span-2">
-            <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.fullName')}</span>
+            <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.fullName')}</span>
             <input
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+              className="w-full rounded-2xl px-4 py-3"
             />
           </label>
 
           {!refugeeMode ? (
             <>
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.dob')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.dob')}</span>
                 <input
                   type="date"
                   value={dateOfBirth}
                   onChange={(event) => setDateOfBirth(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.phone')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.phone')}</span>
                 <input
                   value={phoneNumber}
                   onChange={(event) => setPhoneNumber(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.district')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.district')}</span>
                 <select
                   value={district}
                   onChange={(event) => handleDistrictChange(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 >
                   {Object.keys(districtMap).map((item) => (
                     <option key={item} value={item}>
@@ -160,11 +158,11 @@ export function RegisterPatientPage() {
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.upazila')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.upazila')}</span>
                 <select
                   value={upazila}
                   onChange={(event) => setUpazila(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 >
                   {upazilaOptions.map((item) => (
                     <option key={item} value={item}>
@@ -175,40 +173,40 @@ export function RegisterPatientPage() {
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.union')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.union')}</span>
                 <input
                   value={unionName}
                   onChange={(event) => setUnionName(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 />
               </label>
             </>
           ) : (
             <>
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.campName')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.campName')}</span>
                 <input
                   value={campName}
                   onChange={(event) => setCampName(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 />
               </label>
 
               <label>
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.shelterBlock')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.shelterBlock')}</span>
                 <input
                   value={shelterBlock}
                   onChange={(event) => setShelterBlock(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 />
               </label>
 
               <label className="md:col-span-2">
-                <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.nationality')}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.nationality')}</span>
                 <select
                   value={nationality}
                   onChange={(event) => setNationality(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="w-full rounded-2xl px-4 py-3"
                 >
                   {nationalities.map((item) => (
                     <option key={item} value={item}>
@@ -221,10 +219,10 @@ export function RegisterPatientPage() {
           )}
 
           <fieldset className="md:col-span-2">
-            <legend className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.sex')}</legend>
+            <legend className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.sex')}</legend>
             <div className="flex flex-wrap gap-3">
               {['male', 'female', 'other'].map((option) => (
-                <label key={option} className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700">
+                <label key={option} className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700">
                   <input type="radio" name="sex" value={option} checked={sex === option} onChange={() => setSex(option)} />
                   {t(`patient.${option}`)}
                 </label>
@@ -233,14 +231,14 @@ export function RegisterPatientPage() {
           </fieldset>
 
           <label className="md:col-span-2">
-            <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.newPatient.photo')}</span>
-            <input type="file" onChange={handlePhotoChange} className="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm" />
+            <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.newPatient.photo')}</span>
+            <input type="file" onChange={handlePhotoChange} className="block w-full rounded-2xl bg-white px-4 py-3 text-sm" />
             {photoName ? <p className="mt-2 text-xs text-slate-500">{photoName}</p> : null}
           </label>
 
           <button
             type="submit"
-            className="md:col-span-2 rounded-2xl bg-primary px-5 py-3.5 text-base font-semibold text-white shadow-soft transition hover:bg-primary-600"
+            className="btn-primary md:col-span-2 w-full py-3.5 text-base"
           >
             {t('pages.newPatient.submit')}
           </button>

@@ -25,13 +25,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen items-center justify-center px-4">
-          <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-soft">
-            <h1 className="text-2xl font-semibold text-slate-900">{i18n.t('common.somethingWentWrong')}</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{i18n.t('common.somethingWentWrong')}</p>
+          <div className="card max-w-md text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-3xl">⚠️</div>
+            <h1 className="mt-5 text-page-title">{i18n.t('common.somethingWentWrong')}</h1>
+            <p className="mt-3 text-body">{i18n.t('common.somethingWentWrong')}</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="mt-6 rounded-2xl bg-primary px-5 py-3 font-semibold text-white shadow-soft transition hover:bg-primary-600"
+              className="btn-primary mt-6 w-full"
             >
               {i18n.t('common.reload')}
             </button>

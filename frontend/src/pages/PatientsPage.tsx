@@ -31,34 +31,36 @@ export function PatientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-soft lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t('pages.patients.title')}</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{t('pages.patients.description')}</p>
+      <div className="card rounded-2xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-label text-slate-500">{t('pages.patients.title')}</p>
+            <h1 className="mt-2 text-page-title">{t('pages.patients.title')}</h1>
+            <p className="mt-3 text-body">{t('pages.patients.description')}</p>
+          </div>
+          <Link to="/patients/new" className="btn-primary inline-flex items-center justify-center">
+            {t('pages.patients.register')}
+          </Link>
         </div>
-        <Link
-          to="/patients/new"
-          className="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-600"
-        >
-          {t('pages.patients.register')}
-        </Link>
       </div>
 
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-soft">
+      <div className="card rounded-2xl">
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">{t('pages.patients.search')}</span>
+          <span className="mb-2 block text-sm font-semibold text-slate-700">{t('pages.patients.search')}</span>
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('pages.patients.search')}
-            className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+            className="w-full rounded-2xl px-4 py-3"
           />
         </label>
       </div>
 
       {filteredPatients.length === 0 ? (
-        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-slate-500 shadow-soft">
-          {t('pages.patients.empty')}
+        <div className="card rounded-2xl border-dashed text-center text-slate-500">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 text-4xl">🩺</div>
+          <h3 className="mt-5 text-section-title">No patients found</h3>
+          <p className="mt-2 text-body">{t('pages.patients.empty')}</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -66,36 +68,23 @@ export function PatientsPage() {
             <Link
               key={patient.id}
               to={`/patients/${patient.id}`}
-              className="group rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_18px_45px_rgba(14,165,233,0.12)]"
+              className="group card-hover rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">{patient.id}</p>
-                  <h2 className="mt-2 text-xl font-semibold text-slate-900">{patient.name}</h2>
+              <div className="flex items-start gap-4">
+                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-white ${patient.name.charCodeAt(0) % 2 === 0 ? 'bg-blue-600' : 'bg-teal-600'}`}>
+                  {patient.name.slice(0, 2).toUpperCase()}
                 </div>
-                <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">
-                  {t(`patient.${patient.sex}`)}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{patient.name}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{patient.age} yrs</span>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{t(`patient.${patient.sex}`)}</span>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500">{patient.upazila}, {patient.district}</p>
+                  <p className="mt-1 text-xs text-slate-400">Last visit {patient.lastVisit}</p>
+                </div>
+                <span className="text-slate-400 transition group-hover:translate-x-1">→</span>
               </div>
-
-              <dl className="mt-5 grid gap-3 text-sm text-slate-600">
-                <div className="flex justify-between gap-4">
-                  <dt>{t('pages.patients.age')}</dt>
-                  <dd className="font-medium text-slate-900">{patient.age}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>{t('pages.patients.upazila')}</dt>
-                  <dd className="font-medium text-slate-900">{patient.upazila}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>{t('pages.patients.district')}</dt>
-                  <dd className="font-medium text-slate-900">{patient.district}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>{t('pages.patients.lastVisit')}</dt>
-                  <dd className="font-medium text-slate-900">{patient.lastVisit}</dd>
-                </div>
-              </dl>
             </Link>
           ))}
         </div>

@@ -23,7 +23,7 @@ export function OfflineBanner() {
   }
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-sm">
+    <div className="rounded-xl bg-gradient-to-r from-amber-100 via-amber-50 to-orange-100 px-4 py-2.5 text-center text-sm font-semibold text-amber-900 shadow-sm ring-1 ring-amber-200">
       {t('common.offlineBanner')}
     </div>
   );

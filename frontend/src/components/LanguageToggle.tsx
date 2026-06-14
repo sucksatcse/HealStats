@@ -13,7 +13,7 @@ export function LanguageToggle() {
   ];
 
   return (
-    <div className="inline-flex rounded-full border border-sky-100 bg-sky-50 p-1 text-sm font-medium text-sky-800 shadow-sm">
+    <div className="inline-flex rounded-full border border-blue-100 bg-white p-1 text-sm font-semibold text-slate-700 shadow-sm">
       {languages.map((item) => {
         const active = item.code === language;
 
@@ -28,7 +28,7 @@ export function LanguageToggle() {
             }}
             className={[
               'rounded-full px-3 py-1.5 transition',
-              active ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              active ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
             ].join(' ')}
           >
             {item.label}

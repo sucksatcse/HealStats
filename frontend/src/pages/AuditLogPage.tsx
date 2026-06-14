@@ -27,9 +27,10 @@ export function AuditLogPage() {
 
   if (role !== 'admin') {
     return (
-      <div className="rounded-[2rem] border border-rose-200 bg-white p-8 text-center shadow-soft">
-        <h1 className="text-2xl font-semibold text-slate-900">{t('common.accessDenied')}</h1>
-        <p className="mt-3 text-sm text-slate-600">{t('pages.audit.accessDenied')}</p>
+      <div className="card rounded-2xl text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-3xl">⛔</div>
+        <h1 className="mt-5 text-page-title">{t('common.accessDenied')}</h1>
+        <p className="mt-3 text-body">{t('pages.audit.accessDenied')}</p>
       </div>
     );
   }
@@ -44,26 +45,27 @@ export function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
+      <section className="card rounded-2xl">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t('pages.audit.title')}</h1>
-          <p className="mt-2 text-sm text-slate-600">{t('pages.audit.description')}</p>
+          <p className="text-label text-slate-500">{t('pages.audit.title')}</p>
+          <h1 className="mt-2 text-page-title">{t('pages.audit.title')}</h1>
+          <p className="mt-3 text-body">{t('pages.audit.description')}</p>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} className="rounded-2xl border border-slate-300 px-4 py-3">
+          <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} className="rounded-2xl px-4 py-3">
             {actions.map((item) => <option key={item}>{item}</option>)}
           </select>
-          <select value={userFilter} onChange={(event) => setUserFilter(event.target.value)} className="rounded-2xl border border-slate-300 px-4 py-3">
+          <select value={userFilter} onChange={(event) => setUserFilter(event.target.value)} className="rounded-2xl px-4 py-3">
             {users.map((item) => <option key={item}>{item}</option>)}
           </select>
         </div>
       </section>
 
-      <article className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft">
+      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500">
+          <table className="min-w-full text-left text-sm">
+            <thead className="sticky top-0 bg-slate-50 text-slate-500">
               <tr>
                 <th className="px-5 py-3 font-semibold">{t('pages.audit.columns.timestamp')}</th>
                 <th className="px-5 py-3 font-semibold">{t('pages.audit.columns.user')}</th>
@@ -72,14 +74,21 @@ export function AuditLogPage() {
                 <th className="px-5 py-3 font-semibold">{t('pages.audit.columns.recordId')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="bg-white">
               {visibleRows.map((row) => (
-                <tr key={`${row.timestamp}-${row.recordId}`}>
-                  <td className="px-5 py-4 text-slate-600">{row.timestamp}</td>
-                  <td className="px-5 py-4 font-medium text-slate-900">{row.user}</td>
-                  <td className="px-5 py-4 text-slate-600">{row.action}</td>
+                <tr key={`${row.timestamp}-${row.recordId}`} className="odd:bg-slate-50">
+                  <td className="px-5 py-4 font-mono text-xs text-slate-500">{row.timestamp}</td>
+                  <td className="px-5 py-4 font-semibold text-slate-900">{row.user}</td>
+                  <td className="px-5 py-4">
+                    <span className={[
+                      'rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em]',
+                      row.action.includes('CREATE') ? 'bg-emerald-100 text-emerald-700' : row.action === 'LOGIN' ? 'bg-slate-100 text-slate-600' : row.action.includes('UPDATE') ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                    ].join(' ')}>
+                      {row.action}
+                    </span>
+                  </td>
                   <td className="px-5 py-4 text-slate-600">{row.target}</td>
-                  <td className="px-5 py-4 text-slate-600">{row.recordId}</td>
+                  <td className="px-5 py-4 font-mono text-xs text-slate-500">{row.recordId}</td>
                 </tr>
               ))}
             </tbody>
@@ -92,7 +101,7 @@ export function AuditLogPage() {
             <button
               type="button"
               onClick={() => setPage((value) => Math.max(1, value - 1))}
-              className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40"
+              className="btn-secondary rounded-2xl disabled:opacity-40"
               disabled={page === 1}
             >
               {t('pages.audit.pagination.previous')}
@@ -100,7 +109,7 @@ export function AuditLogPage() {
             <button
               type="button"
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-              className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40"
+              className="btn-secondary rounded-2xl disabled:opacity-40"
               disabled={page === totalPages}
             >
               {t('pages.audit.pagination.next')}

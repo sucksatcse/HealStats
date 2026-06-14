@@ -81,29 +81,29 @@ export function PatientDetailPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
+      <section className="card rounded-2xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{patient.fullName}</h1>
-              <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
+              <h1 className="text-page-title">{patient.fullName}</h1>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                 {t('pages.patientDetail.patientId')}: {id ?? patient.id}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-3 text-body">
               {patient.age} years, {t(`patient.${patient.sex}`)} · {t('pages.patientDetail.districtUpazila')}: {patient.district} / {patient.upazila}
             </p>
           </div>
           <Link
             to={`/encounters/new?patientId=${id ?? patient.id}`}
-            className="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-600"
+            className="btn-primary inline-flex items-center justify-center"
           >
             {t('pages.patientDetail.newEncounter')}
           </Link>
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-3 shadow-soft">
+      <section className="card rounded-2xl p-3">
         <div className="flex flex-wrap gap-2 border-b border-slate-200 px-2 pb-3">
           {[
             ['history', t('pages.patientDetail.tabs.history')],
@@ -116,7 +116,7 @@ export function PatientDetailPage() {
               onClick={() => setTab(key as typeof tab)}
               className={[
                 'rounded-2xl px-4 py-2 text-sm font-semibold transition',
-                tab === key ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-200' : 'text-slate-500 hover:bg-slate-50'
+                tab === key ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'text-slate-500 hover:bg-slate-50'
               ].join(' ')}
             >
               {label}
@@ -131,7 +131,7 @@ export function PatientDetailPage() {
                 const open = expandedVisit === visit.id;
 
                 return (
-                  <article key={visit.id} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                  <article key={visit.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <button
                       type="button"
                       onClick={() => setExpandedVisit(open ? '' : visit.id)}
@@ -141,7 +141,7 @@ export function PatientDetailPage() {
                         <p className="text-sm font-semibold text-slate-900">{visit.id}</p>
                         <p className="text-sm text-slate-500">{visit.date}</p>
                       </div>
-                      <span className="text-sm font-semibold text-sky-700">{open ? '−' : '+'}</span>
+                      <span className="text-sm font-semibold text-blue-700">{open ? '−' : '+'}</span>
                     </button>
                     {open ? (
                       <div className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -166,8 +166,8 @@ export function PatientDetailPage() {
           ) : null}
 
           {tab === 'prescriptions' ? (
-            <div className="overflow-x-auto rounded-[1.5rem] border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-semibold">{t('pages.patientDetail.prescriptionsTable.drug')}</th>
@@ -178,9 +178,9 @@ export function PatientDetailPage() {
                     <th className="px-4 py-3 font-semibold">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="bg-white">
                   {prescriptionRows.map((row, index) => (
-                    <tr key={`${row.encounter}-${index}`}>
+                    <tr key={`${row.encounter}-${index}`} className="odd:bg-slate-50">
                       <td className="px-4 py-3 font-medium text-slate-900">{row.drugName}</td>
                       <td className="px-4 py-3 text-slate-600">{row.dosage}</td>
                       <td className="px-4 py-3 text-slate-600">{row.frequency}</td>
@@ -197,7 +197,7 @@ export function PatientDetailPage() {
           {tab === 'demographics' ? (
             <div className="grid gap-4 md:grid-cols-2">
               {demographics.map(([labelKey, value]) => (
-                <div key={labelKey} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                <div key={labelKey} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{t(labelKey)}</p>
                   <p className="mt-2 text-sm font-medium text-slate-900">{t(value)}</p>
                 </div>

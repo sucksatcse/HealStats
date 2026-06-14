@@ -22,23 +22,26 @@ export function ToastStack() {
   }
 
   return (
-    <div className="fixed right-4 top-4 z-50 flex w-[min(92vw,360px)] flex-col gap-3">
+    <div className="fixed bottom-4 right-4 z-50 flex w-[min(92vw,380px)] flex-col gap-3">
       {toasts.map((toast) => {
         const tone =
           toast.tone === 'error'
-            ? 'border-rose-200 bg-rose-50 text-rose-800'
+            ? 'border-l-rose-500 bg-white text-slate-900'
             : toast.tone === 'info'
-              ? 'border-sky-200 bg-sky-50 text-sky-800'
-              : 'border-emerald-200 bg-emerald-50 text-emerald-800';
+              ? 'border-l-blue-500 bg-white text-slate-900'
+              : 'border-l-emerald-500 bg-white text-slate-900';
+
+        const icon = toast.tone === 'error' ? '⛔' : toast.tone === 'info' ? 'ℹ️' : '✅';
 
         return (
-          <div key={toast.id} className={`rounded-2xl border px-4 py-3 shadow-soft ${tone}`}>
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-medium leading-6">{toast.message}</p>
+          <div key={toast.id} className={`rounded-xl border border-slate-200 border-l-4 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)] ${tone}`}>
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 text-base">{icon}</span>
+              <p className="flex-1 text-sm font-medium leading-6 text-slate-700">{toast.message}</p>
               <button
                 type="button"
                 onClick={() => removeToast(toast.id)}
-                className="text-lg leading-none opacity-60 transition hover:opacity-100"
+                className="text-lg leading-none text-slate-400 transition hover:text-slate-700"
                 aria-label="Dismiss toast"
               >
                 ×

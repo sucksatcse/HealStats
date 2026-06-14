@@ -8,20 +8,29 @@ import { SurgeModeBanner } from './SurgeModeBanner';
 import { useAppStore } from '../../store';
 
 const navItems = [
-  { to: '/dashboard', key: 'nav.dashboard' },
-  { to: '/patients', key: 'nav.patients' },
-  { to: '/encounters/new', key: 'nav.newEncounter' },
-  { to: '/surveillance', key: 'nav.surveillance' },
-  { to: '/audit', key: 'nav.audit' },
-  { to: '/settings', key: 'nav.settings' }
+  { to: '/dashboard', key: 'nav.dashboard', icon: '🏠' },
+  { to: '/patients', key: 'nav.patients', icon: '👥' },
+  { to: '/encounters/new', key: 'nav.newEncounter', icon: '➕' },
+  { to: '/surveillance', key: 'nav.surveillance', icon: '📊' },
+  { to: '/audit', key: 'nav.audit', icon: '📋' },
+  { to: '/settings', key: 'nav.settings', icon: '⚙️' }
 ];
+
+function getInitials(name?: string | null) {
+  if (!name) {
+    return 'HS';
+  }
+
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || 'HS';
+}
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation();
   const location = useLocation();
 
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-2">
       {navItems.map((item) => {
         const active = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
 
@@ -31,13 +40,13 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
             to={item.to}
             onClick={onNavigate}
             className={[
-              'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition',
+              'flex items-center gap-3 rounded-2xl border-l-4 px-4 py-3 text-sm font-semibold transition',
               active
-                ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-200'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                : 'border-transparent text-white/60 hover:bg-white/8 hover:text-white'
             ].join(' ')}
           >
-            <span className={active ? 'text-sky-600' : 'text-slate-400'}>●</span>
+            <span className={active ? 'text-blue-600' : 'text-white/50'}>{item.icon}</span>
             <span>{t(item.key)}</span>
           </NavLink>
         );
@@ -55,6 +64,24 @@ export function AppLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const userLabel = useMemo(() => user?.name ?? t('common.unknown'), [t, user?.name]);
+  const userInitials = useMemo(() => getInitials(user?.name), [user?.name]);
+
+  const titleMap = useMemo(
+    () => ({
+      '/dashboard': t('nav.dashboard'),
+      '/patients': t('nav.patients'),
+      '/encounters/new': t('nav.newEncounter'),
+      '/surveillance': t('nav.surveillance'),
+      '/audit': t('nav.audit'),
+      '/settings': t('nav.settings')
+    }),
+    [t]
+  );
+
+  const pageTitle = useMemo(() => {
+    const active = navItems.find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
+    return active ? titleMap[active.to as keyof typeof titleMap] : t('app.name');
+  }, [location.pathname, t, titleMap]);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -76,21 +103,60 @@ export function AppLayout() {
   }, [drawerOpen]);
 
   return (
-    <div className="min-h-screen text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col lg:flex-row">
-        <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white/95 px-4 py-5 shadow-sm lg:block">
-          <div className="mb-6 rounded-[1.5rem] bg-sky-50 px-4 py-4 ring-1 ring-sky-100">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">{t('app.name')}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{t('app.tagline')}</p>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="sticky top-0 z-50">
+        <OfflineBanner />
+        <SurgeModeBanner />
+      </div>
+
+      <div className="mx-auto flex min-h-screen w-full max-w-[1680px] gap-0 lg:pl-[260px]">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col bg-slate-950 px-5 py-5 text-white shadow-[20px_0_60px_rgba(15,23,42,0.24)] lg:flex">
+          <div className="mb-7 flex items-center gap-3 rounded-2xl bg-white/6 px-4 py-4 ring-1 ring-white/10">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-500 text-white shadow-lg shadow-teal-500/25">
+              <span className="text-lg">♥</span>
+            </div>
+            <div>
+              <p className="text-sm font-extrabold tracking-tight">HealthStats</p>
+              <p className="text-xs text-white/60">{t('app.tagline')}</p>
+            </div>
           </div>
+
+          <div className="mb-6 rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+            <p className="text-label text-white/50">{t('layout.menu')}</p>
+            <p className="mt-1 text-sm font-medium text-white/75">{pageTitle}</p>
+          </div>
+
           <NavList />
+
+          <div className="mt-auto space-y-4 rounded-2xl bg-white/6 p-4 ring-1 ring-white/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                {userInitials}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{userLabel}</p>
+                <p className="inline-flex rounded-full bg-teal-500/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-300">
+                  {user?.role ?? 'staff'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                clearAuth();
+                navigate('/login');
+              }}
+              className="w-full rounded-xl border border-white/15 bg-white/8 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/12"
+            >
+              {t('layout.logout')}
+            </button>
+          </div>
         </aside>
 
         <div className="flex min-h-screen flex-1 flex-col">
-          <div className="sticky top-0 z-30 space-y-2 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur xl:px-6">
-            <OfflineBanner />
-            <SurgeModeBanner />
-            <header className="flex items-center gap-3">
+          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+            <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
@@ -100,17 +166,15 @@ export function AppLayout() {
                 ☰
               </button>
 
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500 text-lg font-black text-white shadow-soft">
-                  H
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">{t('app.name')}</p>
-                  <p className="truncate text-xs text-slate-500">{t('app.tagline')}</p>
-                </div>
+              <div className="min-w-0 lg:hidden">
+                <p className="truncate text-lg font-extrabold text-slate-900">{pageTitle}</p>
               </div>
 
-              <div className="hidden flex-1 justify-center lg:flex">
+              <div className="hidden min-w-0 flex-1 lg:block">
+                <p className="text-page-title">{pageTitle}</p>
+              </div>
+
+              <div className="absolute left-1/2 hidden -translate-x-1/2 lg:block">
                 <SyncStatusBadge />
               </div>
 
@@ -118,100 +182,84 @@ export function AppLayout() {
                 <div className="hidden lg:block">
                   <LanguageToggle />
                 </div>
-                <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 lg:flex">
-                  <span className="font-medium text-slate-900">{userLabel}</span>
-                  <span className="text-slate-300">|</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearAuth();
-                      navigate('/login');
-                    }}
-                    className="font-semibold text-sky-700 transition hover:text-sky-900"
-                  >
-                    {t('layout.logout')}
-                  </button>
+                <button type="button" className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 lg:inline-flex">
+                  🔔
+                </button>
+                <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 lg:flex">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                    {userInitials}
+                  </div>
                 </div>
               </div>
-            </header>
-            <div className="flex justify-center lg:hidden">
-              <SyncStatusBadge />
             </div>
-          </div>
+            <div className="border-t border-slate-200 px-4 py-3 lg:hidden">
+              <div className="flex items-center justify-between gap-3">
+                <SyncStatusBadge />
+                <LanguageToggle />
+                <button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600">
+                  🔔
+                </button>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">{userInitials}</div>
+              </div>
+            </div>
+          </header>
 
-          <main className="flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-6 lg:pb-8">
-            <Outlet />
+          <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+            <div key={location.pathname} className="fade-in-up">
+              <Outlet />
+            </div>
           </main>
-
-          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-12px_36px_rgba(15,23,42,0.08)] lg:hidden">
-            <div className="grid grid-cols-6 gap-1 overflow-x-auto pb-1 scrollbar-hide">
-              {navItems.map((item) => {
-                const active = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
-
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={[
-                      'flex min-w-[72px] flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-semibold transition',
-                      active ? 'bg-sky-50 text-sky-700' : 'text-slate-500'
-                    ].join(' ')}
-                  >
-                    <span className={active ? 'text-sky-600' : 'text-slate-400'}>●</span>
-                    <span className="text-center leading-tight">{t(item.key)}</span>
-                  </NavLink>
-                );
-              })}
-            </div>
-          </div>
-
-          {drawerOpen ? (
-            <div className="fixed inset-0 z-40 lg:hidden">
-              <button
-                type="button"
-                className="absolute inset-0 bg-slate-950/40"
-                aria-label={t('layout.closeMenu')}
-                onClick={() => setDrawerOpen(false)}
-              />
-              <aside className="absolute left-0 top-0 h-full w-[280px] max-w-[84vw] bg-white px-4 py-5 shadow-2xl shadow-slate-900/20">
-                <div className="mb-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">{t('app.name')}</p>
-                    <p className="text-sm text-slate-500">{t('layout.menu')}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDrawerOpen(false)}
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700"
-                  >
-                    ×
-                  </button>
-                </div>
-                <NavList onNavigate={() => setDrawerOpen(false)} />
-                <div className="mt-6 flex items-center justify-between rounded-[1.25rem] bg-slate-50 px-4 py-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{t('layout.loggedInAs')}</p>
-                    <p className="text-sm font-semibold text-slate-900">{userLabel}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearAuth();
-                      navigate('/login');
-                    }}
-                    className="rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white"
-                  >
-                    {t('layout.logout')}
-                  </button>
-                </div>
-                <div className="mt-4 flex justify-center">
-                  <LanguageToggle />
-                </div>
-              </aside>
-            </div>
-          ) : null}
         </div>
       </div>
+
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/55"
+            aria-label={t('layout.closeMenu')}
+            onClick={() => setDrawerOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 h-full w-[320px] max-w-[86vw] bg-slate-950 px-5 py-5 text-white shadow-[24px_0_80px_rgba(15,23,42,0.35)]">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-500 text-white">♥</div>
+                <div>
+                  <p className="text-sm font-extrabold">HealthStats</p>
+                  <p className="text-xs text-white/60">{t('layout.menu')}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                className="rounded-xl border border-white/10 bg-white/8 px-3 py-2 text-sm font-semibold text-white"
+              >
+                ×
+              </button>
+            </div>
+            <NavList onNavigate={() => setDrawerOpen(false)} />
+            <div className="mt-6 rounded-2xl bg-white/6 p-4 ring-1 ring-white/10">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">{userInitials}</div>
+                <div>
+                  <p className="font-semibold text-white">{userLabel}</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-teal-300">{user?.role ?? 'staff'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  clearAuth();
+                  navigate('/login');
+                }}
+                className="mt-4 w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900"
+              >
+                {t('layout.logout')}
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }
