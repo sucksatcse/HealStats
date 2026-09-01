@@ -5,14 +5,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. Create Tables
 -- ==========================================
 
-CREATE TABLE public.clinics (
+CREATE TABLE IF NOT EXISTS public.clinics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     zone TEXT,
     address TEXT
 );
 
-CREATE TABLE public.staff (
+CREATE TABLE IF NOT EXISTS public.staff (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     role TEXT CHECK (role IN ('worker', 'admin')) NOT NULL DEFAULT 'worker',
@@ -21,7 +21,7 @@ CREATE TABLE public.staff (
     email TEXT
 );
 
-CREATE TABLE public.patients (
+CREATE TABLE IF NOT EXISTS public.patients (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     age INTEGER,
@@ -31,7 +31,7 @@ CREATE TABLE public.patients (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE public.visits (
+CREATE TABLE IF NOT EXISTS public.visits (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE,
     staff_id UUID REFERENCES public.staff(id) ON DELETE SET NULL,
@@ -44,7 +44,7 @@ CREATE TABLE public.visits (
     synced_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE public.sync_log (
+CREATE TABLE IF NOT EXISTS public.sync_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     staff_id UUID REFERENCES public.staff(id) ON DELETE CASCADE,
     device_id TEXT,
