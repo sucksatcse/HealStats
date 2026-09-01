@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLang } from "./LanguageContext";
 import { useTheme } from "./ThemeContext";
+import { useAuth } from "./AuthContext";
 
 /* ══════════════════════════════════════════════════════════════════════════════
    HealthStats — single unified navbar used by every page.
@@ -123,7 +124,21 @@ export default function AppNavbar({
 }: AppNavbarProps) {
   const { lang, toggleLang } = useLang();
   const { dark, toggleDark } = useTheme();
+  const { signOut, profile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const isApp = variant === "app";
 
@@ -209,13 +224,43 @@ export default function AppNavbar({
       )}
 
       {/* ── User avatar ── */}
-      <button className={`${avatarBase} ${avatarColor}`} aria-label="Your profile">
-        {isApp && userInitials ? (
-          <span className="text-[11px] font-bold">{userInitials}</span>
-        ) : (
-          <UserIcon />
+      <div className="relative" ref={userMenuRef}>
+        <button 
+          className={`${avatarBase} ${avatarColor}`} 
+          aria-label="Your profile"
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+        >
+          {isApp && userInitials ? (
+            <span className="text-[11px] font-bold">{userInitials}</span>
+          ) : (
+            <UserIcon />
+          )}
+        </button>
+
+        {/* Popover Menu */}
+        {userMenuOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-700 py-1.5 z-50 animate-slide-up">
+            {profile && (
+              <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 mb-1">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{profile.name}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">{profile.role}</p>
+              </div>
+            )}
+            <button
+              onClick={() => {
+                setUserMenuOpen(false);
+                signOut();
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-300 transition-colors flex items-center gap-2"
+            >
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              </svg>
+              Log Out
+            </button>
+          </div>
         )}
-      </button>
+      </div>
     </>
   );
 
