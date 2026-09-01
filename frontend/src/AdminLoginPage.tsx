@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./lib/supabase";
 
 interface AdminLoginPageProps {
   onBack: () => void;
@@ -110,12 +111,23 @@ export default function AdminLoginPage({ onBack, onLogin }: AdminLoginPageProps)
     setTimeout(() => setForgotSent(false), 4000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) { setError("Please enter your admin email and password."); return; }
     setError("");
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 1600);
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      onLogin(); // App.tsx handles the actual role routing
+    }
   };
 
   // subtle floating-dot animation offset
