@@ -100,6 +100,7 @@ ALTER TABLE public.sync_log ENABLE ROW LEVEL SECURITY;
 -- ==========================================
 
 -- Clinics Policy
+DROP POLICY IF EXISTS "Admins can access all clinics, workers can access their own" ON public.clinics;
 CREATE POLICY "Admins can access all clinics, workers can access their own"
 ON public.clinics FOR ALL
 USING (
@@ -108,6 +109,7 @@ USING (
 );
 
 -- Staff Policy
+DROP POLICY IF EXISTS "Admins can access all staff, workers can access staff in their clinic" ON public.staff;
 CREATE POLICY "Admins can access all staff, workers can access staff in their clinic"
 ON public.staff FOR ALL
 USING (
@@ -116,6 +118,7 @@ USING (
 );
 
 -- Patients Policy
+DROP POLICY IF EXISTS "Admins can access all patients, workers can access patients in their clinic" ON public.patients;
 CREATE POLICY "Admins can access all patients, workers can access patients in their clinic"
 ON public.patients FOR ALL
 USING (
@@ -124,6 +127,7 @@ USING (
 );
 
 -- Visits Policy
+DROP POLICY IF EXISTS "Admins can access all visits, workers can access visits for patients in their clinic" ON public.visits;
 CREATE POLICY "Admins can access all visits, workers can access visits for patients in their clinic"
 ON public.visits FOR ALL
 USING (
@@ -132,6 +136,7 @@ USING (
 );
 
 -- Sync Log Policy
+DROP POLICY IF EXISTS "Admins can access all sync logs, workers can access their own logs" ON public.sync_log;
 CREATE POLICY "Admins can access all sync logs, workers can access their own logs"
 ON public.sync_log FOR ALL
 USING (
