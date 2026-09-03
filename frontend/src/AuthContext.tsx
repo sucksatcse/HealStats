@@ -15,6 +15,7 @@ interface AuthContextType {
   profile: AuthProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  loginDemoUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => {},
+  loginDemoUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -33,7 +35,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<AuthProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Demo bypass flag
+  const [isDemo, setIsDemo] = useState(false);
+
   useEffect(() => {
+    if (isDemo) return;
+    
     let mounted = true;
 
     async function fetchProfile(userId: string) {
@@ -73,11 +80,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, currentSession) => {
-        if (!mounted) return;
+        if (!mounted || isDemo) return;
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         if (currentSession?.user) {
-          // fetch profile whenever user changes/logs in
           fetchProfile(currentSession.user.id);
         } else {
           setProfile(null);
@@ -89,14 +95,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isDemo]);
+
+  const loginDemoUser = () => {
+    setIsDemo(true);
+    setSession({} as Session);
+    setUser({ id: 'demo-user-id' } as User);
+    setProfile({
+      id: 'demo-staff-id',
+      name: 'Test Worker (Demo)',
+      role: 'worker',
+      clinic_id: '11111111-1111-1111-1111-111111111111',
+    });
+    setLoading(false);
+  };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isDemo) {
+      setIsDemo(false);
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+    } else {
+      await supabase.auth.signOut();
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signOut, loginDemoUser }}>
       {children}
     </AuthContext.Provider>
   );
