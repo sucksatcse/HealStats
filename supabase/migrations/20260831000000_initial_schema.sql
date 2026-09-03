@@ -86,60 +86,13 @@ AS $$
 $$;
 
 -- ==========================================
--- 3. Enable RLS
+-- 3. Disable RLS (For Dev/Demo Mode)
 -- ==========================================
 
-ALTER TABLE public.clinics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.staff ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.visits ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sync_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clinics DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.staff DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patients DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visits DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sync_log DISABLE ROW LEVEL SECURITY;
 
--- ==========================================
--- 4. Create Policies
--- ==========================================
-
--- Clinics Policy
-DROP POLICY IF EXISTS "Admins can access all clinics, workers can access their own" ON public.clinics;
-CREATE POLICY "Admins can access all clinics, workers can access their own"
-ON public.clinics FOR ALL
-USING (
-  public.get_current_user_role() = 'admin' 
-  OR id = public.get_current_user_clinic_id()
-);
-
--- Staff Policy
-DROP POLICY IF EXISTS "Admins can access all staff, workers can access staff in their clinic" ON public.staff;
-CREATE POLICY "Admins can access all staff, workers can access staff in their clinic"
-ON public.staff FOR ALL
-USING (
-  public.get_current_user_role() = 'admin' 
-  OR clinic_id = public.get_current_user_clinic_id()
-);
-
--- Patients Policy
-DROP POLICY IF EXISTS "Admins can access all patients, workers can access patients in their clinic" ON public.patients;
-CREATE POLICY "Admins can access all patients, workers can access patients in their clinic"
-ON public.patients FOR ALL
-USING (
-  public.get_current_user_role() = 'admin' 
-  OR clinic_id = public.get_current_user_clinic_id()
-);
-
--- Visits Policy
-DROP POLICY IF EXISTS "Admins can access all visits, workers can access visits for patients in their clinic" ON public.visits;
-CREATE POLICY "Admins can access all visits, workers can access visits for patients in their clinic"
-ON public.visits FOR ALL
-USING (
-  public.get_current_user_role() = 'admin'
-  OR patient_id IN (SELECT id FROM public.patients WHERE clinic_id = public.get_current_user_clinic_id())
-);
-
--- Sync Log Policy
-DROP POLICY IF EXISTS "Admins can access all sync logs, workers can access their own logs" ON public.sync_log;
-CREATE POLICY "Admins can access all sync logs, workers can access their own logs"
-ON public.sync_log FOR ALL
-USING (
-  public.get_current_user_role() = 'admin'
-  OR staff_id = public.get_current_user_staff_id()
-);
+-- Note: Policies have been removed for the MVP demo.

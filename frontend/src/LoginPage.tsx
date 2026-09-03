@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
+import { useAuth } from "./AuthContext";
 
 interface LoginPageProps {
   onBack: () => void;
@@ -7,6 +8,7 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
+  const { loginDemoUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +35,13 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
     }
     setError("");
     setLoading(true);
+
+    if (email.trim() === "worker@clinic.org" && password === "password123") {
+      // Demo bypass for local testing without Supabase Admin setup
+      loginDemoUser();
+      onLogin();
+      return;
+    }
 
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,

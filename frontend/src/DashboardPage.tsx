@@ -329,6 +329,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   /* Global lang + dark from context — no local state needed */
   const { lang } = useLang();
@@ -481,10 +482,10 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
         <main className={`flex-1 overflow-y-auto px-4 lg:px-8 py-6 ${activeNav === "patients" ? "flex flex-col min-h-0" : "space-y-6"}`}>
 
           {activeNav === "patients"       && <PatientsPage />}
-          {activeNav === "new-patient"    && <NewPatientPage />}
+          {activeNav === "new-patient"    && <NewPatientPage onSuccess={(id) => { setSelectedPatientId(id); setActiveNav("patient-detail"); }} />}
           {activeNav === "vitals"         && <VitalsPage />}
           {activeNav === "triage"         && <TriagePage />}
-          {activeNav === "patient-detail" && <PatientDetailPage />}
+          {activeNav === "patient-detail" && <PatientDetailPage patientId={selectedPatientId} />}
           {activeNav === "digitize"       && <DigitizePage />}
           {activeNav === "sync"           && <SyncPage />}
           {activeNav === "emergency"      && <EmergencyReportPage />}
