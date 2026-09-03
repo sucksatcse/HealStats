@@ -1,81 +1,207 @@
-# HealthStats — PROJECT CONTEXT (Single Source of Truth)
+# HealthStats — Project Details & Engineering Context
 
 > **MANDATORY for every AI agent (Copilot, Claude, Antigravity, etc.) and every human:**
 >
 > 1. **READ this file completely BEFORE implementing anything.**
-> 2. **UPDATE this file AFTER every merged change** (status board row + changelog entry).
+> 2. **UPDATE this file AFTER every merged change.**
 > 3. Never violate the Architecture Rules below.
 
-Last updated: 2026-09-03 · Current phase: **Initial UI Scaffolding & Backend Setup Complete. Moving towards Data Wiring and Offline Sync functionality.**
+Last updated: 2026-09-04
+Current phase: Data Wiring
 
 ---
 
-## 1. Project Snapshot
+## 1. Project Overview
+HealthStats is an electronic health record (EHR) system engineered for rural clinics in Bangladesh. It addresses the severe infrastructure challenges of intermittent connectivity and power outages by employing an offline-first architecture. 
 
-- **Product:** HealthStats — Offline-first Electronic Health Record (EHR) system built for rural clinics in Bangladesh.
-- **Core loop:** Health worker registers patient offline → Performs AI-assisted triage → Doctor reviews records → Data auto-syncs to central DB when connection returns.
-- **Stack:** React 19 · Vite 8 · TypeScript 5.7 · Tailwind CSS 4.0 · Supabase (PostgreSQL + Auth).
-- **Key Constraints:** Must work fully offline with background sync, must support Bangla & English natively, must have a low-light Dark Mode.
-- **Full context:** Refer to `FEATURES.md` and `PROGRESS.md` for historical roadmaps.
+## 2. Product Goals
+- Ensure community health workers can continue registering patients and logging visits regardless of network status.
+- Synchronize queued local records with a central database automatically upon reconnection.
+- Provide disaster-ready operational modes (e.g., floods, cyclones).
+- Provide a fully bilingual (Bangla/English) and low-light (Dark Mode) accessible interface.
 
-## 2. Repository State
+## 3. User Roles
+- **Worker**: Implemented. Can log visits and register patients only for their assigned clinic.
+- **Admin**: Implemented. Authorized to view analytics across clinics.
+- **Doctor / Coordinator**: Planned/TBD. Not currently implemented in the active routing or database logic.
 
-| Area | State |
-| --- | --- |
-| **Frontend Scaffold** | ✅ Complete. React 19 + Vite + Tailwind configured and building cleanly. `oxfmt` configured. |
-| **Database Schema** | ✅ Initialized. `20260831000000_initial_schema.sql` creates `clinics`, `staff`, `patients`, `visits`, and `sync_log`. |
-| **Security & Auth** | ✅ RLS enabled on all tables via security definer functions. Supabase email/password auth implemented (`AuthContext.tsx`). |
-| **Client UI & Design** | ✅ 30+ pages scaffolded. Bilingual (`LanguageContext`) and Dark Mode (`ThemeContext`) integrated globally. |
-| **Data Fetching (CRUD)**| ⚠️ Pending. Forms like `NewPatientPage` are static and need wiring to Supabase APIs. |
-| **Offline Engine** | ❌ Not Started. Needs IndexedDB/Dexie.js integration, background sync queue, and service workers. |
-| **AI / OCR** | ❌ Not Started. Triage scoring algorithms and physical record OCR pipeline missing. |
+## 4. Core User Flows
+**CURRENT (Online Only):**
+Health Worker → Login → Register Patient → Supabase → View Patient Detail
 
-## 3. Feature Status Board
+**TARGET (Offline-First):**
+Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Queue → Reconnection → Supabase → Sync Log
 
-Statuses: `NOT STARTED` → `IN PROGRESS` → `MVP DONE` → `DONE`
+## 5. Current Project Status
+- **Frontend Scaffold**: ✅ Complete (React 19, Vite 8, Tailwind 4).
+- **Security & Auth**: ✅ Implemented (Supabase Auth, Route Protection, Demo Bypass).
+- **Database Schema**: ✅ Initialized (`clinics`, `staff`, `patients`, `visits`, `sync_log`).
+- **UI & Design**: ✅ Scaffolding complete. Bilingual and Dark Mode contexts active.
+- **Data Fetching (CRUD)**: 🟡 In Progress. Patient Registration is wired to Supabase. Patient Detail and Vitals forms are currently static.
+- **Offline Engine**: ❌ Not Started.
+- **Intelligence (OCR)**: ❌ Not Started.
 
-| ID | Feature | Status | Notes |
-| --- | --- | --- | --- |
-| **F1** | Platform Foundation & Scaffold | DONE | Vite + React + Tailwind setup. CI/CD not yet configured. |
-| **F2** | Database & Authentication | DONE | Supabase schema, RLS policies, AuthContext, role-based routing all active. |
-| **F3** | UI Shell & Contexts | DONE | AppNavbar, Language (Bangla/EN), Theme (Light/Dark) fully built. |
-| **F4** | Role-Based Dashboards | MVP DONE | Views for Admin, Emergency, and Worker created, but data is static. |
-| **F5** | Patient Records & Clinical Forms | IN PROGRESS | NewPatientPage wired to Supabase. Patient detail view supports dynamic ID routing. Needs VitalsPage wiring. |
-| **F6** | Offline-First Engine | NOT STARTED | Core requirement. Needs Dexie.js for local storage and `navigator.onLine` sync queues. |
-| **F7** | AI Triage & OCR | NOT STARTED | Requires ML model choice and Google Vision/Tesseract integration. |
-| **F8** | Emergency / Disaster Mode | MVP DONE | UI exists (`EmergencyDashboard.tsx`), needs live external alerts feed. |
-| **F9** | Progressive Web App (PWA) | NOT STARTED | Missing `manifest.json` and install prompts. |
+## 6. Feature Status Board
+| Feature | Status | Notes |
+| --- | --- | --- |
+| Foundation & Scaffold | DONE | Vite + React + Tailwind setup. |
+| Database & Authentication | DONE | Supabase schema, AuthContext, protected routes active. |
+| UI Shell & Contexts | DONE | AppNavbar, Language, Theme fully built. |
+| Role-Based Dashboards | IN PROGRESS | Views for Admin, Emergency, and Worker created. Worker registration works, others static. |
+| Patient Records | IN PROGRESS | `NewPatientPage` wired to Supabase. `PatientDetailPage` needs dynamic `SELECT`. |
+| Clinical Forms | IN PROGRESS | `VitalsPage` exists but needs `INSERT` wiring. |
+| Offline-First Engine | NOT STARTED | Core requirement. Needs Dexie.js integration. |
+| OCR Digitization | NOT STARTED | Primary intelligence path for digitizing paper records. |
+| AI Triage | OPTIONAL / FUTURE | Deferred feature. |
+| Emergency Mode | IN PROGRESS | UI shell exists. Pending live data. |
+| PWA | NOT STARTED | Missing `manifest.json`. |
 
-## 4. Architecture Rules (NEVER violate)
+## 7. Technology Stack
+- **Frontend**: React 19, TypeScript 5.7, Vite 8
+- **Styling**: Tailwind CSS 4.0
+- **Backend / Database**: Supabase, PostgreSQL
+- **Authentication**: Supabase Auth (Email/Password)
 
-1. **Security First**: All database access must go through Supabase with Row-Level Security (RLS) enabled. Never fetch sensitive patient data without verifying the clinic assignment.
-2. **Offline Resilience**: Never assume an active internet connection. All data writes must eventually go through a local queue (once F6 is built) that pushes to Supabase only when online.
-3. **Role Segregation**: Route protection must occur at the React Router level (`App.tsx`) *and* at the Database level (RLS). A user tampering with frontend roles must still be blocked by Supabase.
-4. **Bilingual Requirement**: No hardcoded English strings in primary clinical views. Use `LanguageContext` for translations.
-5. **No Direct DOM Manipulation**: Use React state and contexts exclusively. No `innerHTML` or `document.getElementById` unless absolutely necessary for 3rd party library wrappers.
+## 8. System Architecture
+**CURRENT ARCHITECTURE:**
+Client (React) ↔ Auth Context ↔ Supabase Auth
+Client (React) ↔ Supabase Client ↔ PostgreSQL
 
-## 5. Conventions Quick Reference
+**PLANNED ARCHITECTURE:**
+Client (React) ↔ Dexie.js (IndexedDB) ↔ Service Worker ↔ Supabase Client ↔ PostgreSQL
 
-- **Styling**: Tailwind CSS v4 utility classes exclusively. No custom CSS unless strictly required in `index.css`.
-- **Database Tables**: Pluralized, snake_case (`patients`, `visits`, `sync_log`).
-- **React Components**: PascalCase (`NewPatientPage.tsx`, `AppNavbar.tsx`).
-- **Formatting**: Rely on `oxfmt` for codebase formatting.
-- **Environment**: Secrets (like Supabase Anon Key) belong in `.env` and are strictly prefixed with `VITE_`.
+## 9. Database Architecture
+Defined in `supabase/migrations/20260831000000_initial_schema.sql`.
+- **`clinics`**: id, name, zone, address.
+- **`staff`**: id, name, role (worker/admin), clinic_id, auth_user_id, email.
+- **`patients`**: id, name, age, sex, village, clinic_id, created_at.
+- **`visits`**: id, patient_id, staff_id, vitals (JSONB), symptoms, symptom_category, diagnosis, urgency_score, created_at, synced_at.
+- **`sync_log`**: id, staff_id, device_id, status, timestamp.
 
-## 6. Database Registry (Supabase)
+*(Relationships: `staff` and `patients` belong to `clinics`. `visits` belong to `patients` and `staff`. `sync_log` belongs to `staff`.)*
 
-- **clinics**: Physical locations (`id`, `name`, `zone`, `address`).
-- **staff**: App users mapped to Supabase Auth (`id`, `name`, `role`, `clinic_id`, `auth_user_id`).
-- **patients**: Beneficiaries assigned to clinics (`id`, `name`, `age`, `sex`, `village`, `clinic_id`).
-- **visits**: Medical records & triage scores (`id`, `patient_id`, `staff_id`, `vitals`, `symptoms`, `diagnosis`, `urgency_score`, `synced_at`).
-- **sync_log**: Audit trail for offline sync events (`id`, `staff_id`, `status`).
+## 10. Authentication & Authorization
+- Supabase Auth handles identity. 
+- `AuthContext.tsx` queries the `staff` table upon login to inject `role` and `clinic_id` into global state.
+- React Router (`App.tsx`) enforces route protection based on the user's role.
+- **Demo Mode**: Entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session.
 
-## 7. Decisions Log (append-only)
+## 11. Offline-First Architecture
+- **Current**: Online only. Mutations (like Patient Registration) go directly to Supabase. If the network drops, mutations fail.
+- **Target**: Form → Validation → Dexie.js (IndexedDB) → Sync Queue → Network Reconnection → Background Push to Supabase → Log in `sync_log`.
 
-| ID | Date | Decision | Why |
-| --- | --- | --- | --- |
-| D-001 | 2026-08-31 | Stack: React 19 + Vite 8 + Tailwind 4 + Supabase. | Modern, highly performant frontend combined with a backend that provides built-in Auth, real-time sync, and PostgreSQL RLS. |
-| D-002 | 2026-08-31 | Security Definer Functions for RLS. | Avoids infinite recursion when evaluating staff roles and clinic IDs against the `staff` table during policy checks. |
-| D-003 | 2026-09-01 | UI Before Logic. | 30+ pages were scaffolded out statically first to ensure UX flows (especially Emergency Mode) felt correct before wiring complex DB logic. |
-| D-004 | 2026-09-03 | Comprehensive Progress Tracking. | `PROGRESS.md` and this `projectdetails.md` established as SSOTs (Single Sources of Truth) to guide remaining backend wiring and offline capabilities. |
-| D-005 | 2026-09-03 | Implemented Task 4: Patient CRUD (Create). | Wired `NewPatientPage.tsx` to insert into Supabase `patients` table using authenticated worker's `clinic_id`. Modified `DashboardPage.tsx` state to handle post-registration redirect passing `patientId` down to `PatientDetailPage`. |
+## 12. Feature Specifications
+- **`FEATURES.md`**: Detailed product feature specification and implementation status. Read this for what the product should do.
+- **`PROGRESS.md`**: Task and progress tracking. Read this to see what tasks are completed vs pending.
+- **`README.md`**: Public project overview and setup documentation.
+- **`projectdetails.md`** (This file): Technical architecture, engineering rules, and development context.
+
+## 13. Repository Structure
+```
+HealthStats/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/       # Reusable UI components
+│   │   ├── pages/            # View components (e.g., NewPatientPage.tsx)
+│   │   ├── lib/              # Supabase client config
+│   │   ├── AuthContext.tsx   # Session & role state
+│   │   ├── LanguageContext.tsx # Translation state
+│   │   ├── ThemeContext.tsx  # Dark mode state
+│   │   ├── App.tsx           # Router and layout
+│   │   └── main.tsx
+│   ├── package.json
+│   └── vite.config.ts
+├── supabase/
+│   └── migrations/
+│       └── 20260831000000_initial_schema.sql
+├── docs/
+│   └── frontend-uiux.md      # UI, styling, and UX rules
+├── FEATURES.md
+├── PROGRESS.md
+├── projectdetails.md
+└── README.md
+```
+
+## 14. Development Rules
+1. **Do not bypass database security.**
+2. **Do not hardcode patient data** except for explicit dummy arrays in unresolved components.
+3. **Do not create fake functionality.** If it isn't wired to the backend, keep it marked as static.
+4. **Do not assume UI scaffolding means backend functionality exists.** Check the actual components.
+5. **Inspect existing implementation before creating new files.**
+6. **Reuse existing contexts/components** (e.g., `LanguageContext`, `ThemeContext`) where appropriate.
+7. **Follow database naming conventions**: Pluralized snake_case tables.
+8. **Follow existing UI/UX rules**: Defined in `docs/frontend-uiux.md`.
+
+## 15. Coding Conventions
+- **Styling**: Tailwind CSS v4 utility classes.
+- **Components**: PascalCase (`NewPatientPage.tsx`). Functions inside should be camelCase.
+- **Language**: No hardcoded English strings in clinical views; use translations.
+
+## 16. Security Rules
+- **Row Level Security (RLS)**: The architectural goal is for RLS to enforce clinic-level data boundaries. **HOWEVER**, in the current `initial_schema.sql` MVP migration, RLS is explicitly **DISABLED** (`DISABLE ROW LEVEL SECURITY`) for rapid development. Do not invent active policies. RLS must be re-enabled and properly configured before production deployment.
+- **Secrets**: Do not expose Supabase `service_role` keys in `.env` or anywhere in the frontend codebase. Use `VITE_SUPABASE_ANON_KEY`.
+
+## 17. Git & Collaboration Workflow
+- Branch naming: `feature/short-description`.
+- Commit messages: Use conventional commits (`feat:`, `fix:`, `chore:`).
+- Never commit `.env` or `node_modules`.
+- Update `PROGRESS.md` and `projectdetails.md` change logs before merging.
+
+## 18. Environment & Configuration
+- Frontend `.env` requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+- Run locally via `npm run dev` in the `frontend` directory.
+
+## 19. Testing Strategy
+- Automated tests are not yet configured.
+- Perform manual smoke-tests (Login, Patient Registration, Theme/Language toggles) before merging PRs.
+
+## 20. Implementation Roadmap
+1. **Foundation**: Complete (UI Scaffolding, DB Schema, Auth).
+2. **Data Wiring**: In Progress (Patient Registration done. Patient Lists, Details, Vitals pending).
+3. **Offline Engine**: Pending (IndexedDB, Sync Queue).
+4. **Intelligence**: Pending (OCR Digitization).
+5. **Admin / Emergency**: Pending (Live data connection).
+
+## 21. Known Limitations
+- Offline Sync is not functional.
+- RLS is temporarily disabled in the MVP schema.
+- Search and Detail pages currently display static mock data.
+
+## 22. Important Decisions Log
+| ID | Date | Decision |
+| --- | --- | --- |
+| D-001 | 2026-08-31 | Stack: React 19, Vite 8, Tailwind 4, Supabase. |
+| D-002 | 2026-08-31 | RLS Architecture uses Security Definer functions to prevent recursive staff lookups. |
+| D-003 | 2026-09-01 | UI Before Logic. 30+ pages scaffolded statically before complex DB wiring. |
+| D-004 | 2026-09-03 | Patient Registration uses the AuthContext `clinic_id` for mutations, ensuring security over user input. |
+| D-005 | 2026-09-04 | OCR established as the primary intelligence path; AI Triage deferred to optional/future. |
+
+## 23. Change Log
+- **2026-09-03**: Implemented Task 4 (Patient Registration). Wired `NewPatientPage.tsx` to `patients` table. Added mock bypass to `AuthContext.tsx`.
+- **2026-09-04**: Rewrote `README.md` and `FEATURES.md` to establish accurate sources of truth. Restructured `projectdetails.md` according to the new standard.
+
+## 24. Instructions for AI Coding Agents
+1. **Read `projectdetails.md` first.**
+2. **Read `FEATURES.md`.**
+3. **Read `PROGRESS.md`.**
+4. **Read `docs/frontend-uiux.md` before modifying UI.**
+5. **Inspect existing code before implementing anything.**
+6. **Verify the actual database schema before writing Supabase queries.**
+7. **Never invent missing APIs, fields, credentials, or features.**
+8. **Never disable security mechanisms just to make a feature work.**
+9. **Preserve existing architecture.**
+10. **Make the smallest appropriate change.**
+11. **Run formatting/build/tests when appropriate.**
+12. **Update `PROGRESS.md` after completing a project task.**
+13. **Report exactly which files were changed and what was implemented.**
+14. **Stop only when genuinely blocked by missing information, credentials, or a destructive decision requiring human approval.**
+
+## 25. Next Immediate Tasks
+Based on the current repository state, the next implementation priorities are:
+
+1. **Task 5 — Patient List/Search**: Wire `PatientRecordsPage.tsx` to retrieve from Supabase.
+2. **Task 5b — Patient Details**: Wire `PatientDetailPage.tsx` to retrieve specific patient data.
+3. **Task 6 — Visit Records**: Wire `VitalsPage.tsx` to insert into the `visits` table.
+4. **Task 7 — Offline Storage**: Integrate Dexie.js.
+5. **Task 8 — Background Sync**: Implement the Service Worker sync queue.

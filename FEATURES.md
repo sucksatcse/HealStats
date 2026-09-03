@@ -1,94 +1,316 @@
-# HealthStats Features Guide
+# HealthStats — Features
 
-HealthStats is designed specifically for the unique challenges of rural clinics in Bangladesh. Below is a detailed breakdown of the core features that make the system resilient, fast, and accessible.
-
-## 1. Offline-First Architecture & Auto-Sync
-Rural clinics frequently experience network dropouts or complete outages during storms. 
-* **Zero-Connectivity Workflows**: Health workers can register new patients, view complete medical histories, and record new visit details without an active internet connection. All data is securely stored on the local device.
-* **Background Auto-Sync**: The moment the device reconnects to a network—whether it's a weak 3G signal or Wi-Fi—the system automatically pushes all queued records to the central server.
-* **Conflict Resolution**: If a patient record was updated on multiple devices, the system automatically handles conflicts to ensure no critical health data is lost.
-
-## 2. AI-Assisted Triage & Priority Scoring
-Overcrowding is common in rural centers. Health workers need to quickly identify which patients require immediate attention.
-* **Rapid Urgency Scoring**: As intake details and symptoms are entered, on-device machine learning algorithms instantly score the patient's condition.
-* **High-Risk Flagging**: Patients exhibiting dangerous symptoms (like high fever with rapid breathing) are pushed to the top of the queue, ensuring doctors see the sickest patients first.
-
-## 3. Disaster-Ready Emergency Mode
-Bangladesh is highly prone to seasonal floods and cyclones, which can displace communities and destroy infrastructure.
-* **Emergency Dashboards**: With a single toggle, the UI shifts to Emergency Mode. This brings triage queues, active disaster zones, and shelter resource allocations to the forefront.
-* **Coordinated Response**: Enables scattered health workers to track outbreaks (like waterborne diseases post-flood) across different temporary shelters.
-
-## 4. Role-Based Access & Dashboards
-The system tailors the user experience based on the individual's role within the healthcare network.
-* **Community Health Workers (CHW)**: Focuses on fast data entry, simple patient lookup, and offline queue management.
-* **Medical Officers / Doctors**: Prioritizes patient history, lab results (when available), and prescribing treatments.
-* **Clinic Administrators & NGO Coordinators**: Provides high-level analytics, data on disease trends across multiple clinics, and system sync statuses.
-
-## 5. Progressive Web App (PWA) Capabilities
-Installing software on diverse, older devices in the field can be difficult.
-* **No App Store Required**: HealthStats can be installed directly from a web browser onto a tablet, phone, or laptop.
-* **Lightweight**: It runs smoothly on low-end hardware, minimizing battery drain and avoiding the bloat of traditional desktop software.
-
-## 6. Bilingual Support & Accessibility
-Usability is critical for rapid adoption by local staff.
-* **English & Bangla (Bengali)**: The entire interface, from landing pages to complex medical forms, supports instant toggling between English and Bangla.
-* **Clear, Modern UI**: Built with a "desktop-first" but fully responsive design, featuring large, tappable card-based layouts, readable typography, and high contrast.
-* **Dark Mode**: Reduces eye strain for workers doing data entry in low-light conditions or during night shifts.
+HealthStats is an offline-first healthcare record and disaster-response platform designed for rural clinics in Bangladesh.
 
 ---
 
-## Roadmap / Things To Do
+## Feature Status Legend
 
-This section tracks outstanding work organized by category. Items marked ✅ are complete, 🔄 are in progress, and ⬜ are yet to start.
+| Status | Meaning |
+|---|---|
+| **Implemented** | Currently working in the application |
+| **In Progress** | Partially implemented or UI built without backend wiring |
+| **Planned** | Defined in the project plan but not implemented |
+| **Optional** | Nice-to-have feature |
+| **Not Started** | Identified but development has not begun |
 
-### Backend & Database
-- ⬜ Set up Supabase project (Postgres database + Auth)
-- ⬜ Define database schema for patients, visits, diagnoses, and prescriptions
-- ⬜ Implement Row-Level Security (RLS) policies in Supabase for role-based data access
-- ⬜ Create API routes / Edge Functions for syncing offline records
-- ⬜ Set up conflict resolution logic for concurrent offline edits
-- ⬜ Create `backend/` folder alongside `frontend/` and scaffold the server
+---
 
-### Authentication & Authorization
-- ⬜ Integrate Supabase Auth (email/password login for clinic staff)
-- ⬜ Implement role-based routing: Health Worker / Doctor / Admin / Coordinator
-- ⬜ Add session persistence so users stay logged in after closing the browser
-- ⬜ Secure all API routes with JWT token verification
+## Feature Overview
 
-### Offline & Sync Engine
-- ⬜ Integrate a local database (e.g., IndexedDB via Dexie.js) for offline data storage
-- ⬜ Build a background sync queue that watches for network reconnection
-- ⬜ Display sync status (queued records count, last synced time) in the UI
+| Feature | Category | Status | Priority |
+|---|---|---|---|
+| Authentication | Security | Implemented | Critical |
+| Role-Based Access | Security | Implemented | Critical |
+| Patient Registration | Patient Records | Implemented | Critical |
+| Patient Search | Patient Records | In Progress | High |
+| Visit Records & Forms | Patient Records | In Progress | High |
+| Offline Storage | Offline-First | Not Started | Critical |
+| Automatic Sync | Offline-First | Not Started | Critical |
+| OCR | Intelligence | Not Started | Optional |
+| AI-Assisted Triage | Intelligence | Not Started | Optional |
+| Admin Dashboard | Administration | In Progress | Medium |
+| Emergency Mode | Disaster Response | In Progress | High |
+| Outbreak Detection | Disaster Response | Planned | Medium |
+| Bangla/English | Accessibility | Implemented | Critical |
+| Dark Mode | UI/UX | Implemented | High |
+| PWA | Platform | Not Started | High |
 
-### AI / ML Features
-- ⬜ Research and select a triage scoring model (rule-based or ML)
-- ⬜ Integrate AI triage scoring into the patient intake form
-- ⬜ Build OCR pipeline for digitizing paper health records (e.g., using Google Vision API or Tesseract.js)
-- ⬜ Add on-device model inference for offline triage support
+---
 
-### Patient Records
-- ⬜ Connect `NewPatientPage` form to Supabase database
-- ⬜ Connect `PatientDetailPage` to fetch and display real patient records
-- ⬜ Connect `VitalsPage` to save and retrieve patient vitals
-- ⬜ Connect `PatientRecordsPage` to show historical visit data
-- ⬜ Implement fuzzy search for patient lookup by name, ID, or diagnosis
+## 1. Product Vision
 
-### Emergency Mode
-- ⬜ Build Emergency Mode toggle in the Admin Dashboard
-- ⬜ Connect `EmergencyDashboard` to live data (shelter occupancy, resource counts)
-- ⬜ Implement real-time alerting for outbreak zones
+HealthStats is designed around:
+1. **Offline-first healthcare records:** The app must never block the user waiting for a network request.
+2. **Simple workflows for health workers:** Streamlined, large-tap-target interfaces.
+3. **Secure role-based access:** Strict boundaries between clinics and administrative staff.
+4. **Reliable synchronization:** Eventual consistency with a central database.
+5. **Disaster-ready operations:** Specialized workflows for floods and cyclones.
+6. **Bilingual accessibility:** Native Bangla support for rural contexts.
+7. **Low-resource optimization:** Fast operation on older devices and low battery constraints (Dark mode).
 
-### UI / UX Polish
-- ⬜ Remove remaining Figma Make scaffold pages and boilerplate components
-- ⬜ Add loading skeletons to all data-fetching pages
-- ⬜ Add form validation and error states to all patient entry forms
-- ⬜ Fully polish Bangla translation across all pages (not just the landing page)
-- ⬜ Add end-to-end PWA support (service worker, app manifest, install prompt)
+---
 
-### DevOps & Deployment
-- ⬜ Set up a `.env.example` file documenting required environment variables
-- ⬜ Configure CI/CD pipeline (e.g., GitHub Actions) for automated builds
-- ⬜ Deploy frontend to Vercel or Netlify
-- ⬜ Deploy backend/Edge Functions via Supabase
-- ⬜ Write a contributing guide (`CONTRIBUTING.md`)
-- ⬜ Choose and add an open-source license
+## 2. Authentication & Access Control
+
+### Login
+- **Who can log in**: Pre-approved community health workers and clinic administrators.
+- **Authentication Provider**: Supabase Auth (Email/Password).
+- **Session Handling**: Managed globally via `AuthContext.tsx`. Unauthenticated users are redirected to `/login`.
+- **Demo Mode**: For development and exhibition testing, entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session.
+
+### Role-Based Access
+- **Worker**: Authorized to log visits and register patients only for their assigned clinic.
+- **Admin**: Authorized to view aggregated analytics across all clinics.
+
+### Clinic-Level Access
+Users are mapped to physical clinics via the `staff` table (`clinic_id`). The application strictly relies on this injected ID for mutations (like patient registration) rather than trusting user-provided inputs.
+
+### Row Level Security (RLS)
+The intended production security architecture uses Supabase RLS to protect all tables (`clinics`, `staff`, `patients`, `visits`, `sync_log`) and Security Definer functions to enforce that workers only interact with their own clinic's data. 
+*(Note: In the current MVP development state, RLS is intentionally disabled in `initial_schema.sql` to facilitate rapid prototyping. Therefore, RLS does not currently protect the deployed MVP).*
+
+---
+
+## 3. Patient Record Management
+
+### Patient Registration
+- **Status**: Implemented
+- **Workflow**: 
+  - Validates inputs (Full Name, Age, Sex, Village, Emergency Contact).
+  - Automatically injects the authenticated worker's `clinic_id`.
+  - Submits directly to the Supabase `patients` table.
+  - Success behavior: Displays a confirmation screen and routes the user to the newly created Patient Detail view.
+
+### Patient List & Search
+- **Status**: In Progress (UI scaffolded)
+- **Features**: Interface exists to list patients and search by name/ID. Currently pending Supabase `SELECT` query integration (displays static mock data).
+
+### Patient Details & History
+- **Status**: In Progress (UI scaffolded)
+- **Features**: Interface exists to view a specific patient's demographic data and past visits. Pending Supabase `SELECT` query integration.
+
+---
+
+## 4. Visit & Health Records
+
+### Vitals & Clinical Forms
+- **Status**: In Progress (UI scaffolded)
+- **Features**: Forms for recording vital signs, symptoms, diagnoses, and urgency. Currently pending `INSERT` query integration to the `visits` table.
+
+---
+
+## 5. Offline-First Capability
+
+*This is the core architectural pillar of HealthStats, currently pending implementation.*
+
+### Online Mode
+When internet is available, data mutations will bypass the local queue and save directly to Supabase.
+
+### Offline Mode
+When the network drops, mutations will be gracefully intercepted without blocking the user.
+
+### Local Storage
+Planned to utilize browser-based storage (IndexedDB via Dexie.js) to store pending records locally on the device.
+
+### Sync Queue & Status
+Records created offline will sit in a local queue. The application will monitor `navigator.onLine` and display sync badges in the navigation sidebar (e.g., "14 records queued").
+
+### Conflict Resolution
+Conflict resolution logic (handling edits to the same record by two offline devices) is planned and is not currently implemented.
+
+---
+
+## 6. Data Synchronization
+
+- **When it occurs**: Automatically when connectivity returns, managed by a Service Worker or background queue loop.
+- **What gets synced**: Queued patient registrations and clinical visits.
+- **Audit Logging**: Synchronizations will be securely logged in the `sync_log` table to monitor sync health and device IDs.
+
+---
+
+## 7. OCR / Paper Record Digitization
+
+- **Status**: Planned (UI static shell exists: `DigitizePage.tsx`)
+- **Purpose**: To quickly digitize legacy paper-based healthcare records using optical character recognition (OCR), easing the transition to the EHR system.
+
+---
+
+## 8. AI-Assisted Triage
+
+- **Status**: Optional / Future
+- **Purpose**: An algorithm (rule-based or lightweight ML) to automatically calculate an `urgency_score` based on entered vitals and symptoms, flagging patients who require immediate attention.
+*(Note: This feature is currently deferred as an optional future enhancement. The project's primary intelligence path focuses on OCR digitization.)*
+
+---
+
+## 9. Administration & Dashboard
+
+### Admin Dashboard
+- **Status**: In Progress (Static UI exists: `AdminDashboardPage.tsx`)
+- **Capabilities**: Displays high-level clinic statistics, patient counts, and flagged high-risk visits. Real-time metric fetching is not yet connected to Supabase.
+
+---
+
+## 10. Staff Management
+
+- **Status**: Manual Setup
+- **Capabilities**: Currently, staff accounts and clinic assignments must be managed manually via the Supabase Dashboard / SQL Editor. An in-app UI for Admin staff management is planned but not implemented.
+
+---
+
+## 11. Emergency Mode
+
+### Disaster Response Interface
+- **Status**: In Progress (Static UI exists: `EmergencyDashboard.tsx`)
+- **Purpose**: During floods or cyclones, health workers need rapid access to SOS protocols and priority patient lists without navigating complex menus.
+- **Capabilities**: The UI provides specialized alerts and simplified workflows. Live external alert feeds (e.g., flood warnings) are planned but not connected.
+
+---
+
+## 12. Outbreak Detection
+
+- **Status**: Planned
+- **Purpose**: A symptom-cluster detection proof-of-concept. It will query visits from the last 48 hours to flag zones where a critical mass of similar symptoms (e.g., waterborne diseases) appear, alerting coordinators.
+
+---
+
+## 13. Language Support
+
+- **Status**: Implemented
+- **Supported**: Bangla and English
+- **Mechanism**: A global `LanguageContext` allows instant UI translation. Core navigation and clinical forms are actively translated.
+
+---
+
+## 14. UI / UX
+
+- **Status**: Implemented
+- **Features**: Desktop-first responsive layout, accessible typography, loading skeleton states, and explicit empty states.
+- **Dark Mode**: Fully integrated via `ThemeContext` for low-light environments and battery saving.
+*(UI components strictly adhere to `docs/frontend-uiux.md`).*
+
+---
+
+## 15. Progressive Web App (PWA)
+
+- **Status**: Planned
+- **Capabilities**: Missing `manifest.json` and service worker caching required for true PWA installation and offline asset serving.
+
+---
+
+## 16. Security & Privacy
+
+- **Supabase Authentication**: Protects all routes from unauthorized access.
+- **Row Level Security**: Database-level enforcements to prevent cross-clinic data leakage.
+- **Development Best Practices**: Developers are explicitly instructed to use fictional patient data only and to never commit `.env` secrets.
+
+---
+
+## 17. Feature Dependencies
+
+```mermaid
+flowchart TD
+    Auth[Authentication] --> Staff[Staff Profile]
+    Staff --> Clinic[Clinic Access]
+    Clinic --> PatReg[Patient Registration]
+    PatReg --> Visit[Visit Records]
+    Visit -.->|Planned| Off[Offline Storage]
+    Off -.->|Planned| Sync[Synchronization]
+    Sync -.->|Planned| Admin[Admin Dashboard]
+```
+
+---
+
+## 18. Core User Flows
+
+### Health Worker Flow
+```mermaid
+flowchart LR
+    Login --> Dash[Dashboard]
+    Dash --> Search[Patient Search]
+    Dash --> Reg[Register Patient]
+    Reg --> Det[Patient Details]
+    Search --> Det
+    Det --> Rec[Record Visit]
+    Rec --> Save[(Supabase)]
+```
+
+---
+
+## 19. Development Roadmap
+
+### Phase 0 — Foundation (Completed)
+- React, Vite, Tailwind setup
+- Supabase schema & authentication scaffolding
+
+### Phase 1 — Patient & Visit Records (In Progress)
+- Patient registration (Completed)
+- Patient lists and retrieval
+- Visit forms
+
+### Phase 2 — Offline Engine (Pending)
+- IndexedDB storage integration
+- Background sync queue
+
+### Phase 3 — Intelligence (Pending)
+- OCR for digitizing paper healthcare records (Proof of Concept)
+
+### Phase 4 — Emergency & Admin (Pending)
+- Admin dashboards connected to live data
+- Emergency mode alert feeds
+- Symptom clustering (Outbreak Detection)
+
+### Phase 5 — Testing & Demo (Pending)
+- PWA manifests
+- Exhibition preparations
+
+---
+
+## 20. Current Implementation Status
+
+| Area | Current Status | Notes |
+|---|---|---|
+| Database Schema | Implemented | `clinics`, `staff`, `patients`, `visits`, `sync_log` created |
+| RLS | Planned / Production Required | RLS is the intended production security architecture but is disabled in the current MVP development schema |
+| Authentication | Implemented | UI + Context + Demo Bypass |
+| Patient Registration | Implemented | Task 4 completed; successfully saves to Supabase |
+| Patient Details/List | In Progress | UI exists; pending Supabase `SELECT` |
+| Vitals/Visits | In Progress | UI exists; pending Supabase `INSERT` |
+| Admin Dashboard | In Progress | UI MVP completed; pending real data |
+| Emergency Mode | In Progress | UI MVP completed; pending real data |
+| Offline Storage | Not Started | Dexie.js integration pending |
+| Background Sync | Not Started | Queue/Service Worker pending |
+| PWA | Not Started | Manifest pending |
+| OCR | Not Started | Proof of concept pending |
+
+---
+
+## 21. Exhibition Demo Priorities
+
+For exhibition purposes, the core story is: **"Healthcare records remain useful even when the internet does not."**
+
+Currently, the strongest demoable features are:
+1. The **Patient Registration flow** (live database mutation).
+2. The **Bilingual & Dark Mode UI** (accessibility).
+3. The **Emergency Dashboard Shell** (UI concepts).
+
+*Note: True offline capability is not yet complete and cannot be demonstrated reliably until Phase 2 is finished. Do not fake offline functionality for the demo.*
+
+---
+
+## 22. Known Limitations
+
+- **Offline Engine:** Not currently functional. Network drops will cause mutations to fail.
+- **Data Fetching:** Patient search and detail views currently rely on hardcoded dummy data arrays.
+- **Admin Configuration:** Creating clinics and staff accounts must be done manually via SQL.
+- **Translation:** Some deep UI elements lack complete Bangla translation strings.
+
+---
+
+## 23. Future Enhancements
+
+- Robust sync conflict resolution.
+- Native mobile app wrapping (Capacitor/React Native).
+- Production-grade CI/CD and automated testing.
+- SMS-based alerts for critical patients.
