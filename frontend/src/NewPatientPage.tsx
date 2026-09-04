@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { supabase } from "./lib/supabase";
+import { useAuth } from "./AuthContext";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface FormData {
@@ -106,7 +108,6 @@ function Step1({ data, update, errors }: {
 }) {
   return (
     <div className="space-y-6">
-      {/* Section: Identity */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
@@ -159,10 +160,7 @@ function Step1({ data, update, errors }: {
           </div>
         </div>
       </div>
-
       <hr className="border-slate-100" />
-
-      {/* Section: Contact */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
@@ -190,10 +188,7 @@ function Step1({ data, update, errors }: {
           <div />
         </div>
       </div>
-
       <hr className="border-slate-100" />
-
-      {/* Section: Emergency Contact */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-red-50 flex items-center justify-center">
@@ -256,7 +251,6 @@ function Step2({ data, update, errors }: {
 
   return (
     <div className="space-y-6">
-      {/* Clinical basics */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
@@ -286,10 +280,7 @@ function Step2({ data, update, errors }: {
           </div>
         </div>
       </div>
-
       <hr className="border-slate-100" />
-
-      {/* Known allergies */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center">
@@ -310,10 +301,7 @@ function Step2({ data, update, errors }: {
           />
         </div>
       </div>
-
       <hr className="border-slate-100" />
-
-      {/* Current medications */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
@@ -334,10 +322,7 @@ function Step2({ data, update, errors }: {
           />
         </div>
       </div>
-
       <hr className="border-slate-100" />
-
-      {/* Chronic conditions */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-violet-50 flex items-center justify-center">
@@ -369,10 +354,7 @@ function Step2({ data, update, errors }: {
           })}
         </div>
       </div>
-
       <hr className="border-slate-100" />
-
-      {/* Vaccinations */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 rounded-md bg-emerald-50 flex items-center justify-center">
@@ -406,8 +388,6 @@ function Step3({ data }: { data: FormData }) {
     </div>
   );
 
-  const generatedId = `PT-${String(Math.floor(Math.random() * 900) + 100).padStart(5, "0")}`;
-
   return (
     <div className="space-y-6">
       {/* ID preview */}
@@ -416,9 +396,9 @@ function Step3({ data }: { data: FormData }) {
           {data.fullName ? data.fullName.split(" ").map(n => n[0]).slice(0, 2).join("") : "??"}
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-0.5">Patient ID (auto-assigned)</p>
-          <p className="font-display text-2xl text-teal-950">{generatedId}</p>
-          <p className="text-xs text-teal-600 mt-0.5">Kayes District Clinic · Registered {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-0.5">Patient Assignment</p>
+          <p className="font-display text-xl text-teal-950">To be auto-generated</p>
+          <p className="text-xs text-teal-600 mt-0.5">Will be registered to your assigned clinic</p>
         </div>
       </div>
 
@@ -485,6 +465,7 @@ function validateStep(step: number, data: FormData): Partial<Record<keyof FormDa
   const e: Partial<Record<keyof FormData, string>> = {};
   if (step === 1) {
     if (!data.fullName.trim()) e.fullName = "Full name is required";
+    if (!data.dob) e.dob = "Date of birth is required";
     if (!data.age || isNaN(Number(data.age)) || Number(data.age) < 0) e.age = "Enter a valid age";
     if (!data.sex) e.sex = "Please select a sex";
     if (!data.village) e.village = "Please select a village or zone";
@@ -496,30 +477,68 @@ function validateStep(step: number, data: FormData): Partial<Record<keyof FormDa
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function NewPatientPage() {
+export default function NewPatientPage({ onSuccess }: { onSuccess?: (id: string) => void }) {
+  const { profile } = useAuth();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(INITIAL);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [submitted, setSubmitted] = useState(false);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdPatientId, setCreatedPatientId] = useState<string | null>(null);
 
   const update = (k: keyof FormData, v: string | string[]) => {
     setData((d) => ({ ...d, [k]: v }));
     if (errors[k]) setErrors((e) => { const n = { ...e }; delete n[k]; return n; });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const e = validateStep(step, data);
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setErrors({});
-    if (step < 3) setStep(step + 1);
-    else setSubmitted(true);
+    
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      if (!profile?.clinic_id) {
+        setSubmitError("No clinic ID associated with your profile. Please contact administrator.");
+        return;
+      }
+
+      setIsSubmitting(true);
+      setSubmitError(null);
+      
+      try {
+        const { data: newPatient, error } = await supabase
+          .from("patients")
+          .insert([{
+            name: data.fullName,
+            age: parseInt(data.age, 10),
+            sex: data.sex,
+            village: data.village,
+            clinic_id: profile.clinic_id
+          }])
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        
+        setCreatedPatientId(newPatient.id);
+        setSubmitted(true);
+      } catch (err: any) {
+        setSubmitError(err.message || "Failed to register patient. Please check your connection and try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
   };
 
   const handleBack = () => {
     if (step > 1) { setStep(step - 1); setErrors({}); }
   };
 
-  if (submitted) {
+  if (submitted && createdPatientId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
         <div className="w-20 h-20 bg-teal-600 rounded-3xl flex items-center justify-center shadow-xl shadow-teal-600/30 animate-bounce">
@@ -530,22 +549,22 @@ export default function NewPatientPage() {
         <div>
           <h2 className="font-display text-3xl text-teal-950 mb-2">Patient Registered!</h2>
           <p className="text-slate-500 text-sm max-w-xs mx-auto leading-relaxed">
-            <strong className="text-teal-700">{data.fullName}</strong> has been added to your clinic records.
+            <strong className="text-teal-700">{data.fullName}</strong> has been added to your clinic records with ID <span className="font-mono bg-teal-50 px-1 rounded">{createdPatientId}</span>.
             The record will sync automatically when connected.
           </p>
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => { setData(INITIAL); setStep(1); setSubmitted(false); }}
+            onClick={() => { setData(INITIAL); setStep(1); setSubmitted(false); setCreatedPatientId(null); }}
             className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
           >
             Register Another
           </button>
           <button
-            onClick={() => { setData(INITIAL); setStep(1); setSubmitted(false); }}
+            onClick={() => onSuccess?.(createdPatientId)}
             className="text-sm font-semibold text-teal-700 border border-teal-200 hover:border-teal-400 px-5 py-2.5 rounded-xl transition-colors"
           >
-            Go to Patients
+            View Patient Record
           </button>
         </div>
       </div>
@@ -570,7 +589,6 @@ export default function NewPatientPage() {
             return (
               <div key={n} className="flex-1 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  {/* Circle */}
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
                       done
@@ -586,14 +604,12 @@ export default function NewPatientPage() {
                       </svg>
                     ) : n}
                   </div>
-                  {/* Connector line */}
                   {n < 3 && (
                     <div className="flex-1 h-px mx-1">
                       <div className={`h-full transition-all duration-500 ${done ? "bg-teal-500" : "bg-slate-200"}`} />
                     </div>
                   )}
                 </div>
-                {/* Labels */}
                 <div>
                   <p className={`text-xs font-semibold ${active ? "text-teal-700" : done ? "text-teal-600" : "text-slate-400"}`}>
                     {title}
@@ -604,8 +620,6 @@ export default function NewPatientPage() {
             );
           })}
         </div>
-
-        {/* Progress bar */}
         <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-teal-500 rounded-full transition-all duration-500"
@@ -626,11 +640,21 @@ export default function NewPatientPage() {
         {step === 2 && <Step2 data={data} update={update} errors={errors} />}
         {step === 3 && <Step3 data={data} />}
 
+        {/* ── Submit Error Banner ── */}
+        {submitError && (
+          <div className="mt-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-red-800">{submitError}</p>
+          </div>
+        )}
+
         {/* ── Navigation ── */}
         <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
           <button
             onClick={handleBack}
-            disabled={step === 1}
+            disabled={step === 1 || isSubmitting}
             className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-teal-700 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
@@ -639,7 +663,6 @@ export default function NewPatientPage() {
             Back
           </button>
 
-          {/* Required fields note */}
           {step < 3 && (
             <p className="text-[11px] text-slate-400 hidden sm:block">
               <span className="text-red-400">*</span> Required fields
@@ -648,12 +671,25 @@ export default function NewPatientPage() {
 
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm shadow-teal-600/20 hover:shadow-md hover:shadow-teal-600/30 transition-all hover:-translate-y-0.5"
+            disabled={isSubmitting}
+            className={`flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm shadow-teal-600/20 transition-all ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-0.5 hover:shadow-md hover:shadow-teal-600/30'}`}
           >
-            {step === 3 ? "Register Patient" : "Next"}
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
-            </svg>
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Registering...
+              </>
+            ) : (
+              <>
+                {step === 3 ? "Register Patient" : "Next"}
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
+                </svg>
+              </>
+            )}
           </button>
         </div>
       </div>

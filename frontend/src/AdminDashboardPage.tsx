@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "./AuthContext";
+import { fetchAdminStats, type AdminStats } from "./lib/adminService";
 import AppNavbar from "./AppNavbar";
 import { useLang } from "./LanguageContext";
 import { useTheme } from "./ThemeContext";
@@ -132,45 +134,19 @@ const NAV_ITEMS = [
   { id: "settings", label: "Settings", icon: Icon.settings },
 ];
 
-// ── Summary stats ────────────────────────────────────────────────────────────────
-const SUMMARY = [
-  {
-    label: "Total Patients",
-    value: "12,847",
-    delta: "+3.2%",
-    up: true,
-    note: "vs. last week",
-    icon: Icon.usersStat,
-    iconCls: "bg-teal-50 text-teal-600",
-  },
-  {
-    label: "Records Today",
-    value: "436",
-    delta: "+8.1%",
-    up: true,
-    note: "across 12 clinics",
-    icon: Icon.fileStat,
-    iconCls: "bg-violet-50 text-violet-600",
-  },
-  {
-    label: "Pending Sync",
-    value: "218",
-    delta: "-12.4%",
-    up: false,
-    note: "queued locally",
-    icon: Icon.cloudStat,
-    iconCls: "bg-amber-50 text-amber-600",
-  },
-  {
-    label: "High-Risk Flagged",
-    value: "27",
-    delta: "+5",
-    up: true,
-    note: "AI triage · today",
-    icon: Icon.alertStat,
-    iconCls: "bg-rose-50 text-rose-600",
-  },
-];
+// ── Stat card skeleton ────────────────────────────────────────────────────────
+function StatSkeleton() {
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 animate-pulse">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800" />
+        <div className="w-14 h-6 rounded-full bg-slate-100 dark:bg-slate-800" />
+      </div>
+      <div className="h-8 w-24 rounded bg-slate-100 dark:bg-slate-800 mb-2" />
+      <div className="h-4 w-32 rounded bg-slate-100 dark:bg-slate-800" />
+    </div>
+  );
+}
 
 // ── Weekly visits data ───────────────────────────────────────────────────────────
 const WEEK = [
@@ -319,6 +295,23 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
   /* Global lang + dark from context */
   const { dark } = useTheme();
   const { lang } = useLang();
+  const { profile } = useAuth();
+
+  /* ── Live dashboard stats (Task 10) ──────────────────────────────────────── */
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const loadStats = () => {
+    setStatsLoading(true);
+    fetchAdminStats(profile?.clinic_id ?? null)
+      .then((result) => { setStats(result); setStatsLoading(false); })
+      .catch(() => setStatsLoading(false));
+  };
+
+  useEffect(() => {
+    loadStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.clinic_id]);
 
   const totalWeek = WEEK.reduce((s, d) => s + d.visits, 0);
   const avgWeek = Math.round(totalWeek / WEEK.length);
@@ -513,41 +506,111 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
 
           {emergency ? <EmergencyDashboard /> : (<>
 
-          {/* Summary cards */}
+          {/* Summary cards — Task 10: Live Supabase data */}
+          {statsLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatSkeleton /><StatSkeleton /><StatSkeleton /><StatSkeleton />
+            </div>
+          ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {SUMMARY.map(({ label, value, delta, up, note, icon, iconCls }) => {
-              const clickable = label === "High-Risk Flagged";
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={clickable ? () => setActiveNav("flagged") : undefined}
-                  className={`text-left bg-white dark:bg-slate-900 rounded-2xl border p-5 transition-all ${
-                    clickable
-                      ? "border-rose-200 dark:border-rose-500/30 hover:border-rose-300 hover:shadow-md cursor-pointer"
-                      : "border-slate-100 dark:border-slate-800 hover:shadow-md cursor-default"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconCls}`}>{icon}</div>
-                    <span
-                      className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${
-                        up ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                      }`}
-                    >
-                      {up ? Icon.arrowUp : Icon.arrowDown}
-                      {delta}
-                    </span>
-                  </div>
-                  <p className="font-display text-3xl text-teal-950 dark:text-white leading-none">{value}</p>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">{label}</p>
-                  <p className={`text-xs mt-0.5 ${clickable ? "text-rose-500 font-medium" : "text-slate-400 dark:text-slate-500"}`}>
-                    {clickable ? "View flagged patients →" : note}
-                  </p>
-                </button>
-              );
-            })}
+
+            {/* 1. Total Patients */}
+            <button
+              type="button"
+              className="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:shadow-md cursor-default transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-50 text-teal-600">{Icon.usersStat}</div>
+                <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">Live</span>
+              </div>
+              {stats?.errors.totalPatients ? (
+                <p className="font-display text-xl text-red-400">—</p>
+              ) : (
+                <p className="font-display text-3xl text-teal-950 dark:text-white leading-none">
+                  {(stats?.totalPatients ?? 0).toLocaleString()}
+                </p>
+              )}
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">Total Patients</p>
+              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">registered in your clinic</p>
+            </button>
+
+            {/* 2. Records Today */}
+            <button
+              type="button"
+              className="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:shadow-md cursor-default transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-50 text-violet-600">{Icon.fileStat}</div>
+                <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">Today</span>
+              </div>
+              {stats?.errors.recordsToday ? (
+                <p className="font-display text-xl text-red-400">—</p>
+              ) : (
+                <p className="font-display text-3xl text-teal-950 dark:text-white leading-none">
+                  {(stats?.recordsToday ?? 0).toLocaleString()}
+                </p>
+              )}
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">Records Today</p>
+              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">visits created since midnight UTC</p>
+            </button>
+
+            {/* 3. Pending Sync */}
+            <button
+              type="button"
+              className="text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:shadow-md cursor-default transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600">{Icon.cloudStat}</div>
+                {(stats?.pendingSync ?? 0) > 0 ? (
+                  <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-600">
+                    {Icon.arrowUp} Pending
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">
+                    {Icon.arrowDown} Synced
+                  </span>
+                )}
+              </div>
+              {stats?.errors.pendingSync ? (
+                <p className="font-display text-xl text-red-400">—</p>
+              ) : (
+                <p className="font-display text-3xl text-teal-950 dark:text-white leading-none">
+                  {(stats?.pendingSync ?? 0).toLocaleString()}
+                </p>
+              )}
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">Pending Sync</p>
+              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">visits awaiting synchronisation</p>
+            </button>
+
+            {/* 4. High-Risk Flagged — clickable → Flagged Patients view */}
+            <button
+              type="button"
+              onClick={() => setActiveNav("flagged")}
+              className="text-left bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-500/30 p-5 hover:border-rose-300 hover:shadow-md cursor-pointer transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600">{Icon.alertStat}</div>
+                {(stats?.highRiskFlagged ?? 0) > 0 ? (
+                  <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-rose-50 text-rose-600">
+                    {Icon.arrowUp} High
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">Live</span>
+                )}
+              </div>
+              {stats?.errors.highRiskFlagged ? (
+                <p className="font-display text-xl text-red-400">—</p>
+              ) : (
+                <p className="font-display text-3xl text-teal-950 dark:text-white leading-none">
+                  {(stats?.highRiskFlagged ?? 0).toLocaleString()}
+                </p>
+              )}
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">High-Risk Flagged</p>
+              <p className="text-xs mt-0.5 text-rose-500 font-medium">View flagged patients →</p>
+            </button>
+
           </div>
+          )}
 
           {/* Chart + clinic breakdown */}
           <div className="grid lg:grid-cols-3 gap-4">

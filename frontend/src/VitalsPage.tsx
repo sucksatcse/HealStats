@@ -79,7 +79,7 @@ function buildAIResult(vals: Record<string, string>, chips: string[], complaint:
   const actions: string[] = [];
 
   if (sys >= 180 || sys < 80) { flags.push(`Systolic BP ${sys} mmHg — outside safe range`); urgency = "High"; }
-  else if (sys >= 140) { flags.push(`Systolic BP ${sys} mmHg — Stage 2 hypertension`); if (urgency !== "High") urgency = "Medium"; }
+  else if (sys >= 140) { flags.push(`Systolic BP ${sys} mmHg — Stage 2 hypertension`); urgency = "Medium"; }
 
   if (temp >= 39.5) { flags.push(`Temperature ${temp}°C — high-grade fever`); urgency = "High"; }
   else if (temp >= 38) { flags.push(`Temperature ${temp}°C — moderate fever`); if (urgency !== "High") urgency = "Medium"; }

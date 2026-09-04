@@ -184,7 +184,7 @@ const TABS = [
 ];
 
 // ── Main ───────────────────────────────────────────────────────────────────────
-export default function PatientDetailPage() {
+export default function PatientDetailPage({ patientId }: { patientId?: string | null }) {
   const [tab, setTab] = useState<"vitals" | "visits" | "diagnosis">("vitals");
   const [editing, setEditing] = useState(false);
   const [visitExpanded, setVisitExpanded] = useState<number | null>(0);

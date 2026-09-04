@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppNavbar from "./AppNavbar";
 import { useLang } from "./LanguageContext";
 import LoginPage from "./LoginPage";
@@ -16,6 +16,7 @@ import SuccessConfirmationPage from "./SuccessConfirmationPage";
 import SyncProgressPage from "./SyncProgressPage";
 import ClinicsMapSection from "./ClinicsMapSection";
 import ChatWidget from "./ChatWidget";
+import { useAuth } from "./AuthContext";
 
 /* ══════════════════════════════════════════════════════════════════════════════
    Landing page translations — en / bn
@@ -145,6 +146,34 @@ export default function App() {
   /* Global language from context — drives all landing page text */
   const { lang } = useLang();
   const t = LANDING[lang];
+  const { session, profile, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const isProtectedRoute = [
+      "dashboard", "admin-dashboard", "patient-lookup", "record-saved", "sync-progress"
+    ].includes(page);
+
+    if (isProtectedRoute && !session) {
+      setPage("login");
+    }
+
+    if (session && profile && (page === "login" || page === "admin-login" || page === "role-selection" || page === "landing")) {
+       setPage(profile.role === 'admin' ? 'admin-dashboard' : 'dashboard');
+    }
+  }, [page, session, profile, loading]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
+        <svg className="animate-spin w-8 h-8 text-teal-600" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+        </svg>
+      </div>
+    );
+  }
 
   if (page === "navbar-demo")     return <NavbarPreviewPage onBack={() => setPage("landing")} />;
   if (page === "loading-states")  return <SkeletonStatesPage onBack={() => setPage("landing")} />;
@@ -154,14 +183,8 @@ export default function App() {
   if (page === "design-system")   return <StyleGuidePage onBack={() => setPage("landing")} />;
   if (page === "system-states")   return <EmptyStatesShowcase onBack={() => setPage("landing")} />;
   if (page === "patient-lookup")  return <PatientLookupPage onBack={() => setPage("landing")} />;
-  if (page === "login")           return <LoginPage onBack={() => setPage("landing")} onLogin={() => setPage("role-selection")} />;
-  if (page === "admin-login")     return <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />;
-  if (page === "role-selection")  return (
-    <RoleSelectionPage
-      onBack={() => setPage("login")}
-      onSelect={(role) => setPage(role === "clinic-admin" ? "admin-dashboard" : "dashboard")}
-    />
-  );
+  if (page === "login")           return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} />;
+  if (page === "admin-login")     return <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => {}} />;
   if (page === "dashboard")       return <><DashboardPage onLogout={() => setPage("landing")} /><ChatWidget /></>;
   if (page === "admin-dashboard") return <><AdminDashboardPage onLogout={() => setPage("landing")} /><ChatWidget /></>;
 

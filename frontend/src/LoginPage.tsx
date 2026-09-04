@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./lib/supabase";
+import { useAuth } from "./AuthContext";
 
 interface LoginPageProps {
   onBack: () => void;
@@ -6,7 +8,8 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
-  const [workerId, setWorkerId] = useState("");
+  const { loginDemoUser } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -24,15 +27,33 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!workerId.trim() || !password) {
-      setError("Please enter your Worker ID and password.");
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
       return;
     }
     setError("");
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 1800);
+
+    if (email.trim() === "worker@clinic.org" && password === "password123") {
+      // Demo bypass for local testing without Supabase Admin setup
+      loginDemoUser();
+      onLogin();
+      return;
+    }
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      onLogin(); // will trigger redirect in App.tsx
+    }
   };
 
   return (
@@ -129,7 +150,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                   htmlFor="workerId"
                   className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5"
                 >
-                  Worker ID or Email
+                  Email Address
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
@@ -143,11 +164,11 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                   </span>
                   <input
                     id="workerId"
-                    type="text"
+                    type="email"
                     autoComplete="username"
-                    placeholder="e.g. HW-20451 or name@clinic.org"
-                    value={workerId}
-                    onChange={(e) => setWorkerId(e.target.value)}
+                    placeholder="e.g. name@clinic.org"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
                   />
                 </div>
