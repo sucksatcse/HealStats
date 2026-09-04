@@ -24,7 +24,7 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Role-Based Access | Security | Implemented | Critical |
 | Patient Registration | Patient Records | Implemented | Critical |
 | Patient Search | Patient Records | Implemented | High |
-| Visit Records & Forms | Patient Records | In Progress | High |
+| Visit Records & Forms | Patient Records | Implemented | High |
 | Offline Storage | Offline-First | Not Started | Critical |
 | Automatic Sync | Offline-First | Not Started | Critical |
 | OCR | Intelligence | Not Started | Optional |
@@ -87,16 +87,23 @@ The intended production security architecture uses Supabase RLS to protect all t
 - **Features**: Interface successfully lists patients mapped to the user's clinic and allows search by name/ID/village. Dynamic urgency and recency filtering is fully wired to Supabase.
 
 ### Patient Details & History
-- **Status**: In Progress (UI scaffolded)
-- **Features**: Interface exists to view a specific patient's demographic data and past visits. Pending Supabase `SELECT` query integration.
+- **Status**: Implemented
+- **Features**: `PatientDetailPage` loads the selected patient (name, age, sex, village, registration date, clinic) and all of their visits from Supabase. Tabs show Vitals History (per-visit readings from the `vitals` JSONB, with trend sparklines once 2+ readings exist), Visit History (clinician, symptom category, symptoms, diagnosis, urgency, sync status) and Diagnoses. Reachable from the Patients list (click a name), after registration, or after saving a visit. Fields with no schema backing (allergies, blood type, medications, emergency contact) are no longer shown.
 
 ---
 
 ## 4. Visit & Health Records
 
 ### Vitals & Clinical Forms
-- **Status**: In Progress (UI scaffolded)
-- **Features**: Forms for recording vital signs, symptoms, diagnoses, and urgency. Currently pending `INSERT` query integration to the `visits` table.
+- **Status**: Implemented
+- **Workflow** (`VitalsPage`, "Record Visit"):
+  - Select a patient from the worker's clinic (searchable list), or arrive pre-selected via "New Visit" on a patient record.
+  - Enter vitals (BP, temperature, pulse, weight, SpO₂, respiratory rate, MUAC) — only entered values are stored in the `vitals` JSONB.
+  - Chief complaint (required, free text) and optional symptom chips → `symptoms`.
+  - Symptom Category dropdown (`diarrhea/gastrointestinal`, `fever`, `respiratory`, `skin/rash`, `other`) → `symptom_category`, kept separate from the free-text symptoms for outbreak monitoring.
+  - Diagnosis / assessment → `diagnosis`; Urgency Score 1–5 → `urgency_score` (the on-device AI Urgency Check pre-fills a suggestion; the worker can override).
+  - Saves directly to `visits` with `patient_id`, `staff_id` (from the authenticated staff profile) and `synced_at`. Shows a success screen linking to the patient record.
+- **Limitations**: Online only (no offline queue yet). English-only strings, consistent with the rest of the clinical forms. Visits cannot be edited after saving.
 
 ---
 
@@ -275,8 +282,8 @@ flowchart LR
 | RLS | Planned / Production Required | RLS is the intended production security architecture but is disabled in the current MVP development schema |
 | Authentication | Implemented | UI + Context + Demo Bypass |
 | Patient Registration | Implemented | Task 4 completed; successfully saves to Supabase |
-| Patient Details/List | In Progress | UI exists; pending Supabase `SELECT` |
-| Vitals/Visits | In Progress | UI exists; pending Supabase `INSERT` |
+| Patient Details/List | Implemented | Tasks 5/6; list and detail read from Supabase |
+| Vitals/Visits | Implemented | Task 6; `VitalsPage` inserts into `visits` |
 | Admin Dashboard | In Progress | UI MVP completed; pending real data |
 | Emergency Mode | In Progress | UI MVP completed; pending real data |
 | Offline Storage | Not Started | Dexie.js integration pending |
@@ -291,7 +298,7 @@ flowchart LR
 For exhibition purposes, the core story is: **"Healthcare records remain useful even when the internet does not."**
 
 Currently, the strongest demoable features are:
-1. The **Patient Registration flow** (live database mutation).
+1. The **Patient Registration → Record Visit → Patient Record** flow (live database mutations and reads).
 2. The **Bilingual & Dark Mode UI** (accessibility).
 3. The **Emergency Dashboard Shell** (UI concepts).
 
@@ -302,7 +309,7 @@ Currently, the strongest demoable features are:
 ## 22. Known Limitations
 
 - **Offline Engine:** Not currently functional. Network drops will cause mutations to fail.
-- **Data Fetching:** Patient search and detail views currently rely on hardcoded dummy data arrays.
+- **Data Fetching:** Admin, Emergency, Sync and Triage views still rely on hardcoded dummy data arrays. The worker dashboard home (recent patients, stats) is also static.
 - **Admin Configuration:** Creating clinics and staff accounts must be done manually via SQL.
 - **Translation:** Some deep UI elements lack complete Bangla translation strings.
 

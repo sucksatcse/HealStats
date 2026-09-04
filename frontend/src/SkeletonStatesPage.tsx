@@ -174,7 +174,7 @@ export default function SkeletonStatesPage({
 }) {
   const [view, setView] = useState<View>("dashboard")
 
-  const TABS: { id: View label: string }[] = [
+  const TABS: { id: View; label: string }[] = [
     { id: "dashboard", label: "Dashboard" },
     { id: "patients", label: "Patient List" },
   ]

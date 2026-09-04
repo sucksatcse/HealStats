@@ -422,7 +422,7 @@ export default function SyncPage() {
   const displayed =
     filter === "all" ? records : records.filter((r) => r.status === filter)
 
-  const FILTERS: { id: "all" | SyncStatus label: string count: number }[] = [
+  const FILTERS: { id: "all" | SyncStatus; label: string; count: number }[] = [
     { id: "all", label: "All", count: records.length },
     {
       id: "queued",
@@ -838,7 +838,7 @@ export default function SyncPage() {
                 status: "failed",
                 desc: "Upload failed — tap Retry to try again",
               },
-            ] as { status: SyncStatus desc: string }[]).map(
+            ] as { status: SyncStatus; desc: string }[]).map(
               ({ status, desc }) => {
                 const sc = STATUS_CONFIG[status]
                 return (

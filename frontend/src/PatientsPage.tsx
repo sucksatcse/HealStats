@@ -328,7 +328,7 @@ const SearchIcon = () => (
     />
   </svg>
 )
-const SortIcon = ({ active, dir }: { active: boolean dir: "asc" | "desc" }) => (
+const SortIcon = ({ active, dir }: { active: boolean; dir: "asc" | "desc" }) => (
   <svg
     viewBox="0 0 16 16"
     fill="none"
@@ -456,13 +456,13 @@ export default function PatientsPage() {
     [],
   )
 
-  const FILTERS: { id: Filter label: string icon?: React.ReactNode }[] = [
+  const FILTERS: { id: Filter; label: string; icon?: React.ReactNode }[] = [
     { id: "all", label: "All Patients" },
     { id: "recent", label: "Recent" },
     { id: "flagged", label: "High-Risk", icon: <FlagIcon /> },
   ]
 
-  const COL_HEADERS: { key: SortKey | null label: string width: string }[] = [
+  const COL_HEADERS: { key: SortKey | null; label: string; width: string }[] = [
     { key: "name", label: "Patient", width: "w-[22%]" },
     { key: "age", label: "Age", width: "w-[7%]" },
     { key: null, label: "Sex", width: "w-[6%]" },

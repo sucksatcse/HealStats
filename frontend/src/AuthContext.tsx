@@ -108,6 +108,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       clinic_id: "11111111-1111-1111-1111-111111111111",
     })
     setLoading(false)
+
+    // Writes (e.g. visits.staff_id) need a real staff.id; hydrate from the seeded demo row if present.
+    supabase
+      .from("staff")
+      .select("id, name, role, clinic_id")
+      .eq("email", "worker@clinic.org")
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) return
+        setProfile({ ...(data as AuthProfile), name: `${data.name} (Demo)` })
+      })
   }
 
   const signOut = async () => {

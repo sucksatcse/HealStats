@@ -37,7 +37,7 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 - **Security & Auth**: ✅ Implemented (Supabase Auth, Route Protection, Demo Bypass).
 - **Database Schema**: ✅ Initialized (`clinics`, `staff`, `patients`, `visits`, `sync_log`).
 - **UI & Design**: ✅ Scaffolding complete. Bilingual and Dark Mode contexts active.
-- **Data Fetching (CRUD)**: 🟡 In Progress. Patient Registration is wired to Supabase. Patient Detail and Vitals forms are currently static.
+- **Data Fetching (CRUD)**: 🟡 In Progress. Patient Registration, Patient List, Patient Detail and Visit Recording are wired to Supabase. Admin/Emergency/Sync views remain static.
 - **Offline Engine**: ❌ Not Started.
 - **Intelligence (OCR)**: ❌ Not Started.
 
@@ -48,8 +48,8 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 | Database & Authentication | DONE | Supabase schema, AuthContext, protected routes active. |
 | UI Shell & Contexts | DONE | AppNavbar, Language, Theme fully built. |
 | Role-Based Dashboards | IN PROGRESS | Views for Admin, Emergency, and Worker created. Worker registration works, others static. |
-| Patient Records | IN PROGRESS | `NewPatientPage` wired to Supabase. `PatientDetailPage` needs dynamic `SELECT`. |
-| Clinical Forms | IN PROGRESS | `VitalsPage` exists but needs `INSERT` wiring. |
+| Patient Records | DONE | `NewPatientPage`, `PatientRecordsPage` and `PatientDetailPage` wired to Supabase. |
+| Clinical Forms | DONE | `VitalsPage` inserts into `visits` (vitals JSONB, symptoms, symptom_category, diagnosis, urgency_score). |
 | Offline-First Engine | NOT STARTED | Core requirement. Needs Dexie.js integration. |
 | OCR Digitization | NOT STARTED | Primary intelligence path for digitizing paper records. |
 | AI Triage | OPTIONAL / FUTURE | Deferred feature. |
@@ -84,10 +84,10 @@ Defined in `supabase/migrations/20260831000000_initial_schema.sql`.
 - Supabase Auth handles identity. 
 - `AuthContext.tsx` queries the `staff` table upon login to inject `role` and `clinic_id` into global state.
 - React Router (`App.tsx`) enforces route protection based on the user's role.
-- **Demo Mode**: Entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session.
+- **Demo Mode**: Entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session. On demo login, `AuthContext` also looks up the seeded `staff` row for `worker@clinic.org` and, if found, replaces the mock profile with the real `id`/`clinic_id` so writes that reference `staff.id` (e.g. `visits.staff_id`) are valid. If no such row exists the mock (non-UUID) profile is kept and the visit form refuses to save with a clear message.
 
 ## 11. Offline-First Architecture
-- **Current**: Online only. Mutations (like Patient Registration) go directly to Supabase. If the network drops, mutations fail.
+- **Current**: Online only. Mutations (Patient Registration, Visit Recording) go directly to Supabase; visits saved online set `synced_at` immediately. If the network drops, mutations fail.
 - **Target**: Form → Validation → Dexie.js (IndexedDB) → Sync Queue → Network Reconnection → Background Push to Supabase → Log in `sync_log`.
 
 ## 12. Feature Specifications
@@ -158,7 +158,7 @@ HealthStats/
 
 ## 20. Implementation Roadmap
 1. **Foundation**: Complete (UI Scaffolding, DB Schema, Auth).
-2. **Data Wiring**: In Progress (Patient Registration done. Patient Lists, Details, Vitals pending).
+2. **Data Wiring**: In Progress (Patient Registration, List, Detail and Visit Recording done. Admin/Emergency live data pending).
 3. **Offline Engine**: Pending (IndexedDB, Sync Queue).
 4. **Intelligence**: Pending (OCR Digitization).
 5. **Admin / Emergency**: Pending (Live data connection).
@@ -166,7 +166,8 @@ HealthStats/
 ## 21. Known Limitations
 - Offline Sync is not functional.
 - RLS is temporarily disabled in the MVP schema.
-- Search and Detail pages currently display static mock data.
+- Admin, Emergency, Sync, Triage and the worker dashboard home still display static mock data.
+- Clinical forms (Vitals/Visit) are English-only; visits cannot be edited after saving.
 
 ## 22. Important Decisions Log
 | ID | Date | Decision |
@@ -176,10 +177,12 @@ HealthStats/
 | D-003 | 2026-09-01 | UI Before Logic. 30+ pages scaffolded statically before complex DB wiring. |
 | D-004 | 2026-09-03 | Patient Registration uses the AuthContext `clinic_id` for mutations, ensuring security over user input. |
 | D-005 | 2026-09-04 | OCR established as the primary intelligence path; AI Triage deferred to optional/future. |
+| D-006 | 2026-09-04 | `visits.urgency_score` uses a 1–5 integer scale (1 Stable, 2 Low, 3 Moderate, 4 High, 5 Critical), shared by `VitalsPage`, `PatientRecordsPage` and `PatientDetailPage`. `symptom_category` stores one of `diarrhea/gastrointestinal`, `fever`, `respiratory`, `skin/rash`, `other`. |
 
 ## 23. Change Log
 - **2026-09-03**: Implemented Task 4 (Patient Registration). Wired `NewPatientPage.tsx` to `patients` table. Added mock bypass to `AuthContext.tsx`.
 - **2026-09-04**: Rewrote `README.md` and `FEATURES.md` to establish accurate sources of truth. Restructured `projectdetails.md` according to the new standard.
+- **2026-09-04**: Implemented Task 6 (Visits). `VitalsPage.tsx` inserts into `visits`; `PatientDetailPage.tsx` reads patient + visits from Supabase; `DashboardPage.tsx` passes the selected patient between list → detail → visit form; `PatientRecordsPage.tsx` gained an `onViewPatient` callback; `AuthContext.tsx` demo login hydrates from the real `staff` row. Also fixed 21 pre-existing TS syntax errors (missing `;` in inline object types) and removed the deprecated `baseUrl` from `tsconfig.json`.
 
 ## 24. Instructions for AI Coding Agents
 1. **Read `projectdetails.md` first.**
@@ -200,8 +203,8 @@ HealthStats/
 ## 25. Next Immediate Tasks
 Based on the current repository state, the next implementation priorities are:
 
-1. **Task 5 — Patient List/Search**: Wire `PatientRecordsPage.tsx` to retrieve from Supabase.
-2. **Task 5b — Patient Details**: Wire `PatientDetailPage.tsx` to retrieve specific patient data.
-3. **Task 6 — Visit Records**: Wire `VitalsPage.tsx` to insert into the `visits` table.
+1. ~~**Task 5 — Patient List/Search**~~: Done.
+2. ~~**Task 5b — Patient Details**~~: Done (Task 6).
+3. ~~**Task 6 — Visit Records**~~: Done.
 4. **Task 7 — Offline Storage**: Integrate Dexie.js.
 5. **Task 8 — Background Sync**: Implement the Service Worker sync queue.

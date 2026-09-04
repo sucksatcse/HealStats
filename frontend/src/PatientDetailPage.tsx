@@ -1,190 +1,70 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { supabase } from "./lib/supabase"
+import { SYMPTOM_CATEGORIES, URGENCY_LEVELS } from "./VitalsPage"
 
-// ── Data ───────────────────────────────────────────────────────────────────────
-const PATIENT = {
-  id: "PT-00412",
-  name: "Mariama Kouyaté",
-  age: 34,
-  sex: "Female",
-  dob: "12 Mar 1992",
-  village: "Dialafara",
-  phone: "+223 76 43 21 08",
-  bloodType: "O+",
-  allergies: ["Penicillin (rash)", "Sulfonamides"],
-  registeredDate: "14 Jan 2024",
-  initials: "MK",
-  status: "Active — Follow-up",
-  emergencyContact: "Amadou Kouyaté (Spouse) · +223 76 11 22 33",
-  conditions: ["Hypertension", "Recurrent Malaria"],
-  weight: "64.5 kg",
-  totalVisits: 6,
+// ── Types (mirror supabase/migrations/20260831000000_initial_schema.sql) ──────
+type Patient = {
+  id: string
+  name: string
+  age: number | null
+  sex: string | null
+  village: string | null
+  created_at: string
+  clinics: { name: string } | null
 }
 
-// 6-visit vitals trend (oldest → newest)
-const VITALS_HISTORY = [
-  {
-    date: "10 Jul",
-    systolic: 120,
-    diastolic: 78,
-    temp: 36.8,
-    pulse: 74,
-    weight: 64.0,
-    spo2: 99,
-  },
-  {
-    date: "24 Jul",
-    systolic: 124,
-    diastolic: 80,
-    temp: 37.0,
-    pulse: 76,
-    weight: 63.5,
-    spo2: 99,
-  },
-  {
-    date: "7 Aug",
-    systolic: 128,
-    diastolic: 82,
-    temp: 36.9,
-    pulse: 78,
-    weight: 63.0,
-    spo2: 98,
-  },
-  {
-    date: "14 Aug",
-    systolic: 135,
-    diastolic: 85,
-    temp: 37.2,
-    pulse: 82,
-    weight: 63.5,
-    spo2: 98,
-  },
-  {
-    date: "21 Aug",
-    systolic: 138,
-    diastolic: 88,
-    temp: 38.1,
-    pulse: 98,
-    weight: 64.0,
-    spo2: 97,
-  },
-  {
-    date: "28 Aug",
-    systolic: 142,
-    diastolic: 91,
-    temp: 38.4,
-    pulse: 102,
-    weight: 64.5,
-    spo2: 96,
-  },
-]
+type Vitals = Partial<
+  Record<
+    | "systolic"
+    | "diastolic"
+    | "temperature"
+    | "pulse"
+    | "weight"
+    | "spo2"
+    | "respRate"
+    | "muac",
+    number
+  >
+>
 
-const VISITS = [
-  {
-    date: "28 Aug 2026",
-    time: "09:14",
-    clinician: "Sr. Amara Diallo",
-    complaint: "High fever for 2 days with chills and body aches.",
-    diagnosis: "Malaria (uncomplicated) + Stage 1 Hypertension",
-    treatment:
-      "Artemether-lumefantrine 20/120 mg × 6 doses. Continue Amlodipine 5 mg daily. Paracetamol 500 mg PRN.",
-    outcome: "Treated & reviewed",
-    urgency: "Medium",
-    synced: true,
-  },
-  {
-    date: "21 Aug 2026",
-    time: "11:30",
-    clinician: "Sr. Amara Diallo",
-    complaint: "Routine BP check. Mild headache.",
-    diagnosis: "Hypertension — partially controlled",
-    treatment:
-      "Amlodipine 5 mg daily continued. Dietary sodium restriction reinforced.",
-    outcome: "Follow-up booked",
-    urgency: "Low",
-    synced: true,
-  },
-  {
-    date: "14 Aug 2026",
-    time: "10:05",
-    clinician: "Dr. Ibrahima Coulibaly",
-    complaint: "Dizziness on standing. BP check.",
-    diagnosis: "Hypertension — stable. Possible orthostatic hypotension.",
-    treatment:
-      "Advised to rise slowly. Continue current antihypertensives. Rehydration.",
-    outcome: "Discharged — routine follow-up",
-    urgency: "Low",
-    synced: true,
-  },
-  {
-    date: "7 Aug 2026",
-    time: "08:50",
-    clinician: "Sr. Amara Diallo",
-    complaint: "Scheduled monthly review.",
-    diagnosis: "Hypertension — controlled. No acute illness.",
-    treatment: "Continue Amlodipine 5 mg. Lifestyle counselling provided.",
-    outcome: "Stable",
-    urgency: "Low",
-    synced: true,
-  },
-  {
-    date: "24 Jul 2026",
-    time: "14:20",
-    clinician: "Sr. Amara Diallo",
-    complaint: "Fever 2 days. Loss of appetite.",
-    diagnosis: "Malaria (uncomplicated) — RDT positive",
-    treatment: "Artemether-lumefantrine course completed. Oral rehydration.",
-    outcome: "Treated — resolved",
-    urgency: "Medium",
-    synced: true,
-  },
-  {
-    date: "10 Jul 2026",
-    time: "09:00",
-    clinician: "Dr. Ibrahima Coulibaly",
-    complaint: "First registration & baseline assessment.",
-    diagnosis: "Hypertension (new diagnosis). BMI 24.1.",
-    treatment:
-      "Amlodipine 5 mg OD initiated. Diet and exercise counselling. Monthly reviews scheduled.",
-    outcome: "Enrolled in hypertension programme",
-    urgency: "Routine",
-    synced: true,
-  },
-]
+type Visit = {
+  id: string
+  created_at: string
+  vitals: Vitals | null
+  symptoms: string | null
+  symptom_category: string | null
+  diagnosis: string | null
+  urgency_score: number | null
+  synced_at: string | null
+  staff: { name: string } | null
+}
 
-const DIAGNOSIS_NOTES = [
-  {
-    condition: "Hypertension",
-    icd: "I10",
-    since: "10 Jul 2026",
-    status: "Ongoing — partially controlled",
-    medications: [
-      {
-        name: "Amlodipine",
-        dose: "5 mg",
-        freq: "Once daily (morning)",
-        started: "10 Jul 2026",
-      },
-    ],
-    notes:
-      "BP trending upward over past 6 weeks. Dietary compliance inconsistent. Consider increasing Amlodipine to 10 mg at next visit if BP remains > 140/90.",
-  },
-  {
-    condition: "Recurrent Malaria",
-    icd: "B50.9",
-    since: "24 Jul 2026",
-    status: "Treated — 2nd episode this year",
-    medications: [
-      {
-        name: "Artemether-lumefantrine",
-        dose: "20/120 mg",
-        freq: "BD × 3 days (acute episodes only)",
-        started: "28 Aug 2026",
-      },
-    ],
-    notes:
-      "Two episodes within 5 weeks. Recommend chemoprevention review with district malaria officer. Ensure bed net usage confirmed at next visit.",
-  },
-]
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const shortId = (id: string) => id.split("-")[0].toUpperCase()
+const sexLabel = (s: string | null) =>
+  s === "F" ? "Female" : s === "M" ? "Male" : (s ?? "—")
+const fmtDate = (iso: string, withYear = true) =>
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    ...(withYear ? { year: "numeric" } : {}),
+  })
+const fmtTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+const categoryLabel = (v: string | null) =>
+  SYMPTOM_CATEGORIES.find((c) => c.value === v)?.label ?? v ?? "—"
+const urgencyLabel = (score: number | null) =>
+  URGENCY_LEVELS.find((u) => u.score === score)?.label ??
+  (score !== null && score >= 5 ? "Critical" : null)
+const initialsOf = (name: string) => {
+  const parts = name.trim().split(/\s+/)
+  return (
+    parts.length > 1 ? parts[0][0] + parts[1][0] : name.substring(0, 2)
+  ).toUpperCase()
+}
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────────────
 function Sparkline({
@@ -262,18 +142,24 @@ function Sparkline({
 }
 
 // ── Urgency badge ──────────────────────────────────────────────────────────────
-function UrgencyBadge({ level }: { level: string }) {
-  const cls =
-    level === "Medium"
-      ? "bg-amber-50 text-amber-700 border-amber-200"
-      : level === "High"
-        ? "bg-red-50 text-red-700 border-red-200"
-        : "bg-slate-50 text-slate-500 border-slate-200"
+const URGENCY_BADGE_CLS: Record<string, string> = {
+  Critical: "bg-red-50 text-red-700 border-red-200",
+  High: "bg-orange-50 text-orange-700 border-orange-200",
+  Moderate: "bg-amber-50 text-amber-700 border-amber-200",
+  Low: "bg-sky-50 text-sky-700 border-sky-200",
+  Stable: "bg-emerald-50 text-emerald-700 border-emerald-200",
+}
+
+function UrgencyBadge({ score }: { score: number | null }) {
+  const label = urgencyLabel(score)
+  const cls = label
+    ? URGENCY_BADGE_CLS[label]
+    : "bg-slate-50 text-slate-500 border-slate-200"
   return (
     <span
       className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${cls}`}
     >
-      {level}
+      {label ?? "Unscored"}
     </span>
   )
 }
@@ -282,20 +168,145 @@ function UrgencyBadge({ level }: { level: string }) {
 const TABS = [
   { id: "vitals", label: "Vitals History" },
   { id: "visits", label: "Visit History" },
-  { id: "diagnosis", label: "Diagnosis & Treatment" },
+  { id: "diagnosis", label: "Diagnoses" },
 ]
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function PatientDetailPage({
   patientId,
+  onNewVisit,
 }: {
   patientId?: string | null
+  onNewVisit?: (patientId: string) => void
 }) {
   const [tab, setTab] = useState<"vitals" | "visits" | "diagnosis">("vitals")
-  const [editing, setEditing] = useState(false)
   const [visitExpanded, setVisitExpanded] = useState<number | null>(0)
 
-  const latest = VITALS_HISTORY[VITALS_HISTORY.length - 1]
+  const [patient, setPatient] = useState<Patient | null>(null)
+  const [visits, setVisits] = useState<Visit[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!patientId) {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      setError(null)
+      setPatient(null)
+      setVisits([])
+      try {
+        const [pRes, vRes] = await Promise.all([
+          supabase
+            .from("patients")
+            .select("id, name, age, sex, village, created_at, clinics ( name )")
+            .eq("id", patientId)
+            .maybeSingle(),
+          supabase
+            .from("visits")
+            .select(
+              "id, created_at, vitals, symptoms, symptom_category, diagnosis, urgency_score, synced_at, staff ( name )",
+            )
+            .eq("patient_id", patientId)
+            .order("created_at", { ascending: false }),
+        ])
+        if (pRes.error) throw pRes.error
+        if (vRes.error) throw vRes.error
+        if (cancelled) return
+        setPatient((pRes.data as unknown as Patient) ?? null)
+        setVisits((vRes.data as unknown as Visit[]) ?? [])
+        setVisitExpanded(0)
+      } catch (err: any) {
+        console.error(err)
+        if (!cancelled) setError(err.message || "Failed to load patient.")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [patientId])
+
+  // Oldest → newest, only visits that captured vitals
+  const vitalsHistory = visits
+    .filter((v) => v.vitals && Object.keys(v.vitals).length > 0)
+    .slice()
+    .reverse()
+  const latestVitals = vitalsHistory[vitalsHistory.length - 1]?.vitals ?? null
+  const latestVisit = visits[0] ?? null
+  const diagnosed = visits.filter((v) => v.diagnosis && v.diagnosis.trim())
+
+  if (!patientId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center max-w-5xl mx-auto w-full">
+        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            className="w-8 h-8"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.5-1.632z"
+            />
+          </svg>
+        </div>
+        <h2 className="text-lg font-semibold text-slate-700">
+          No patient selected
+        </h2>
+        <p className="text-sm text-slate-500 mt-1 max-w-sm">
+          Open a record from the Patients list, or register a new patient to
+          view their history here.
+        </p>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-teal-600 rounded-full animate-spin" />
+        <p className="mt-4 text-slate-500 font-medium">
+          Loading patient record...
+        </p>
+      </div>
+    )
+  }
+
+  if (error || !patient) {
+    return (
+      <div className="bg-red-50 text-red-700 p-6 rounded-2xl border border-red-100 flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="w-12 h-12 mb-4 text-red-400"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 8v4m0 4h.01"
+          />
+        </svg>
+        <p className="font-semibold text-lg">
+          {error ? "Failed to load patient" : "Patient not found"}
+        </p>
+        <p className="text-sm mt-1">
+          {error ?? "This record may have been removed or belongs to another clinic."}
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto pb-10 w-full">
@@ -308,12 +319,8 @@ export default function PatientDetailPage({
           {/* Avatar */}
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl bg-teal-600 flex items-center justify-center text-white font-display text-2xl shadow-md shadow-teal-600/20">
-              {PATIENT.initials}
+              {initialsOf(patient.name)}
             </div>
-            <div
-              className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white"
-              title="Active patient"
-            />
           </div>
 
           {/* Identity */}
@@ -321,85 +328,76 @@ export default function PatientDetailPage({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h1 className="font-display text-2xl text-teal-950 leading-tight">
-                  {PATIENT.name}
+                  {patient.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                   <span className="text-sm text-slate-500">
-                    {PATIENT.age} yrs
+                    {patient.age ?? "—"} yrs
                   </span>
                   <span className="w-1 h-1 rounded-full bg-slate-300" />
-                  <span className="text-sm text-slate-500">{PATIENT.sex}</span>
+                  <span className="text-sm text-slate-500">
+                    {sexLabel(patient.sex)}
+                  </span>
                   <span className="w-1 h-1 rounded-full bg-slate-300" />
                   <span className="text-sm text-slate-500">
-                    {PATIENT.village}
+                    {patient.village ?? "—"}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-slate-300" />
                   <span className="font-mono text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                    {PATIENT.id}
+                    {shortId(patient.id)}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {PATIENT.conditions.map((c) => (
-                    <span
-                      key={c}
-                      className="text-[11px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
+                {latestVisit && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <UrgencyBadge score={latestVisit.urgency_score} />
+                    {latestVisit.symptom_category && (
+                      <span className="text-[11px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                        {categoryLabel(latestVisit.symptom_category)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2.5 flex-shrink-0">
-                <button
-                  onClick={() => setEditing(!editing)}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-teal-700 border border-slate-200 hover:border-teal-300 px-3.5 py-2 rounded-xl transition-all"
-                >
-                  <svg
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    className="w-3.5 h-3.5"
+              {onNewVisit && (
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <button
+                    onClick={() => onNewVisit(patient.id)}
+                    className="flex items-center gap-1.5 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-xl shadow-sm shadow-teal-600/20 transition-all hover:-translate-y-0.5"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M11.5 2.5a2.121 2.121 0 013 3L5 15l-4 1 1-4L11.5 2.5z"
-                    />
-                  </svg>
-                  Edit
-                </button>
-                <button className="flex items-center gap-1.5 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-xl shadow-sm shadow-teal-600/20 transition-all hover:-translate-y-0.5">
-                  <svg
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    className="w-3.5 h-3.5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 3v10M3 8h10"
-                    />
-                  </svg>
-                  New Visit
-                </button>
-              </div>
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      className="w-3.5 h-3.5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 3v10M3 8h10"
+                      />
+                    </svg>
+                    New Visit
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Meta row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
               {[
-                { label: "DOB", value: PATIENT.dob },
-                { label: "Blood Type", value: PATIENT.bloodType },
+                { label: "Registered", value: fmtDate(patient.created_at) },
                 {
                   label: "Total Visits",
-                  value: `${PATIENT.totalVisits} visits`,
+                  value: `${visits.length} visit${visits.length === 1 ? "" : "s"}`,
                 },
-                { label: "Registered", value: PATIENT.registeredDate },
+                {
+                  label: "Last Visit",
+                  value: latestVisit ? fmtDate(latestVisit.created_at) : "—",
+                },
+                { label: "Clinic", value: patient.clinics?.name ?? "—" },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
@@ -413,25 +411,6 @@ export default function PatientDetailPage({
             </div>
           </div>
         </div>
-
-        {/* Allergy / emergency banner */}
-        {PATIENT.allergies.length > 0 && (
-          <div className="mx-6 mb-5 flex flex-wrap items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-red-500 mt-0.5 flex-shrink-0">
-              ⚠ Allergies
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {PATIENT.allergies.map((a) => (
-                <span
-                  key={a}
-                  className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full"
-                >
-                  {a}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Tab bar ── */}
@@ -454,53 +433,72 @@ export default function PatientDetailPage({
       {/* ══════════════════════════════════════════════
           TAB 1 — Vitals History
       ══════════════════════════════════════════════ */}
-      {tab === "vitals" && (
+      {tab === "vitals" && vitalsHistory.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-14 text-center">
+          <p className="text-sm font-medium text-slate-500">
+            No vitals recorded yet
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Measurements entered during a visit will appear here.
+          </p>
+        </div>
+      )}
+      {tab === "vitals" && vitalsHistory.length > 0 && latestVitals && (
         <div className="flex flex-col gap-4">
           {/* Sparkline cards row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                label: "Systolic BP",
-                unit: "mmHg",
-                color: "#ef4444",
-                data: VITALS_HISTORY.map((v) => v.systolic),
-                latest: latest.systolic,
-                min: 100,
-                max: 160,
-                status: latest.systolic >= 140 ? "High" : "Normal",
-              },
-              {
-                label: "Temperature",
-                unit: "°C",
-                color: "#f59e0b",
-                data: VITALS_HISTORY.map((v) => v.temp),
-                latest: latest.temp,
-                min: 36,
-                max: 40,
-                status: latest.temp >= 38 ? "Elevated" : "Normal",
-              },
-              {
-                label: "Pulse Rate",
-                unit: "bpm",
-                color: "#8b5cf6",
-                data: VITALS_HISTORY.map((v) => v.pulse),
-                latest: latest.pulse,
-                min: 60,
-                max: 130,
-                status: latest.pulse > 100 ? "High" : "Normal",
-              },
-              {
-                label: "SpO₂",
-                unit: "%",
-                color: "#0d9488",
-                data: VITALS_HISTORY.map((v) => v.spo2),
-                latest: latest.spo2,
-                min: 90,
-                max: 100,
-                status: latest.spo2 < 95 ? "Low" : "Normal",
-              },
-            ].map(
-              ({ label, unit, color, data, latest: lv, min, max, status }) => (
+            {(
+              [
+                {
+                  key: "systolic",
+                  label: "Systolic BP",
+                  unit: "mmHg",
+                  color: "#ef4444",
+                  min: 80,
+                  max: 180,
+                  flag: (n: number) => n >= 140,
+                  flagLabel: "High",
+                },
+                {
+                  key: "temperature",
+                  label: "Temperature",
+                  unit: "°C",
+                  color: "#f59e0b",
+                  min: 35,
+                  max: 40,
+                  flag: (n: number) => n >= 38,
+                  flagLabel: "Elevated",
+                },
+                {
+                  key: "pulse",
+                  label: "Pulse Rate",
+                  unit: "bpm",
+                  color: "#8b5cf6",
+                  min: 40,
+                  max: 140,
+                  flag: (n: number) => n > 100,
+                  flagLabel: "High",
+                },
+                {
+                  key: "spo2",
+                  label: "SpO₂",
+                  unit: "%",
+                  color: "#0d9488",
+                  min: 85,
+                  max: 100,
+                  flag: (n: number) => n < 95,
+                  flagLabel: "Low",
+                },
+              ] as const
+            ).map(({ key, label, unit, color, min, max, flag, flagLabel }) => {
+              const series = vitalsHistory.filter(
+                (v) => typeof v.vitals?.[key] === "number",
+              )
+              const data = series.map((v) => v.vitals![key] as number)
+              const lv = data[data.length - 1]
+              const status =
+                lv === undefined ? null : flag(lv) ? flagLabel : "Normal"
+              return (
                 <div
                   key={label}
                   className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 pt-4 pb-3 flex flex-col gap-2 overflow-hidden"
@@ -509,51 +507,66 @@ export default function PatientDetailPage({
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       {label}
                     </p>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        status === "Normal"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-amber-50 text-amber-600"
-                      }`}
-                    >
-                      {status}
-                    </span>
+                    {status && (
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          status === "Normal"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-amber-50 text-amber-600"
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="font-display text-2xl text-slate-900">
-                      {lv}
+                      {lv ?? "—"}
                     </span>
                     <span className="text-xs text-slate-400 font-medium">
                       {unit}
                     </span>
                   </div>
-                  <div className="h-12 -mx-1">
-                    <Sparkline
-                      data={data}
-                      color={color}
-                      minVal={min}
-                      maxVal={max}
-                      height={48}
-                      width={180}
-                    />
+                  <div className="h-12 -mx-1 flex items-center justify-center">
+                    {data.length >= 2 ? (
+                      <Sparkline
+                        data={data}
+                        color={color}
+                        minVal={Math.min(min, ...data)}
+                        maxVal={Math.max(max, ...data)}
+                        height={48}
+                        width={180}
+                      />
+                    ) : (
+                      <span className="text-[10px] text-slate-400">
+                        {data.length === 0
+                          ? "Not recorded"
+                          : "Trend needs 2+ readings"}
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between text-[10px] text-slate-400 pt-1">
-                    <span>{VITALS_HISTORY[0].date}</span>
-                    <span>↑ Trend</span>
                     <span>
-                      {VITALS_HISTORY[VITALS_HISTORY.length - 1].date}
+                      {series[0] ? fmtDate(series[0].created_at, false) : ""}
+                    </span>
+                    {data.length >= 2 && <span>Trend</span>}
+                    <span>
+                      {series.length > 1
+                        ? fmtDate(series[series.length - 1].created_at, false)
+                        : ""}
                     </span>
                   </div>
                 </div>
-              ),
-            )}
+              )
+            })}
           </div>
 
           {/* Detailed vitals table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-700">
-                All Readings — Last 6 Visits
+                All Readings — {vitalsHistory.length} visit
+                {vitalsHistory.length === 1 ? "" : "s"}
               </h3>
               <span className="text-xs text-slate-400">Oldest → newest</span>
             </div>
@@ -568,6 +581,8 @@ export default function PatientDetailPage({
                       "Pulse (bpm)",
                       "Weight (kg)",
                       "SpO₂ (%)",
+                      "Resp (/min)",
+                      "MUAC (cm)",
                     ].map((h) => (
                       <th
                         key={h}
@@ -579,18 +594,33 @@ export default function PatientDetailPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {VITALS_HISTORY.map((v, i) => {
-                    const isLatest = i === VITALS_HISTORY.length - 1
+                  {vitalsHistory.map((v, i) => {
+                    const isLatest = i === vitalsHistory.length - 1
+                    const vt = v.vitals ?? {}
+                    const cell = (
+                      n: number | undefined,
+                      warn?: boolean,
+                    ) => (
+                      <span
+                        className={
+                          warn
+                            ? "text-amber-600 font-semibold"
+                            : "text-slate-700"
+                        }
+                      >
+                        {n ?? "—"}
+                      </span>
+                    )
                     return (
                       <tr
-                        key={v.date}
+                        key={v.id}
                         className={`border-b border-slate-100 last:border-0 ${
                           isLatest ? "bg-teal-50/50" : "hover:bg-slate-50"
                         } transition-colors`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <span className="font-medium text-slate-700">
-                            {v.date}
+                            {fmtDate(v.created_at)}
                           </span>
                           {isLatest && (
                             <span className="ml-2 text-[10px] font-bold text-teal-600 bg-teal-100 px-1.5 py-0.5 rounded-full">
@@ -601,48 +631,29 @@ export default function PatientDetailPage({
                         <td className="px-4 py-3">
                           <span
                             className={`font-semibold ${
-                              v.systolic >= 140
+                              (vt.systolic ?? 0) >= 140
                                 ? "text-amber-600"
                                 : "text-slate-700"
                             }`}
                           >
-                            {v.systolic}/{v.diastolic}
+                            {vt.systolic ?? "—"}/{vt.diastolic ?? "—"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={
-                              v.temp >= 38
-                                ? "text-amber-600 font-semibold"
-                                : "text-slate-700"
-                            }
-                          >
-                            {v.temp}
-                          </span>
+                          {cell(vt.temperature, (vt.temperature ?? 0) >= 38)}
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={
-                              v.pulse > 100
-                                ? "text-amber-600 font-semibold"
-                                : "text-slate-700"
-                            }
-                          >
-                            {v.pulse}
-                          </span>
+                          {cell(vt.pulse, (vt.pulse ?? 0) > 100)}
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{v.weight}</td>
+                        <td className="px-4 py-3">{cell(vt.weight)}</td>
                         <td className="px-4 py-3">
-                          <span
-                            className={
-                              v.spo2 < 96
-                                ? "text-amber-600 font-semibold"
-                                : "text-slate-700"
-                            }
-                          >
-                            {v.spo2}
-                          </span>
+                          {cell(
+                            vt.spo2,
+                            vt.spo2 !== undefined && vt.spo2 < 96,
+                          )}
                         </td>
+                        <td className="px-4 py-3">{cell(vt.respRate)}</td>
+                        <td className="px-4 py-3">{cell(vt.muac)}</td>
                       </tr>
                     )
                   })}
@@ -656,15 +667,31 @@ export default function PatientDetailPage({
       {/* ══════════════════════════════════════════════
           TAB 2 — Visit History
       ══════════════════════════════════════════════ */}
-      {tab === "visits" && (
+      {tab === "visits" && visits.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-14 text-center">
+          <p className="text-sm font-medium text-slate-500">
+            No visits recorded yet
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Use “New Visit” to record vitals and symptoms for this patient.
+          </p>
+        </div>
+      )}
+      {tab === "visits" && visits.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-500">
-              {VISITS.length} recorded visits
+              {visits.length} recorded visit{visits.length === 1 ? "" : "s"}
             </p>
-            <span className="text-xs text-teal-600 font-medium">
-              All synced ✓
-            </span>
+            {visits.every((v) => v.synced_at) ? (
+              <span className="text-xs text-teal-600 font-medium">
+                All synced ✓
+              </span>
+            ) : (
+              <span className="text-xs text-amber-600 font-medium">
+                {visits.filter((v) => !v.synced_at).length} pending sync
+              </span>
+            )}
           </div>
 
           {/* Timeline */}
@@ -673,10 +700,10 @@ export default function PatientDetailPage({
             <div className="absolute left-[19px] top-6 bottom-6 w-px bg-slate-200" />
 
             <div className="flex flex-col gap-3">
-              {VISITS.map((v, i) => {
+              {visits.map((v, i) => {
                 const open = visitExpanded === i
                 return (
-                  <div key={i} className="flex gap-4">
+                  <div key={v.id} className="flex gap-4">
                     {/* Timeline node */}
                     <div className="flex-shrink-0 flex flex-col items-center mt-4">
                       <div
@@ -686,7 +713,7 @@ export default function PatientDetailPage({
                             : "bg-white text-slate-500 border-slate-200"
                         }`}
                       >
-                        {VISITS.length - i}
+                        {visits.length - i}
                       </div>
                     </div>
 
@@ -694,25 +721,35 @@ export default function PatientDetailPage({
                     <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                       <button
                         onClick={() => setVisitExpanded(open ? null : i)}
+                        aria-expanded={open}
                         className="w-full px-5 py-4 flex items-start justify-between gap-3 text-left hover:bg-slate-50 transition-colors"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <span className="font-semibold text-sm text-slate-800">
-                              {v.date}
+                              {fmtDate(v.created_at)}
                             </span>
                             <span className="text-xs text-slate-400">
-                              {v.time}
+                              {fmtTime(v.created_at)}
                             </span>
-                            <UrgencyBadge level={v.urgency} />
-                            {v.synced && (
+                            <UrgencyBadge score={v.urgency_score} />
+                            {v.symptom_category && (
+                              <span className="text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                                {categoryLabel(v.symptom_category)}
+                              </span>
+                            )}
+                            {v.synced_at ? (
                               <span className="text-[10px] font-medium text-emerald-600">
                                 ✓ Synced
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-medium text-amber-600">
+                                Pending sync
                               </span>
                             )}
                           </div>
                           <p className="text-xs text-slate-500 truncate">
-                            {v.complaint}
+                            {v.symptoms?.split("\n")[0] || "No symptoms recorded"}
                           </p>
                         </div>
                         <svg
@@ -735,35 +772,72 @@ export default function PatientDetailPage({
                       {open && (
                         <div className="border-t border-slate-100 px-5 py-4 grid sm:grid-cols-2 gap-4">
                           {[
-                            { label: "Clinician", value: v.clinician },
-                            { label: "Diagnosis", value: v.diagnosis },
-                            { label: "Treatment", value: v.treatment },
-                            { label: "Outcome", value: v.outcome },
-                          ].map(({ label, value }) => (
-                            <div
-                              key={label}
-                              className={
-                                label === "Treatment" || label === "Diagnosis"
-                                  ? "sm:col-span-2"
-                                  : ""
-                              }
-                            >
+                            {
+                              label: "Clinician",
+                              value: v.staff?.name ?? "—",
+                            },
+                            {
+                              label: "Symptom Category",
+                              value: categoryLabel(v.symptom_category),
+                            },
+                            {
+                              label: "Symptoms",
+                              value: v.symptoms || "—",
+                              wide: true,
+                            },
+                            {
+                              label: "Diagnosis",
+                              value: v.diagnosis || "Not recorded",
+                              wide: true,
+                            },
+                          ].map(({ label, value, wide }) => (
+                            <div key={label} className={wide ? "sm:col-span-2" : ""}>
                               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
                                 {label}
                               </p>
-                              <p className="text-sm text-slate-700 leading-relaxed">
+                              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
                                 {value}
                               </p>
                             </div>
                           ))}
-                          <div className="sm:col-span-2 flex gap-2 pt-1">
-                            <button className="text-xs font-semibold text-teal-600 hover:text-teal-800 border border-teal-200 hover:border-teal-400 px-3 py-1.5 rounded-lg transition-all">
-                              View full notes
-                            </button>
-                            <button className="text-xs font-semibold text-slate-500 hover:text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-all">
-                              Print summary
-                            </button>
-                          </div>
+                          {v.vitals && Object.keys(v.vitals).length > 0 && (
+                            <div className="sm:col-span-2">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+                                Vitals
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {(
+                                  [
+                                    ["systolic", "Sys", "mmHg"],
+                                    ["diastolic", "Dia", "mmHg"],
+                                    ["temperature", "Temp", "°C"],
+                                    ["pulse", "Pulse", "bpm"],
+                                    ["spo2", "SpO₂", "%"],
+                                    ["respRate", "Resp", "/min"],
+                                    ["weight", "Weight", "kg"],
+                                    ["muac", "MUAC", "cm"],
+                                  ] as const
+                                )
+                                  .filter(([k]) => v.vitals?.[k] !== undefined)
+                                  .map(([k, lbl, unit]) => (
+                                    <span
+                                      key={k}
+                                      className="text-xs bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1 text-slate-700"
+                                    >
+                                      <span className="text-slate-400 font-medium mr-1">
+                                        {lbl}
+                                      </span>
+                                      <span className="font-semibold">
+                                        {v.vitals![k]}
+                                      </span>
+                                      <span className="text-slate-400 ml-0.5">
+                                        {unit}
+                                      </span>
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -776,159 +850,63 @@ export default function PatientDetailPage({
       )}
 
       {/* ══════════════════════════════════════════════
-          TAB 3 — Diagnosis & Treatment
+          TAB 3 — Diagnoses (from visits.diagnosis)
       ══════════════════════════════════════════════ */}
-      {tab === "diagnosis" && (
+      {tab === "diagnosis" && diagnosed.length === 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-14 text-center">
+          <p className="text-sm font-medium text-slate-500">
+            No diagnoses recorded yet
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Diagnoses entered on the visit form will be listed here.
+          </p>
+        </div>
+      )}
+      {tab === "diagnosis" && diagnosed.length > 0 && (
         <div className="flex flex-col gap-4">
-          {/* Active conditions */}
-          {DIAGNOSIS_NOTES.map((d, i) => (
+          {diagnosed.map((v) => (
             <div
-              key={i}
+              key={v.id}
               className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
             >
-              {/* Condition header */}
               <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <h3 className="font-semibold text-slate-800">
-                      {d.condition}
+                      {fmtDate(v.created_at)}
                     </h3>
-                    <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {d.icd}
-                    </span>
+                    <UrgencyBadge score={v.urgency_score} />
+                    {v.symptom_category && (
+                      <span className="text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                        {categoryLabel(v.symptom_category)}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Since {d.since} · {d.status}
+                    {fmtTime(v.created_at)} · {v.staff?.name ?? "Unknown clinician"}
                   </p>
                 </div>
-                <button className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-teal-700 border border-slate-200 hover:border-teal-200 px-3 py-1.5 rounded-lg transition-all">
-                  <svg
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    className="w-3 h-3"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.5 2.5a2 2 0 012.828 2.828L4 13.657l-3 .343.343-3z"
-                    />
-                  </svg>
-                  Edit
-                </button>
               </div>
-
               <div className="px-5 py-4 grid sm:grid-cols-2 gap-5">
-                {/* Medications */}
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">
-                    Current Medications
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                    Diagnosis / Assessment
                   </p>
-                  <div className="space-y-2">
-                    {d.medications.map((m, j) => (
-                      <div
-                        key={j}
-                        className="flex items-start gap-3 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2.5"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center flex-shrink-0">
-                          <svg
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            stroke="white"
-                            strokeWidth={1.8}
-                            className="w-3.5 h-3.5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M5 3h4l1 2.5H4L5 3zM2.5 5.5h9l-.857 6H3.357L2.5 5.5z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-teal-900">
-                            {m.name}{" "}
-                            <span className="font-normal text-teal-700">
-                              {m.dose}
-                            </span>
-                          </p>
-                          <p className="text-[11px] text-teal-600 mt-0.5">
-                            {m.freq}
-                          </p>
-                          <p className="text-[10px] text-teal-500 mt-0.5">
-                            Started {m.started}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                    {v.diagnosis}
+                  </p>
                 </div>
-
-                {/* Clinical notes */}
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">
-                    Clinician Notes
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                    Presenting Symptoms
                   </p>
-                  <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 rounded-xl border border-slate-100 px-3 py-3">
-                    {d.notes}
+                  <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 rounded-xl border border-slate-100 px-3 py-3 whitespace-pre-line">
+                    {v.symptoms || "—"}
                   </p>
                 </div>
               </div>
             </div>
           ))}
-
-          {/* Allergies & contraindications */}
-          <div className="bg-white rounded-2xl border border-red-200 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-5 h-5 rounded-md bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 text-[10px] font-black">!</span>
-              </div>
-              <h3 className="text-sm font-semibold text-slate-700">
-                Allergies & Contraindications
-              </h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {PATIENT.allergies.map((a) => (
-                <div
-                  key={a}
-                  className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                  <span className="text-xs font-semibold text-red-700">
-                    {a}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Emergency contact */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-              Emergency Contact
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                <svg
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                  className="w-4 h-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2 3.5A1.5 1.5 0 013.5 2h1.172a1.5 1.5 0 011.395.944l.69 1.726a1.5 1.5 0 01-.344 1.627L5.5 7.207A11.037 11.037 0 008.793 10.5l.91-.913a1.5 1.5 0 011.627-.344l1.726.69A1.5 1.5 0 0114 11.328V12.5A1.5 1.5 0 0112.5 14H11C5.477 14 1 9.523 1 4v-1l.5-1h.5z"
-                  />
-                </svg>
-              </div>
-              <p className="text-sm text-slate-700 font-medium">
-                {PATIENT.emergencyContact}
-              </p>
-            </div>
-          </div>
         </div>
       )}
     </div>

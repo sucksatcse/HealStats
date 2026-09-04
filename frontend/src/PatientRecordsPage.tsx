@@ -227,7 +227,13 @@ function Dropdown({
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
-export default function PatientRecordsPage({ onNewPatient }: { onNewPatient?: () => void } = {}) {
+export default function PatientRecordsPage({
+  onNewPatient,
+  onViewPatient,
+}: {
+  onNewPatient?: () => void
+  onViewPatient?: (patientId: string) => void
+} = {}) {
   const { profile } = useAuth()
   const [patients, setPatients] = useState<PatientRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -601,7 +607,13 @@ export default function PatientRecordsPage({ onNewPatient }: { onNewPatient?: ()
                   </td>
                   {/* Name */}
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onViewPatient?.(r.rawId)}
+                      disabled={!onViewPatient}
+                      className="flex items-center gap-3 text-left rounded-lg disabled:cursor-default enabled:hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                      title={onViewPatient ? "Open patient record" : undefined}
+                    >
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${r.color}`}
                       >
@@ -615,7 +627,7 @@ export default function PatientRecordsPage({ onNewPatient }: { onNewPatient?: ()
                           {r.gender === "F" ? "Female" : "Male"}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   </td>
                   {/* Age */}
                   <td className="px-5 py-4">
