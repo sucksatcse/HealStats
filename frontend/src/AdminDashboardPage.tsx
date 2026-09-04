@@ -408,7 +408,7 @@ const CLINICS = [
   { name: "Mopti Outreach Unit", visits: 38, share: 27, status: "offline" },
 ]
 
-const CLINIC_STATUS: Record<string, { label: string cls: string dot: string }> =
+const CLINIC_STATUS: Record<string, { label: string; cls: string; dot: string }> =
   {
     online: { label: "Online", cls: "text-emerald-600", dot: "bg-emerald-500" },
     syncing: {

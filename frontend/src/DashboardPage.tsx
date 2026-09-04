@@ -248,7 +248,7 @@ const RECENT_PATIENTS = [
   },
 ]
 
-const STATUS_LABELS: Record<string, { label: string cls: string }> = {
+const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   "follow-up": {
     label: "Follow-up",
     cls: "bg-blue-50 text-blue-600 border-blue-200",
@@ -697,7 +697,15 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
             activeNav === "patients" ? "flex flex-col min-h-0" : "space-y-6"
           }`}
         >
-          {activeNav === "patients" && <PatientsPage onNewPatient={() => setActiveNav("new-patient")} />}
+          {activeNav === "patients" && (
+            <PatientsPage
+              onNewPatient={() => setActiveNav("new-patient")}
+              onViewPatient={(id) => {
+                setSelectedPatientId(id)
+                setActiveNav("patient-detail")
+              }}
+            />
+          )}
           {activeNav === "new-patient" && (
             <NewPatientPage
               onSuccess={(id) => {
@@ -706,10 +714,27 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
               }}
             />
           )}
-          {activeNav === "vitals" && <VitalsPage />}
+          {activeNav === "vitals" && (
+            <VitalsPage
+              patientId={selectedPatientId}
+              onSaved={(id) => {
+                setSelectedPatientId(id)
+                setActiveNav("patient-detail")
+              }}
+              onBack={() =>
+                setActiveNav(selectedPatientId ? "patient-detail" : "patients")
+              }
+            />
+          )}
           {activeNav === "triage" && <TriagePage />}
           {activeNav === "patient-detail" && (
-            <PatientDetailPage patientId={selectedPatientId} />
+            <PatientDetailPage
+              patientId={selectedPatientId}
+              onNewVisit={(id) => {
+                setSelectedPatientId(id)
+                setActiveNav("vitals")
+              }}
+            />
           )}
           {activeNav === "digitize" && <DigitizePage />}
           {activeNav === "sync" && <SyncPage />}

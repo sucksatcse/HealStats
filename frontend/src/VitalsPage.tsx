@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef } from "react"
+import { supabase } from "./lib/supabase"
+import { useAuth } from "./AuthContext"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type RangeStatus = "normal" | "low" | "high" | "critical" | "empty"
+
+type PatientOption = {
+  id: string
+  name: string
+  age: number | null
+  sex: string | null
+  village: string | null
+}
 
 interface VitalField {
   key: string
@@ -138,6 +148,43 @@ const VISIT_STEPS = [
   { n: 3, label: "Diagnosis", sub: "Assessment & plan" },
 ]
 
+// Stored verbatim in visits.symptom_category
+export const SYMPTOM_CATEGORIES = [
+  { value: "diarrhea/gastrointestinal", label: "Diarrhea / Gastrointestinal" },
+  { value: "fever", label: "Fever" },
+  { value: "respiratory", label: "Respiratory" },
+  { value: "skin/rash", label: "Skin / Rash" },
+  { value: "other", label: "Other" },
+]
+
+// visits.urgency_score scale; matches getUrgencyFromScore in PatientRecordsPage
+export const URGENCY_LEVELS = [
+  { score: 1, label: "Stable", cls: "bg-emerald-600 border-emerald-600" },
+  { score: 2, label: "Low", cls: "bg-sky-600 border-sky-600" },
+  { score: 3, label: "Moderate", cls: "bg-amber-500 border-amber-500" },
+  { score: 4, label: "High", cls: "bg-orange-600 border-orange-600" },
+  { score: 5, label: "Critical", cls: "bg-red-600 border-red-600" },
+]
+
+const AI_URGENCY_SCORE: Record<"High" | "Medium" | "Low", number> = {
+  High: 4,
+  Medium: 3,
+  Low: 1,
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const shortId = (id: string) => id.split("-")[0].toUpperCase()
+const sexLabel = (s: string | null) =>
+  s === "F" ? "Female" : s === "M" ? "Male" : (s ?? "—")
+const initialsOf = (name: string) => {
+  const parts = name.trim().split(/\s+/)
+  return (
+    parts.length > 1 ? parts[0][0] + parts[1][0] : name.substring(0, 2)
+  ).toUpperCase()
+}
+
 // ── AI result lines (simulated) ────────────────────────────────────────────────
 function buildAIResult(
   vals: Record<string, string>,
@@ -158,7 +205,7 @@ function buildAIResult(
     urgency = "High"
   } else if (sys >= 140) {
     flags.push(`Systolic BP ${sys} mmHg — Stage 2 hypertension`)
-    if (urgency !== "High") urgency = "Medium"
+    urgency = "Medium"
   }
 
   if (temp >= 39.5) {
@@ -292,13 +339,13 @@ function useTypewriter(text: string, active: boolean, speed = 18) {
 }
 
 // ── Components ─────────────────────────────────────────────────────────────────
-function StepBar() {
+function StepBar({ step }: { step: 1 | 2 | 3 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4">
       <div className="flex items-start gap-3">
         {VISIT_STEPS.map(({ n, label, sub }) => {
-          const done = n < 2
-          const active = n === 2
+          const done = n < step
+          const active = n === step
           return (
             <div key={n} className="flex-1 flex flex-col gap-2">
               <div className="flex items-center gap-2">
@@ -360,25 +407,96 @@ function StepBar() {
         })}
       </div>
       <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
-        <div className="h-full bg-teal-500 rounded-full w-1/2" />
+        <div
+          className="h-full bg-teal-500 rounded-full transition-all"
+          style={{ width: `${((step - 1) / 3) * 100 + 16}%` }}
+        />
       </div>
       <p className="text-[11px] text-slate-400 mt-1.5 text-right">
-        Step 2 of 3
+        Step {step} of 3
       </p>
     </div>
   )
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────────
-export default function VitalsPage() {
+export default function VitalsPage({
+  patientId,
+  onSaved,
+  onBack,
+}: {
+  patientId?: string | null
+  onSaved?: (patientId: string) => void
+  onBack?: () => void
+}) {
+  const { profile } = useAuth()
+
+  // Patient selection
+  const [patients, setPatients] = useState<PatientOption[]>([])
+  const [patientsLoading, setPatientsLoading] = useState(true)
+  const [patientsError, setPatientsError] = useState<string | null>(null)
+  const [patientQuery, setPatientQuery] = useState("")
+  const [selected, setSelected] = useState<PatientOption | null>(null)
+
+  // Clinical fields
   const [values, setValues] = useState<Record<string, string>>({})
   const [chips, setChips] = useState<string[]>([])
   const [complaint, setComplaint] = useState("")
+  const [category, setCategory] = useState("")
+  const [diagnosis, setDiagnosis] = useState("")
+  const [urgencyScore, setUrgencyScore] = useState<number | null>(null)
+
   const [aiState, setAiState] = useState<"idle" | "loading" | "done">("idle")
   const [aiResult, setAiResult] =
     useState<ReturnType<typeof buildAIResult> | null>(null)
-  const [savedTime, setSavedTime] = useState<string | null>(null)
   const resultRef = useRef<HTMLDivElement>(null)
+
+  // Persistence
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [savedVisit, setSavedVisit] = useState<{
+    id: string
+    patient: PatientOption
+    time: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (!profile) return
+    let cancelled = false
+    async function fetchPatients() {
+      setPatientsLoading(true)
+      setPatientsError(null)
+      try {
+        let q = supabase
+          .from("patients")
+          .select("id, name, age, sex, village")
+          .order("name")
+        if (profile!.role === "worker" && profile!.clinic_id) {
+          q = q.eq("clinic_id", profile!.clinic_id)
+        }
+        const { data, error } = await q
+        if (error) throw error
+        if (!cancelled) setPatients((data ?? []) as PatientOption[])
+      } catch (err: any) {
+        console.error(err)
+        if (!cancelled)
+          setPatientsError(err.message || "Failed to load patients.")
+      } finally {
+        if (!cancelled) setPatientsLoading(false)
+      }
+    }
+    fetchPatients()
+    return () => {
+      cancelled = true
+    }
+  }, [profile])
+
+  // Pre-select when opened from a patient record
+  useEffect(() => {
+    if (!patientId || patients.length === 0) return
+    const match = patients.find((p) => p.id === patientId)
+    if (match) setSelected(match)
+  }, [patientId, patients])
 
   const set = (key: string, val: string) =>
     setValues((v) => ({ ...v, [key]: val }))
@@ -386,6 +504,23 @@ export default function VitalsPage() {
     setChips((prev) =>
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
     )
+
+  const hasVitals = VITALS.some((v) => !isNaN(parseFloat(values[v.key] ?? "")))
+  const step: 1 | 2 | 3 = !selected ? 1 : hasVitals ? 3 : 2
+
+  const filteredPatients =
+    patientQuery.trim() === ""
+      ? patients.slice(0, 8)
+      : patients
+          .filter((p) => {
+            const q = patientQuery.toLowerCase()
+            return (
+              p.name.toLowerCase().includes(q) ||
+              (p.village ?? "").toLowerCase().includes(q) ||
+              shortId(p.id).toLowerCase().includes(q)
+            )
+          })
+          .slice(0, 8)
 
   const urgencySummary = aiResult
     ? `${aiResult.urgency} urgency. ${aiResult.flags[0]}. Recommended: ${aiResult.actions[0]}.`
@@ -399,6 +534,7 @@ export default function VitalsPage() {
     setTimeout(() => {
       const result = buildAIResult(values, chips, complaint)
       setAiResult(result)
+      setUrgencyScore(AI_URGENCY_SCORE[result.urgency])
       setAiState("done")
       setTimeout(
         () =>
@@ -411,13 +547,86 @@ export default function VitalsPage() {
     }, 2000)
   }
 
-  const handleSave = () => {
-    const t = new Date().toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-    setSavedTime(t)
-    setTimeout(() => setSavedTime(null), 3000)
+  const resetForm = () => {
+    setValues({})
+    setChips([])
+    setComplaint("")
+    setCategory("")
+    setDiagnosis("")
+    setUrgencyScore(null)
+    setAiState("idle")
+    setAiResult(null)
+    setSaveError(null)
+    setSavedVisit(null)
+    if (!patientId) setSelected(null)
+  }
+
+  const handleSave = async () => {
+    if (!selected) {
+      setSaveError("Select a patient before saving the visit.")
+      return
+    }
+    if (!complaint.trim()) {
+      setSaveError("Chief complaint is required.")
+      return
+    }
+    if (!profile || !UUID_RE.test(profile.id)) {
+      setSaveError(
+        "Your session is not linked to a staff record, so this visit cannot be saved. Sign in with a staff account.",
+      )
+      return
+    }
+
+    setSaving(true)
+    setSaveError(null)
+
+    const vitals: Record<string, number> = {}
+    for (const v of VITALS) {
+      const n = parseFloat(values[v.key] ?? "")
+      if (!isNaN(n)) vitals[v.key] = n
+    }
+    const symptoms =
+      chips.length > 0
+        ? `${complaint.trim()}\nReported symptoms: ${chips.join(", ")}`
+        : complaint.trim()
+
+    try {
+      const { data, error } = await supabase
+        .from("visits")
+        .insert([
+          {
+            patient_id: selected.id,
+            staff_id: profile.id,
+            vitals: Object.keys(vitals).length > 0 ? vitals : null,
+            symptoms,
+            symptom_category: category || null,
+            diagnosis: diagnosis.trim() || null,
+            urgency_score: urgencyScore,
+            synced_at: new Date().toISOString(),
+          },
+        ])
+        .select("id")
+        .single()
+
+      if (error) throw error
+
+      setSavedVisit({
+        id: data.id,
+        patient: selected,
+        time: new Date().toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      })
+    } catch (err: any) {
+      console.error(err)
+      setSaveError(
+        err.message ||
+          "Failed to save visit. Check your connection and try again.",
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
   const URGENCY_STYLE: Record<string, {
@@ -446,6 +655,57 @@ export default function VitalsPage() {
     },
   }
 
+  if (savedVisit) {
+    return (
+      <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-10">
+        <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm px-6 py-10 flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              className="w-7 h-7 text-emerald-600"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h1 className="font-display text-2xl text-teal-950">Visit saved</h1>
+          <p className="text-sm text-slate-500 mt-1.5 max-w-sm">
+            Recorded for{" "}
+            <span className="font-semibold text-teal-700">
+              {savedVisit.patient.name}
+            </span>{" "}
+            at {savedVisit.time} and synced to the clinic database.
+          </p>
+          <p className="font-mono text-[11px] text-slate-400 mt-2">
+            Visit {shortId(savedVisit.id)}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-7">
+            <button
+              onClick={resetForm}
+              className="text-sm font-semibold text-teal-700 border border-teal-200 hover:border-teal-400 hover:bg-teal-50 px-4 py-2.5 rounded-xl transition-all"
+            >
+              Record another visit
+            </button>
+            {onSaved && (
+              <button
+                onClick={() => onSaved(savedVisit.patient.id)}
+                className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm shadow-teal-600/20 transition-all hover:-translate-y-0.5"
+              >
+                View patient record
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-10">
       {/* Header */}
@@ -455,34 +715,143 @@ export default function VitalsPage() {
             Vitals & Symptoms
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            Recording for{" "}
-            <span className="font-semibold text-teal-700">Mariama Kouyaté</span>
-            <span className="text-slate-300 mx-1.5">·</span>
-            <span className="font-mono text-xs text-slate-400">PT-00412</span>
+            {selected ? (
+              <>
+                Recording for{" "}
+                <span className="font-semibold text-teal-700">
+                  {selected.name}
+                </span>
+                <span className="text-slate-300 mx-1.5">·</span>
+                <span className="font-mono text-xs text-slate-400">
+                  {shortId(selected.id)}
+                </span>
+              </>
+            ) : (
+              "Select a patient to begin recording a visit"
+            )}
           </p>
         </div>
-        {savedTime && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+      </div>
+
+      {/* Step bar */}
+      <StepBar step={step} />
+
+      {/* ── Patient selection ── */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-6">
+        <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
+          <div className="w-6 h-6 rounded-lg bg-teal-100 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
-              strokeWidth={2}
-              className="w-3.5 h-3.5"
+              strokeWidth={1.8}
+              className="w-3.5 h-3.5 text-teal-600"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M2 8l4 4 8-8"
+                d="M8 8a3 3 0 100-6 3 3 0 000 6zM2.5 14a5.5 5.5 0 0111 0"
               />
             </svg>
-            Saved locally at {savedTime}
+          </div>
+          <h2 className="text-sm font-semibold text-slate-700">Patient</h2>
+          {selected && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelected(null)
+                setPatientQuery("")
+              }}
+              className="ml-auto text-xs font-semibold text-slate-500 hover:text-teal-700 transition-colors"
+            >
+              Change
+            </button>
+          )}
+        </div>
+
+        {selected ? (
+          <div className="flex items-center gap-3 bg-teal-50 border border-teal-100 rounded-xl px-4 py-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+              {initialsOf(selected.name)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-teal-900 truncate">
+                {selected.name}
+              </p>
+              <p className="text-xs text-teal-700">
+                {selected.age ?? "—"} yrs · {sexLabel(selected.sex)} ·{" "}
+                {selected.village ?? "—"}
+              </p>
+            </div>
+            <span className="ml-auto font-mono text-[11px] text-teal-600 bg-white px-1.5 py-0.5 rounded border border-teal-100">
+              {shortId(selected.id)}
+            </span>
+          </div>
+        ) : (
+          <div>
+            <label
+              htmlFor="visit-patient-search"
+              className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2"
+            >
+              Find patient <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="visit-patient-search"
+              type="search"
+              value={patientQuery}
+              onChange={(e) => setPatientQuery(e.target.value)}
+              placeholder="Search by name, village, or patient ID…"
+              disabled={patientsLoading}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all disabled:opacity-60"
+            />
+            {patientsLoading && (
+              <p className="text-xs text-slate-400 mt-3">Loading patients…</p>
+            )}
+            {patientsError && (
+              <p className="text-xs text-red-600 mt-3">{patientsError}</p>
+            )}
+            {!patientsLoading && !patientsError && (
+              <>
+                {filteredPatients.length === 0 ? (
+                  <p className="text-xs text-slate-400 mt-3">
+                    {patients.length === 0
+                      ? "No patients registered for your clinic yet."
+                      : "No patients match your search."}
+                  </p>
+                ) : (
+                  <ul className="mt-3 divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                    {filteredPatients.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelected(p)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50/60 transition-colors"
+                        >
+                          <span className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {initialsOf(p.name)}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-slate-800 truncate">
+                              {p.name}
+                            </span>
+                            <span className="block text-[11px] text-slate-400">
+                              {p.age ?? "—"} yrs · {sexLabel(p.sex)} ·{" "}
+                              {p.village ?? "—"}
+                            </span>
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-400">
+                            {shortId(p.id)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
-
-      {/* Step bar */}
-      <StepBar />
 
       {/* ── Vitals grid ── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-6">
@@ -613,10 +982,14 @@ export default function VitalsPage() {
 
         {/* Chief complaint textarea */}
         <div className="mb-5">
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+          <label
+            htmlFor="visit-complaint"
+            className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2"
+          >
             Chief Complaint <span className="text-red-400">*</span>
           </label>
           <textarea
+            id="visit-complaint"
             rows={4}
             placeholder="In the patient's own words: what brings them in today? Include onset, duration, and severity.&#10;&#10;e.g. 'High fever for 2 days with shivering and body aches. Feels worse at night. No cough.'"
             value={complaint}
@@ -628,6 +1001,32 @@ export default function VitalsPage() {
               {complaint.length} characters
             </span>
           </div>
+        </div>
+
+        {/* Symptom category (structured) */}
+        <div className="mb-5">
+          <label
+            htmlFor="visit-symptom-category"
+            className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2"
+          >
+            Symptom Category
+          </label>
+          <select
+            id="visit-symptom-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+          >
+            <option value="">Not categorised</option>
+            {SYMPTOM_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-400 mt-1.5">
+            Used for outbreak monitoring across clinics.
+          </p>
         </div>
 
         {/* Symptom chips */}
@@ -871,9 +1270,120 @@ export default function VitalsPage() {
         )}
       </div>
 
+      {/* ── Diagnosis & urgency ── */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-6">
+        <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
+          <div className="w-6 h-6 rounded-lg bg-sky-50 flex items-center justify-center">
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              className="w-3.5 h-3.5 text-sky-600"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 2.5h8a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1v-9a1 1 0 011-1zM6 6h4M6 9h4"
+              />
+            </svg>
+          </div>
+          <h2 className="text-sm font-semibold text-slate-700">
+            Diagnosis & Urgency
+          </h2>
+        </div>
+
+        <div className="mb-5">
+          <label
+            htmlFor="visit-diagnosis"
+            className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2"
+          >
+            Diagnosis / Assessment
+          </label>
+          <textarea
+            id="visit-diagnosis"
+            rows={3}
+            placeholder="Working diagnosis and plan. e.g. 'Suspected uncomplicated malaria — RDT ordered. Paracetamol for fever.'"
+            value={diagnosis}
+            onChange={(e) => setDiagnosis(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all resize-none leading-relaxed"
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Urgency Score
+            </p>
+            {aiResult && urgencyScore === AI_URGENCY_SCORE[aiResult.urgency] && (
+              <span className="text-[10px] font-semibold text-violet-600">
+                Suggested by AI check
+              </span>
+            )}
+          </div>
+          <div
+            role="radiogroup"
+            aria-label="Urgency score"
+            className="flex flex-wrap gap-2"
+          >
+            {URGENCY_LEVELS.map((u) => {
+              const on = urgencyScore === u.score
+              return (
+                <button
+                  key={u.score}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setUrgencyScore(on ? null : u.score)}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all ${
+                    on
+                      ? `${u.cls} text-white shadow-sm`
+                      : "bg-white text-slate-600 border-slate-200 hover:border-teal-300 hover:text-teal-700"
+                  }`}
+                >
+                  <span
+                    className={`font-mono text-[10px] ${on ? "opacity-80" : "text-slate-400"}`}
+                  >
+                    {u.score}
+                  </span>
+                  {u.label}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-2">
+            Optional. Clinical judgement overrides any suggested score.
+          </p>
+        </div>
+      </div>
+
+      {saveError && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path strokeLinecap="round" d="M12 8v4m0 4h.01" />
+          </svg>
+          <p className="text-sm font-medium text-red-800">{saveError}</p>
+        </div>
+      )}
+
       {/* ── Navigation buttons ── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex items-center justify-between gap-3">
-        <button className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-teal-700 transition-colors">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={!onBack}
+          className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-teal-700 transition-colors disabled:opacity-40 disabled:hover:text-slate-500"
+        >
           <svg
             viewBox="0 0 16 16"
             fill="none"
@@ -887,33 +1397,61 @@ export default function VitalsPage() {
               d="M10 4L6 8l4 4"
             />
           </svg>
-          Back to Patient
+          Back
         </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSave}
-            className="text-sm font-semibold text-teal-700 border border-teal-200 hover:border-teal-400 hover:bg-teal-50 px-4 py-2.5 rounded-xl transition-all"
-          >
-            Save Draft
-          </button>
-          <button className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm shadow-teal-600/20 hover:shadow-md hover:shadow-teal-600/30 transition-all hover:-translate-y-0.5">
-            Next: Diagnosis
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="w-4 h-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 4l4 4-4 4"
-              />
-            </svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className={`flex items-center gap-2 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-all ${
+            saving
+              ? "bg-teal-400 cursor-wait"
+              : "bg-teal-600 hover:bg-teal-700 shadow-teal-600/20 hover:shadow-md hover:shadow-teal-600/30 hover:-translate-y-0.5"
+          }`}
+        >
+          {saving ? (
+            <>
+              <svg
+                className="animate-spin w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                />
+              </svg>
+              Saving…
+            </>
+          ) : (
+            <>
+              Save Visit
+              <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M2 8l4 4 8-8"
+                />
+              </svg>
+            </>
+          )}
+        </button>
       </div>
     </div>
   )

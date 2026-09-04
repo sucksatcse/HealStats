@@ -269,7 +269,7 @@ const INITIAL: Alert[] = [
   },
 ]
 
-const FILTERS: { key: Kind | "all" label: string }[] = [
+const FILTERS: { key: Kind | "all"; label: string }[] = [
   { key: "all", label: "All" },
   { key: "urgent", label: "High-Urgency" },
   { key: "emergency", label: "Emergency" },
