@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
+// ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
   search: (
     <svg
@@ -418,10 +418,6 @@ function AddStaffModal({
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl px-3.5 py-2.5">
-            <strong>Note:</strong> A Supabase Auth account must be created separately in the Supabase Dashboard before this staff member can log in.
-          </div>
-
           <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
@@ -444,102 +440,7 @@ function AddStaffModal({
   )
 }
 
-// ── Edit Staff modal ──────────────────────────────────────────────────────────
-interface EditStaffModalProps {
-  staff: StaffWithClinic;
-  onClose: () => void;
-  onSaved: () => void;
-}
-function EditStaffModal({ staff, onClose, onSaved }: EditStaffModalProps) {
-  const [name, setName]   = useState(staff.name);
-  const [email, setEmail] = useState(staff.email ?? "");
-  const [role, setRole]   = useState<StaffRole>(staff.role);
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState("");
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) { setError("Name is required."); return; }
-    setSaving(true);
-    const { error: err } = await updateStaffRecord(staff.id, {
-      name: name.trim(),
-      email: email.trim() || undefined,
-      role,
-    });
-    setSaving(false);
-    if (err) { setError(err); return; }
-    onSaved();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-teal-950/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div>
-            <h3 className="font-display text-xl text-teal-950">Edit Staff</h3>
-            <p className="text-xs text-slate-400 mt-0.5">{staff.id}</p>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1">{Icon.close}</button>
-        </div>
-
-        <form onSubmit={submit} noValidate className="px-6 py-5 space-y-4">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-3.5 py-2.5">{error}</div>}
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Full Name</label>
-            <input
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(""); }}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Work Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(""); }}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Role</label>
-            <div className="relative">
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as StaffRole)}
-                className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all cursor-pointer"
-              >
-                {ROLE_OPTIONS.map((r) => (
-                  <option key={r} value={r}>{r === "worker" ? "Health Worker" : "Admin"}</option>
-                ))}
-              </select>
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{Icon.chevronDown}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 py-2.5 rounded-xl transition-colors">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all disabled:opacity-60"
-            >
-              {saving ? "Saving…" : <>{Icon.check} Save Changes</>}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Page ───────────────────────────────────────────────────────────────────────
 export default function StaffPage() {
   const [staff, setStaff] = useState<Staff[]>(INITIAL_STAFF)
   const [query, setQuery] = useState("")
@@ -601,21 +502,13 @@ export default function StaffPage() {
             zones
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={load}
-            className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 bg-white px-4 py-2.5 rounded-xl transition-all"
-          >
-            {Icon.refresh}
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5"
-          >
-            {Icon.plus}
-            Add New Staff
-          </button>
-        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5"
+        >
+          {Icon.plus}
+          Add New Staff
+        </button>
       </div>
 
       {/* Toolbar */}
@@ -627,7 +520,7 @@ export default function StaffPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, role, email, or ID…"
+            placeholder="Search by name, role, zone, or ID…"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
           />
         </div>
@@ -647,14 +540,6 @@ export default function StaffPage() {
           ))}
         </div>
       </div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-          {error}
-          <button onClick={load} className="ml-3 font-semibold underline">Retry</button>
-        </div>
-      )}
 
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -777,7 +662,7 @@ export default function StaffPage() {
           </table>
         </div>
 
-        {!loading && filtered.length === 0 && (
+        {filtered.length === 0 && (
           <div className="py-16 text-center">
             <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
               {Icon.search}
@@ -791,7 +676,8 @@ export default function StaffPage() {
           </div>
         )}
 
-        {!loading && filtered.length > 0 && (
+        {/* Footer */}
+        {filtered.length > 0 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-slate-50/40">
             <p className="text-xs text-slate-400">
               Showing{" "}
