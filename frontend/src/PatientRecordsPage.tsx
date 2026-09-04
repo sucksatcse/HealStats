@@ -1,7 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PatientFormPage, { type PatientRecord } from "./PatientFormPage";
+import { useAuth } from "./AuthContext";
+import { fetchPatients } from "./lib/adminService";
+import { urgencyFromScore, shortId, initials, type UrgencyLevel, type PatientWithLatestVisit } from "./lib/types";
 
-// ── Icons ────────────────────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const Icon = {
   search: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
@@ -39,68 +42,67 @@ const Icon = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M2 3h12l-4.5 5.5V13l-3 1.5V8.5L2 3z" />
     </svg>
   ),
+  refresh: (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8a5 5 0 015-5c2.1 0 3.8 1.2 4.6 3M13 8a5 5 0 01-5 5c-2.1 0-3.8-1.2-4.6-3" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 3v3h-3M3 13v-3h3" />
+    </svg>
+  ),
 };
 
-// ── Data ───────────────────────────────────────────────────────────────────────
-type Urgency = "Critical" | "High" | "Moderate" | "Low" | "Stable";
-
-type PatientRow = {
-  id: string;
-  name: string;
-  age: number;
-  gender: "F" | "M";
-  village: string;
-  lastVisit: string;
-  lastVisitSort: number; // days ago, for sorting
-  urgency: Urgency;
-  initials: string;
-  color: string;
-};
-
-const RECORDS: PatientRow[] = [
-  { id: "PT-00412", name: "Mariama Kouyaté", age: 34, gender: "F", village: "Diamou", lastVisit: "Today", lastVisitSort: 0, urgency: "High", initials: "MK", color: "bg-rose-100 text-rose-700" },
-  { id: "PT-00389", name: "Ibrahim Traoré", age: 52, gender: "M", village: "Sadiola", lastVisit: "Today", lastVisitSort: 0, urgency: "Moderate", initials: "IT", color: "bg-violet-100 text-violet-700" },
-  { id: "PT-00401", name: "Fanta Diallo", age: 27, gender: "F", village: "Kéniéba", lastVisit: "Yesterday", lastVisitSort: 1, urgency: "Low", initials: "FD", color: "bg-pink-100 text-pink-700" },
-  { id: "PT-00376", name: "Oumar Coulibaly", age: 8, gender: "M", village: "Diamou", lastVisit: "Yesterday", lastVisitSort: 1, urgency: "Critical", initials: "OC", color: "bg-sky-100 text-sky-700" },
-  { id: "PT-00365", name: "Kadiatou Baldé", age: 61, gender: "F", village: "Yélimané", lastVisit: "2 days ago", lastVisitSort: 2, urgency: "High", initials: "KB", color: "bg-amber-100 text-amber-700" },
-  { id: "PT-00358", name: "Sekou Bah", age: 19, gender: "M", village: "Sadiola", lastVisit: "3 days ago", lastVisitSort: 3, urgency: "Stable", initials: "SB", color: "bg-teal-100 text-teal-700" },
-  { id: "PT-00344", name: "Aminata Sané", age: 45, gender: "F", village: "Kéniéba", lastVisit: "4 days ago", lastVisitSort: 4, urgency: "Moderate", initials: "AS", color: "bg-indigo-100 text-indigo-700" },
-  { id: "PT-00331", name: "Modibo Keïta", age: 70, gender: "M", village: "Yélimané", lastVisit: "5 days ago", lastVisitSort: 5, urgency: "Critical", initials: "MK", color: "bg-emerald-100 text-emerald-700" },
-  { id: "PT-00318", name: "Rokia Cissé", age: 3, gender: "F", village: "Diamou", lastVisit: "1 week ago", lastVisitSort: 7, urgency: "Low", initials: "RC", color: "bg-fuchsia-100 text-fuchsia-700" },
-  { id: "PT-00305", name: "Bakary Konaté", age: 38, gender: "M", village: "Sadiola", lastVisit: "1 week ago", lastVisitSort: 7, urgency: "Stable", initials: "BK", color: "bg-cyan-100 text-cyan-700" },
-  { id: "PT-00292", name: "Assitan Doumbia", age: 29, gender: "F", village: "Kéniéba", lastVisit: "2 weeks ago", lastVisitSort: 14, urgency: "Moderate", initials: "AD", color: "bg-orange-100 text-orange-700" },
-  { id: "PT-00281", name: "Yacouba Sidibé", age: 56, gender: "M", village: "Yélimané", lastVisit: "2 weeks ago", lastVisitSort: 14, urgency: "High", initials: "YS", color: "bg-lime-100 text-lime-700" },
-  { id: "PT-00270", name: "Nana Traoré", age: 12, gender: "F", village: "Diamou", lastVisit: "3 weeks ago", lastVisitSort: 21, urgency: "Low", initials: "NT", color: "bg-rose-100 text-rose-700" },
-  { id: "PT-00263", name: "Salif Diarra", age: 64, gender: "M", village: "Sadiola", lastVisit: "3 weeks ago", lastVisitSort: 21, urgency: "Stable", initials: "SD", color: "bg-violet-100 text-violet-700" },
-  { id: "PT-00251", name: "Hawa Camara", age: 41, gender: "F", village: "Kéniéba", lastVisit: "1 month ago", lastVisitSort: 30, urgency: "Critical", initials: "HC", color: "bg-sky-100 text-sky-700" },
-  { id: "PT-00240", name: "Adama Fofana", age: 24, gender: "M", village: "Yélimané", lastVisit: "1 month ago", lastVisitSort: 30, urgency: "Moderate", initials: "AF", color: "bg-amber-100 text-amber-700" },
-  { id: "PT-00229", name: "Djeneba Touré", age: 33, gender: "F", village: "Diamou", lastVisit: "5 weeks ago", lastVisitSort: 35, urgency: "Low", initials: "DT", color: "bg-teal-100 text-teal-700" },
-  { id: "PT-00218", name: "Moussa Samaké", age: 49, gender: "M", village: "Sadiola", lastVisit: "6 weeks ago", lastVisitSort: 42, urgency: "High", initials: "MS", color: "bg-indigo-100 text-indigo-700" },
-];
-
-const URGENCY_CLS: Record<Urgency, string> = {
+// ── Urgency badge config ───────────────────────────────────────────────────────
+const URGENCY_CLS: Record<UrgencyLevel, string> = {
   Critical: "bg-red-50 text-red-700 border-red-200",
-  High: "bg-orange-50 text-orange-700 border-orange-200",
+  High:     "bg-orange-50 text-orange-700 border-orange-200",
   Moderate: "bg-amber-50 text-amber-700 border-amber-200",
-  Low: "bg-sky-50 text-sky-700 border-sky-200",
-  Stable: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Low:      "bg-sky-50 text-sky-700 border-sky-200",
+  Stable:   "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
-
-const URGENCY_DOT: Record<Urgency, string> = {
+const URGENCY_DOT: Record<UrgencyLevel, string> = {
   Critical: "bg-red-500",
-  High: "bg-orange-500",
+  High:     "bg-orange-500",
   Moderate: "bg-amber-500",
-  Low: "bg-sky-500",
-  Stable: "bg-emerald-500",
+  Low:      "bg-sky-500",
+  Stable:   "bg-emerald-500",
 };
 
-const URGENCY_OPTIONS: (Urgency | "All")[] = ["All", "Critical", "High", "Moderate", "Low", "Stable"];
-const VILLAGES = ["Diamou", "Sadiola", "Kéniéba", "Yélimané"];
-const VILLAGE_OPTIONS = ["All", ...VILLAGES];
+const URGENCY_OPTIONS: (UrgencyLevel | "All")[] = ["All", "Critical", "High", "Moderate", "Low", "Stable"];
 const PAGE_SIZE = 8;
 
-// ── Filter dropdown ──────────────────────────────────────────────────────────────
-function Dropdown({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+// ── Avatar colour palette (deterministic from first char of name) ──────────────
+const AVATAR_COLOURS = [
+  "bg-teal-100 text-teal-700",
+  "bg-violet-100 text-violet-700",
+  "bg-sky-100 text-sky-700",
+  "bg-rose-100 text-rose-700",
+  "bg-amber-100 text-amber-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-indigo-100 text-indigo-700",
+  "bg-pink-100 text-pink-700",
+  "bg-fuchsia-100 text-fuchsia-700",
+  "bg-orange-100 text-orange-700",
+];
+function avatarColour(name: string): string {
+  const idx = (name.charCodeAt(0) || 0) % AVATAR_COLOURS.length;
+  return AVATAR_COLOURS[idx];
+}
+
+/** Format a visit date relative to now. */
+function formatVisitDate(iso: string | undefined): string {
+  if (!iso) return "No visits";
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  if (diff < 7)  return `${diff} days ago`;
+  if (diff < 14) return "1 week ago";
+  if (diff < 30) return `${Math.floor(diff / 7)} weeks ago`;
+  return `${Math.floor(diff / 30)} month${Math.floor(diff / 30) > 1 ? "s" : ""} ago`;
+}
+
+// ── Filter dropdown ───────────────────────────────────────────────────────────
+function Dropdown({ label, value, options, onChange }: {
+  label: string; value: string; options: string[]; onChange: (v: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -142,20 +144,77 @@ function Dropdown({ label, value, options, onChange }: { label: string; value: s
   );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────────
+// ── Skeleton row ──────────────────────────────────────────────────────────────
+function SkeletonRow() {
+  return (
+    <tr className="animate-pulse border-b border-slate-100">
+      {[40, 140, 60, 80, 80, 90, 32].map((w, i) => (
+        <td key={i} className="px-5 py-4">
+          <div className="h-4 bg-slate-100 rounded" style={{ width: w }} />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function PatientRecordsPage() {
-  const [query, setQuery] = useState("");
-  const [urgency, setUrgency] = useState("All");
-  const [village, setVillage] = useState("All");
-  const [page, setPage] = useState(1);
-  const [form, setForm] = useState<{ mode: "add" } | { mode: "edit"; patient: PatientRecord } | null>(null);
-  const [toast, setToast] = useState("");
+  const { profile } = useAuth();
+
+  const [query, setQuery]       = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [urgency, setUrgency]   = useState<UrgencyLevel | "All">("All");
+  const [page, setPage]         = useState(1);
+  const [form, setForm]         = useState<{ mode: "add" } | { mode: "edit"; patient: PatientRecord } | null>(null);
+  const [toast, setToast]       = useState("");
+
+  // Data state
+  const [rows, setRows]     = useState<PatientWithLatestVisit[]>([]);
+  const [total, setTotal]   = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState<string | null>(null);
 
   const flash = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2800); };
 
-  const openEdit = (r: PatientRow) => setForm({
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedQuery(query); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(1); }, [urgency]);
+
+  // ── Fetch patients ──────────────────────────────────────────────────────────
+  const load = useCallback(() => {
+    setLoading(true);
+    fetchPatients({
+      clinicId: profile?.clinic_id ?? null,
+      query: debouncedQuery,
+      urgencyFilter: urgency,
+      page,
+      pageSize: PAGE_SIZE,
+    }).then(({ data, count, error: err }) => {
+      setRows(data);
+      setTotal(count);
+      setError(err);
+      setLoading(false);
+    });
+  }, [profile?.clinic_id, debouncedQuery, urgency, page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // ── Edit handler ────────────────────────────────────────────────────────────
+  const openEdit = (p: PatientWithLatestVisit) => setForm({
     mode: "edit",
-    patient: { id: r.id, name: r.name, age: r.age, gender: r.gender === "F" ? "Female" : "Male", village: r.village, urgency: r.urgency },
+    patient: {
+      id: p.id,
+      name: p.name,
+      age: p.age ?? 0,
+      gender: p.sex === "Female" || p.sex === "F" ? "Female" : "Male",
+      village: p.village ?? "",
+      urgency: urgencyFromScore(p.latest_visit?.urgency_score),
+    },
   });
 
   if (form) {
@@ -163,34 +222,17 @@ export default function PatientRecordsPage() {
       <PatientFormPage
         patient={form.mode === "edit" ? form.patient : null}
         onCancel={() => setForm(null)}
-        onSave={(rec) => { setForm(null); flash(`${rec.name || "Record"} ${form.mode === "edit" ? "updated" : "created"}`); }}
+        onSave={(rec) => {
+          setForm(null);
+          flash(`${rec.name || "Record"} ${form.mode === "edit" ? "updated" : "created"}`);
+          load();
+        }}
       />
     );
   }
 
-  const filtered = useMemo(() => {
-    const result = RECORDS.filter((r) => {
-      const matchesQuery =
-        query === "" ||
-        r.name.toLowerCase().includes(query.toLowerCase()) ||
-        r.id.toLowerCase().includes(query.toLowerCase()) ||
-        r.village.toLowerCase().includes(query.toLowerCase());
-      const matchesUrgency = urgency === "All" || r.urgency === urgency;
-      const matchesVillage = village === "All" || r.village === village;
-      return matchesQuery && matchesUrgency && matchesVillage;
-    });
-    return result;
-  }, [query, urgency, village]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-
-  // Reset to page 1 whenever filters change
-  const resetPage = () => setPage(1);
-
-  const criticalCount = RECORDS.filter((r) => r.urgency === "Critical").length;
-  const activeFilters = (urgency !== "All" ? 1 : 0) + (village !== "All" ? 1 : 0);
+  const totalPages   = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const activeFilters = (urgency !== "All" ? 1 : 0);
 
   return (
     <div className="space-y-6">
@@ -200,15 +242,17 @@ export default function PatientRecordsPage() {
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950">Patient Records</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {RECORDS.length} records across {VILLAGES.length} villages · {criticalCount} flagged critical
+            {loading ? "Loading…" : `${total.toLocaleString()} record${total !== 1 ? "s" : ""} found`}
+            {urgency !== "All" && ` · filtered by ${urgency}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 bg-white px-4 py-2.5 rounded-xl transition-all">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v8M4.5 6.5L8 10l3.5-3.5M2.5 13.5h11" />
-            </svg>
-            Export CSV
+          <button
+            onClick={load}
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 bg-white px-4 py-2.5 rounded-xl transition-all"
+          >
+            {Icon.refresh}
+            Refresh
           </button>
           <button
             onClick={() => setForm({ mode: "add" })}
@@ -222,28 +266,40 @@ export default function PatientRecordsPage() {
         </div>
       </div>
 
-      {/* Toolbar: search + filters */}
+      {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[240px] max-w-md">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{Icon.search}</span>
           <input
             value={query}
-            onChange={(e) => { setQuery(e.target.value); resetPage(); }}
-            placeholder="Search by name, patient ID, or village…"
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by patient name…"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
           />
         </div>
-        <Dropdown label="Urgency" value={urgency} options={URGENCY_OPTIONS} onChange={(v) => { setUrgency(v); resetPage(); }} />
-        <Dropdown label="Village" value={village} options={VILLAGE_OPTIONS} onChange={(v) => { setVillage(v); resetPage(); }} />
+        <Dropdown label="Urgency" value={urgency} options={URGENCY_OPTIONS} onChange={(v) => setUrgency(v as UrgencyLevel | "All")} />
         {activeFilters > 0 && (
           <button
-            onClick={() => { setUrgency("All"); setVillage("All"); resetPage(); }}
+            onClick={() => { setUrgency("All"); }}
             className="text-xs font-semibold text-slate-500 hover:text-red-600 px-3 py-2.5 transition-colors"
           >
             Clear filters ({activeFilters})
           </button>
         )}
+        {urgency !== "All" && (
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-lg">
+            Urgency filter fetches all matching patients — pagination counts reflect filtered results.
+          </p>
+        )}
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          {error}
+          <button onClick={load} className="ml-3 font-semibold underline">Retry</button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -253,7 +309,7 @@ export default function PatientRecordsPage() {
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {["Patient ID", "Name", "Age", "Village", "Last Visit", "Urgency Level"].map((col) => (
                   <th key={col} className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    <span className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600 transition-colors">
+                    <span className="inline-flex items-center gap-1">
                       {col}
                       <span className="text-slate-300">{Icon.sort}</span>
                     </span>
@@ -263,102 +319,115 @@ export default function PatientRecordsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {pageRows.map((r) => (
-                <tr key={r.id} className="group hover:bg-teal-50/40 transition-colors">
-                  {/* ID */}
-                  <td className="px-5 py-4">
-                    <span className="text-xs font-mono font-semibold text-slate-500">{r.id}</span>
-                  </td>
-                  {/* Name */}
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${r.color}`}>
-                        {r.initials}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{r.name}</p>
-                        <p className="text-[11px] text-slate-400">{r.gender === "F" ? "Female" : "Male"}</p>
-                      </div>
-                    </div>
-                  </td>
-                  {/* Age */}
-                  <td className="px-5 py-4">
-                    <span className="text-sm text-slate-600">{r.age} yrs</span>
-                  </td>
-                  {/* Village */}
-                  <td className="px-5 py-4">
-                    <span className="text-sm text-slate-600">{r.village}</span>
-                  </td>
-                  {/* Last Visit */}
-                  <td className="px-5 py-4">
-                    <span className="text-sm text-slate-500">{r.lastVisit}</span>
-                  </td>
-                  {/* Urgency */}
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${URGENCY_CLS[r.urgency]}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${URGENCY_DOT[r.urgency]}`} />
-                      {r.urgency}
-                    </span>
-                  </td>
-                  {/* View */}
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => openEdit(r)}
-                        className="p-2 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Edit record"
-                      >
-                        {Icon.view}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {loading
+                ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonRow key={i} />)
+                : rows.map((p) => {
+                    const level  = urgencyFromScore(p.latest_visit?.urgency_score);
+                    const colour = avatarColour(p.name);
+                    const inits  = initials(p.name);
+                    return (
+                      <tr key={p.id} className="group hover:bg-teal-50/40 transition-colors">
+                        {/* ID */}
+                        <td className="px-5 py-4">
+                          <span className="text-xs font-mono font-semibold text-slate-500">{shortId(p.id)}</span>
+                        </td>
+                        {/* Name */}
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${colour}`}>
+                              {inits}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
+                              <p className="text-[11px] text-slate-400">{p.sex ?? "—"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        {/* Age */}
+                        <td className="px-5 py-4">
+                          <span className="text-sm text-slate-600">{p.age != null ? `${p.age} yrs` : "—"}</span>
+                        </td>
+                        {/* Village */}
+                        <td className="px-5 py-4">
+                          <span className="text-sm text-slate-600">{p.village ?? "—"}</span>
+                        </td>
+                        {/* Last Visit */}
+                        <td className="px-5 py-4">
+                          <span className="text-sm text-slate-500">{formatVisitDate(p.latest_visit?.created_at)}</span>
+                        </td>
+                        {/* Urgency */}
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${URGENCY_CLS[level]}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${URGENCY_DOT[level]}`} />
+                            {level}
+                            {p.latest_visit?.urgency_score != null && (
+                              <span className="opacity-60">· {p.latest_visit.urgency_score}</span>
+                            )}
+                          </span>
+                        </td>
+                        {/* View */}
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => openEdit(p)}
+                              className="p-2 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100"
+                              title="View / edit record"
+                            >
+                              {Icon.view}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+              }
             </tbody>
           </table>
         </div>
 
-        {filtered.length === 0 && (
+        {/* Empty state */}
+        {!loading && !error && rows.length === 0 && (
           <div className="py-16 text-center">
             <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
               {Icon.search}
             </div>
             <p className="text-sm font-medium text-slate-500">No records match your search</p>
-            <p className="text-xs text-slate-400 mt-1">Try a different name, ID, or clear your filters</p>
+            <p className="text-xs text-slate-400 mt-1">Try a different name or clear your filters</p>
           </div>
         )}
 
         {/* Pagination */}
-        {filtered.length > 0 && (
+        {!loading && rows.length > 0 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-slate-50/40 flex-wrap gap-3">
             <p className="text-xs text-slate-400">
-              Showing <span className="font-semibold text-slate-600">{(safePage - 1) * PAGE_SIZE + 1}</span>–
-              <span className="font-semibold text-slate-600">{Math.min(safePage * PAGE_SIZE, filtered.length)}</span> of{" "}
-              <span className="font-semibold text-slate-600">{filtered.length}</span> records
+              Showing <span className="font-semibold text-slate-600">{(page - 1) * PAGE_SIZE + 1}</span>–
+              <span className="font-semibold text-slate-600">{Math.min(page * PAGE_SIZE, total)}</span> of{" "}
+              <span className="font-semibold text-slate-600">{total.toLocaleString()}</span> records
             </p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
+                disabled={page === 1}
                 className="flex items-center gap-1 text-xs font-semibold text-slate-500 px-2.5 py-1.5 rounded-lg hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               >
                 {Icon.chevronLeft}
                 Prev
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
                   className={`text-xs font-semibold w-7 h-7 rounded-lg transition-colors ${
-                    p === safePage ? "bg-teal-600 text-white" : "text-slate-500 hover:bg-white"
+                    p === page ? "bg-teal-600 text-white" : "text-slate-500 hover:bg-white"
                   }`}
                 >
                   {p}
                 </button>
               ))}
+              {totalPages > 7 && <span className="text-slate-400 text-xs px-1">…{totalPages}</span>}
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
+                disabled={page === totalPages}
                 className="flex items-center gap-1 text-xs font-semibold text-slate-500 px-2.5 py-1.5 rounded-lg hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               >
                 Next

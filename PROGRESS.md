@@ -91,6 +91,10 @@ Based on the original plan in `FEATURES.md`, the following checkboxes have been 
 - [x] Implement role-based routing: Health Worker / Doctor / Admin / Coordinator
 - [x] English & Bangla (Bengali) context setup
 - [x] Dark Mode context setup
+- [x] Admin Dashboard stats cards wired to real Supabase metrics with resilient parallel fetching (`AdminDashboardPage.tsx`)
+- [x] Patient Directory wired to Supabase `patients` table with server-side ILIKE search, pagination, and latest visit urgency badge (`PatientRecordsPage.tsx`)
+- [x] Staff Management UI wired to Supabase `staff` table with clinic joins, Add/Edit modals, and soft deactivation (`StaffPage.tsx`)
+- [x] Flagged Patients page wired to Supabase `visits` with latest-visit deduplication and coordinator assignments (`FlaggedPatientsPage.tsx`)
 
 ### 🚨 Pending / Needs to be Added (⬜)
 
@@ -108,12 +112,11 @@ The following components, infrastructure, and integrations are explicitly missin
 - [ ] **Sync Status UI Hookup**: The `SyncMonitorPage.tsx` and `SyncPage.tsx` are static placeholders; they need to read from the actual background queue to display true syncing status.
 
 #### 3. Data Fetching & UI Wiring (CRUD)
-- *Note: All 30+ React pages are currently static "shells" and contain no actual data-fetching logic.*
+- *Note: Admin panel pages (AdminDashboardPage, PatientRecordsPage, StaffPage, FlaggedPatientsPage) and authentication are now fully wired to Supabase. The following clinical worker pages remain pending:*
 - [ ] **Patient Registration**: `NewPatientPage.tsx` needs to be wired to `supabase.from('patients').insert(...)`.
-- [ ] **Patient Retrieval**: `PatientRecordsPage.tsx` and `PatientDetailPage.tsx` need to execute `SELECT` queries to fetch patient history and visits.
+- [ ] **Patient Details & History**: `PatientDetailPage.tsx` needs to execute `SELECT` queries to fetch patient history and visits.
 - [ ] **Vitals & Forms**: `VitalsPage.tsx` needs mutation logic to save triage data to the `visits` table.
 - [ ] **Form Validation & State**: No robust form validation libraries (e.g., Zod, React Hook Form) are integrated. Form error states and toast notifications (except for static examples) are missing.
-- [ ] **Loading States**: Skeletons and spinners are not dynamically triggered by network/data loading states.
 
 #### 4. AI, ML & OCR Integrations
 - [ ] **Triage Scoring Model**: The ML or rule-based algorithm to instantly score a patient's urgency during intake does not exist.
