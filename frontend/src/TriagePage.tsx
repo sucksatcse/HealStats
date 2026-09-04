@@ -328,7 +328,7 @@ function useTypewriter(text: string, active: boolean) {
 }
 
 // ── Saved / escalated toast ───────────────────────────────────────────────────
-function Toast({ message, onDone }: { message: string onDone: () => void }) {
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3000)
     return () => clearTimeout(t)

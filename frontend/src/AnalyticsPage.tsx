@@ -374,7 +374,7 @@ function UrgencyDonut() {
 
 // ── Heatmap: village × day intensity ─────────────────────────────────────────────
 function VillageHeatmap() {
-  const [hover, setHover] = useState<{ v: number d: number } | null>(null)
+  const [hover, setHover] = useState<{ v: number; d: number } | null>(null)
   // Sequential teal ramp (light→dark), monotonic lightness
   const shade = (v: number) => {
     if (v < 20) return "#f0fdfa"

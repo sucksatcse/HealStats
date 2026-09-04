@@ -118,7 +118,7 @@ const ZONES = [
   },
 ]
 
-const SEVERITY: Record<string, { chip: string bar: string dot: string }> = {
+const SEVERITY: Record<string, { chip: string; bar: string; dot: string }> = {
   Critical: {
     chip: "bg-red-100 text-red-700 border-red-300",
     bar: "bg-red-500",

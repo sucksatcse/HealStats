@@ -452,7 +452,7 @@ function ColorGroup({
   onCopy,
 }: {
   title: string
-  swatches: { name: string hex: string note?: string }[]
+  swatches: { name: string; hex: string; note?: string }[]
   copied: string | null
   onCopy: (hex: string) => void
 }) {
@@ -524,7 +524,7 @@ function BadgeRow({
   )
 }
 
-function Badge({ cls, children }: { cls: string children: React.ReactNode }) {
+function Badge({ cls, children }: { cls: string; children: React.ReactNode }) {
   return (
     <span
       className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${cls}`}

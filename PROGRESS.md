@@ -108,10 +108,10 @@ The following components, infrastructure, and integrations are explicitly missin
 - [ ] **Sync Status UI Hookup**: The `SyncMonitorPage.tsx` and `SyncPage.tsx` are static placeholders; they need to read from the actual background queue to display true syncing status.
 
 #### 3. Data Fetching & UI Wiring (CRUD)
-- *Note: All 30+ React pages are currently static "shells" and contain no actual data-fetching logic.*
+- *Note: Patient Registration, Patient List, Patient Detail and Visit Recording are wired to Supabase. All other pages (Admin, Emergency, Sync, Triage, Digitize, etc.) remain static shells.*
 - [x] **Patient Registration**: `NewPatientPage.tsx` needs to be wired to `supabase.from('patients').insert(...)`.
-- [ ] **Patient Retrieval**: `PatientRecordsPage.tsx` (Completed: wired to fetch from Supabase) and `PatientDetailPage.tsx` (Pending) need to execute `SELECT` queries to fetch patient history and visits.
-- [ ] **Vitals & Forms**: `VitalsPage.tsx` needs mutation logic to save triage data to the `visits` table.
+- [x] **Patient Retrieval**: `PatientRecordsPage.tsx` (wired to fetch from Supabase) and `PatientDetailPage.tsx` (Task 6: fetches the patient plus their `visits` with `staff(name)` and `clinics(name)` joins; Vitals History, Visit History and Diagnoses tabs render real data with honest empty states).
+- [x] **Vitals & Forms**: `VitalsPage.tsx` (Task 6) inserts into `visits` with `patient_id` (from an in-form patient selector or pre-selected from Patient Detail), `staff_id` from `AuthContext.profile.id`, `vitals` JSONB, `symptoms` (free text + selected chips), `symptom_category` (dropdown: diarrhea/gastrointestinal, fever, respiratory, skin/rash, other), `diagnosis`, `urgency_score` (1–5, pre-filled by the AI check, worker can override) and `synced_at`.
 - [ ] **Form Validation & State**: No robust form validation libraries (e.g., Zod, React Hook Form) are integrated. Form error states and toast notifications (except for static examples) are missing.
 - [ ] **Loading States**: Skeletons and spinners are not dynamically triggered by network/data loading states.
 

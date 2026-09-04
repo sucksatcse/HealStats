@@ -141,7 +141,7 @@ const Icon = {
 }
 
 // ── Toggle switch ─────────────────────────────────────────────────────────────────
-function Toggle({ on, onChange }: { on: boolean onChange: () => void }) {
+function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
     <button
       type="button"
