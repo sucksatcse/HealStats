@@ -206,8 +206,8 @@ npm install
 1. Copy the example file at the root of the project: `cp .env.example .env`
 2. Open `.env` and fill it with your exact credentials:
    ```env
-   VITE_SUPABASE_URL="https://your-project-id.supabase.co"
-   VITE_SUPABASE_ANON_KEY="your-anon-key"
+      VITE_SUPABASE_URL="https://ckcovsgmiykenokkvxrk.supabase.co"
+      VITE_SUPABASE_ANON_KEY="sb_publishable_GoqHBw-ekCFPlMHCkDKUdg_U2-IKgIh"
    ```
 
 *Note: Never commit `.env` to version control. Never expose your Supabase `service_role` key.*
