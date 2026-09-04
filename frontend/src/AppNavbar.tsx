@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { useLang } from "./LanguageContext";
-import { useTheme } from "./ThemeContext";
-import { useAuth } from "./AuthContext";
+import { useState, useRef, useEffect } from "react"
+import { useLang } from "./LanguageContext"
+import { useTheme } from "./ThemeContext"
+import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
    HealthStats — single unified navbar used by every page.
@@ -20,86 +20,125 @@ import { useAuth } from "./AuthContext";
 
 /* ── Landing-page anchor links ── */
 const LANDING_LINKS = [
-  { en: "Features",      bn: "বৈশিষ্ট্য",   href: "#features" },
-  { en: "How It Works",  bn: "কীভাবে কাজ করে", href: "#how-it-works-detail" },
-  { en: "Testimonials",  bn: "প্রশংসাপত্র",  href: "#testimonials" },
-  { en: "Pricing",       bn: "মূল্য",        href: "#pricing" },
-];
+  { en: "Features", bn: "বৈশিষ্ট্য", href: "#features" },
+  { en: "How It Works", bn: "কীভাবে কাজ করে", href: "#how-it-works-detail" },
+  { en: "Testimonials", bn: "প্রশংসাপত্র", href: "#testimonials" },
+  { en: "Pricing", bn: "মূল্য", href: "#pricing" },
+]
 
 /* ── Props ── */
 interface AppNavbarProps {
-  variant?: "landing" | "app";
+  variant?: "landing" | "app"
 
   /* landing CTA callbacks — omit to hide the button */
-  onPatientLookup?: () => void;
-  onAdminLogin?: () => void;
-  onLogin?: () => void;
+  onPatientLookup?: () => void
+  onAdminLogin?: () => void
+  onLogin?: () => void
 
   /* app-header props */
-  onSidebarOpen?: () => void;
-  searchValue?: string;
-  onSearchChange?: (value: string) => void;
-  searchPlaceholder?: string;
-  isOnline?: boolean;
-  onlineText?: string;
-  offlineText?: string;
-  onNotifications?: () => void;
-  notificationCount?: number;
-  userInitials?: string;
-  userColor?: "teal" | "violet";
-  breadcrumb?: string;
+  onSidebarOpen?: () => void
+  searchValue?: string
+  onSearchChange?: (value: string) => void
+  searchPlaceholder?: string
+  isOnline?: boolean
+  onlineText?: string
+  offlineText?: string
+  onNotifications?: () => void
+  notificationCount?: number
+  userInitials?: string
+  userColor?: "teal" | "violet"
+  breadcrumb?: string
 }
 
 /* ── Icons ── */
 function SunIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="w-[18px] h-[18px]">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      className="w-[18px] h-[18px]"
+    >
       <circle cx="12" cy="12" r="4" />
-      <line x1="12" y1="2"  x2="12" y2="5"  />
+      <line x1="12" y1="2" x2="12" y2="5" />
       <line x1="12" y1="19" x2="12" y2="22" />
-      <line x1="4.22"  y1="4.22"  x2="6.34"  y2="6.34"  />
+      <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
       <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
-      <line x1="2"  y1="12" x2="5"  y2="12" />
+      <line x1="2" y1="12" x2="5" y2="12" />
       <line x1="19" y1="12" x2="22" y2="12" />
-      <line x1="4.22"  y1="19.78" x2="6.34"  y2="17.66" />
-      <line x1="17.66" y1="6.34"  x2="19.78" y2="4.22"  />
+      <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
+      <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
     </svg>
-  );
+  )
 }
 
 function MoonIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-[18px] h-[18px]"
+    >
       <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
     </svg>
-  );
+  )
 }
 
 function UserIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-[18px] h-[18px]"
+    >
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
-  );
+  )
 }
 
 function BellIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-5 h-5"
+    >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
-  );
+  )
 }
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4"
+    >
       <circle cx="11" cy="11" r="8" />
       <path d="M21 21l-4.35-4.35" />
     </svg>
-  );
+  )
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -122,50 +161,64 @@ export default function AppNavbar({
   userColor = "teal",
   breadcrumb,
 }: AppNavbarProps) {
-  const { lang, toggleLang } = useLang();
-  const { dark, toggleDark } = useTheme();
-  const { signOut, profile } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { lang, toggleLang } = useLang()
+  const { dark, toggleDark } = useTheme()
+  const { signOut, profile } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   // Close user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-  const isApp = variant === "app";
+  const isApp = variant === "app"
 
   /* Avatar styling — app shows initials, landing shows silhouette icon */
-  const avatarBase = "w-9 h-9 rounded-full flex items-center justify-center text-white transition-all duration-200 ring-2 ring-transparent shadow-sm flex-shrink-0";
+  const avatarBase =
+    "w-9 h-9 rounded-full flex items-center justify-center text-white transition-all duration-200 ring-2 ring-transparent shadow-sm flex-shrink-0"
   const avatarColor =
     userColor === "violet"
       ? "bg-violet-500 hover:bg-violet-600 hover:ring-violet-300 dark:hover:ring-violet-600 shadow-violet-500/20"
-      : "bg-teal-600 hover:bg-teal-700 hover:ring-teal-300 dark:hover:ring-teal-600 shadow-teal-600/20";
+      : "bg-teal-600 hover:bg-teal-700 hover:ring-teal-300 dark:hover:ring-teal-600 shadow-teal-600/20"
 
   /* Shared right-side controls (both variants) */
   const rightControls = (
     <>
       {/* Connectivity badge — app only */}
       {isApp && isOnline !== undefined && (
-        <div className={`hidden sm:flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full border transition-colors ${
-          isOnline
-            ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-            : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+        <div
+          className={`hidden sm:flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full border transition-colors ${
+            isOnline
+              ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+              : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+              isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+            }`}
+          />
           {isOnline ? onlineText : offlineText}
         </div>
       )}
 
       {/* ── Language pill ── */}
-      <div role="group" aria-label="Select language" className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-[3px] border border-slate-200 dark:border-slate-700">
+      <div
+        role="group"
+        aria-label="Select language"
+        className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-[3px] border border-slate-200 dark:border-slate-700"
+      >
         <button
           onClick={() => lang !== "en" && toggleLang()}
           aria-pressed={lang === "en"}
@@ -225,8 +278,8 @@ export default function AppNavbar({
 
       {/* ── User avatar ── */}
       <div className="relative" ref={userMenuRef}>
-        <button 
-          className={`${avatarBase} ${avatarColor}`} 
+        <button
+          className={`${avatarBase} ${avatarColor}`}
           aria-label="Your profile"
           onClick={() => setUserMenuOpen(!userMenuOpen)}
         >
@@ -242,19 +295,33 @@ export default function AppNavbar({
           <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-700 py-1.5 z-50 animate-slide-up">
             {profile && (
               <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 mb-1">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{profile.name}</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">{profile.role}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                  {profile.name}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
+                  {profile.role}
+                </p>
               </div>
             )}
             <button
               onClick={() => {
-                setUserMenuOpen(false);
-                signOut();
+                setUserMenuOpen(false)
+                signOut()
               }}
               className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-300 transition-colors flex items-center gap-2"
             >
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+                />
               </svg>
               Log Out
             </button>
@@ -262,21 +329,31 @@ export default function AppNavbar({
         )}
       </div>
     </>
-  );
+  )
 
   /* ─── Shared logo ─── */
   const logo = (
     <a href="#" className="flex items-center gap-2.5 flex-shrink-0 group">
       <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm shadow-teal-600/25 group-hover:bg-teal-700 transition-colors">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.2} className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth={2.2}
+          className="w-5 h-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+          />
         </svg>
       </div>
       <span className="font-display text-xl tracking-tight text-teal-900 dark:text-white leading-none select-none">
         Health<span className="text-teal-600 dark:text-teal-400">Stats</span>
       </span>
     </a>
-  );
+  )
 
   /* ─────────────── APP variant ─────────────── */
   if (isApp) {
@@ -288,7 +365,14 @@ export default function AppNavbar({
           className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors flex-shrink-0"
           aria-label="Open sidebar"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="w-5 h-5">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            className="w-5 h-5"
+          >
             <path d="M4 7h16M4 12h10M4 17h14" />
           </svg>
         </button>
@@ -296,9 +380,13 @@ export default function AppNavbar({
         {/* Optional breadcrumb */}
         {breadcrumb && (
           <div className="hidden sm:flex items-center gap-1.5 text-sm flex-shrink-0">
-            <span className="text-slate-400 dark:text-slate-500 font-medium">Admin</span>
+            <span className="text-slate-400 dark:text-slate-500 font-medium">
+              Admin
+            </span>
             <span className="text-slate-300 dark:text-slate-700">/</span>
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{breadcrumb}</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-200">
+              {breadcrumb}
+            </span>
           </div>
         )}
 
@@ -316,15 +404,13 @@ export default function AppNavbar({
           />
         </div>
 
-        <div className="flex items-center gap-2.5 ml-auto">
-          {rightControls}
-        </div>
+        <div className="flex items-center gap-2.5 ml-auto">{rightControls}</div>
       </header>
-    );
+    )
   }
 
   /* ─────────────── LANDING variant ─────────────── */
-  const hasCtas = onPatientLookup || onAdminLogin || onLogin;
+  const hasCtas = onPatientLookup || onAdminLogin || onLogin
 
   return (
     <header className="sticky top-0 z-50 bg-white/96 dark:bg-slate-900/96 backdrop-blur-md border-b border-teal-100 dark:border-slate-800 transition-colors duration-200">
@@ -350,27 +436,41 @@ export default function AppNavbar({
           {hasCtas && (
             <div className="hidden md:flex items-center gap-1.5 mr-1">
               {onPatientLookup && (
-                <button onClick={onPatientLookup} className="text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors">
+                <button
+                  onClick={onPatientLookup}
+                  className="text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
+                >
                   {lang === "bn" ? "ভিজিট দেখুন" : "Check My Visit"}
                 </button>
               )}
               {onAdminLogin && (
-                <button onClick={onAdminLogin} className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 px-3 py-2 border border-slate-200 dark:border-slate-700 hover:border-teal-300 rounded-lg transition-colors">
+                <button
+                  onClick={onAdminLogin}
+                  className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 px-3 py-2 border border-slate-200 dark:border-slate-700 hover:border-teal-300 rounded-lg transition-colors"
+                >
                   {lang === "bn" ? "অ্যাডমিন" : "Admin"}
                 </button>
               )}
               {onLogin && (
-                <button onClick={onLogin} className="text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors">
+                <button
+                  onClick={onLogin}
+                  className="text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
+                >
                   {lang === "bn" ? "লগ ইন" : "Log in"}
                 </button>
               )}
-              <a href="#get-started" className="text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm shadow-teal-600/20">
+              <a
+                href="#get-started"
+                className="text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm shadow-teal-600/20"
+              >
                 {lang === "bn" ? "শুরু করুন" : "Get Started"}
               </a>
             </div>
           )}
 
-          {hasCtas && <span className="hidden md:block w-px h-6 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />}
+          {hasCtas && (
+            <span className="hidden md:block w-px h-6 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+          )}
 
           {rightControls}
 
@@ -381,11 +481,23 @@ export default function AppNavbar({
             aria-label="Toggle menu"
           >
             {menuOpen ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[18px] h-[18px]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="w-[18px] h-[18px]"
+              >
                 <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[18px] h-[18px]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="w-[18px] h-[18px]"
+              >
                 <path strokeLinecap="round" d="M4 7h16M4 12h10M4 17h14" />
               </svg>
             )}
@@ -397,8 +509,12 @@ export default function AppNavbar({
       {menuOpen && (
         <div className="md:hidden border-t border-teal-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 flex flex-col gap-0.5 animate-slide-up">
           {LANDING_LINKS.map(({ en, bn, href }) => (
-            <a key={href} href={href} onClick={() => setMenuOpen(false)}
-              className="px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            <a
+              key={href}
+              href={href}
+              onClick={() => setMenuOpen(false)}
+              className="px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
               {lang === "bn" ? bn : en}
             </a>
           ))}
@@ -406,16 +522,32 @@ export default function AppNavbar({
             <>
               <hr className="border-teal-100 dark:border-slate-800 my-1" />
               {onPatientLookup && (
-                <button onClick={() => { onPatientLookup(); setMenuOpen(false); }} className="px-3 py-2.5 text-sm font-medium text-teal-700 dark:text-teal-300 text-left rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors">
+                <button
+                  onClick={() => {
+                    onPatientLookup()
+                    setMenuOpen(false)
+                  }}
+                  className="px-3 py-2.5 text-sm font-medium text-teal-700 dark:text-teal-300 text-left rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
+                >
                   {lang === "bn" ? "ভিজিট দেখুন" : "Check My Visit"}
                 </button>
               )}
               {onLogin && (
-                <button onClick={() => { onLogin(); setMenuOpen(false); }} className="px-3 py-2.5 text-sm font-medium text-teal-700 dark:text-teal-300 text-left rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors">
+                <button
+                  onClick={() => {
+                    onLogin()
+                    setMenuOpen(false)
+                  }}
+                  className="px-3 py-2.5 text-sm font-medium text-teal-700 dark:text-teal-300 text-left rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
+                >
                   {lang === "bn" ? "লগ ইন" : "Log in"}
                 </button>
               )}
-              <a href="#get-started" onClick={() => setMenuOpen(false)} className="mx-0 mt-1 py-2.5 rounded-lg text-sm font-semibold bg-teal-600 text-white text-center hover:bg-teal-700 transition-colors">
+              <a
+                href="#get-started"
+                onClick={() => setMenuOpen(false)}
+                className="mx-0 mt-1 py-2.5 rounded-lg text-sm font-semibold bg-teal-600 text-white text-center hover:bg-teal-700 transition-colors"
+              >
                 {lang === "bn" ? "শুরু করুন" : "Get Started"}
               </a>
             </>
@@ -423,5 +555,5 @@ export default function AppNavbar({
         </div>
       )}
     </header>
-  );
+  )
 }

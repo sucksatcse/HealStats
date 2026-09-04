@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import { useTheme } from "./ThemeContext";
+import { useState, useRef, useEffect } from "react"
+import { useTheme } from "./ThemeContext"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Message {
-  id: number;
-  role: "user" | "assistant";
-  text: string;
+  id: number
+  role: "user" | "assistant"
+  text: string
 }
 
 // ── Initial greeting ───────────────────────────────────────────────────────
@@ -13,123 +13,163 @@ const GREETING: Message = {
   id: 0,
   role: "assistant",
   text: "Hi! I'm the HealthStats Assistant. I can help with patient records, clinic sync status, or guide you through the platform. How can I help?",
-};
+}
 
-const QUICK_REPLIES = ["How does offline sync work?", "Find a patient record", "Clinic status"];
+const QUICK_REPLIES = [
+  "How does offline sync work?",
+  "Find a patient record",
+  "Clinic status",
+]
 
 // ── Simulated response map ─────────────────────────────────────────────────
 function getResponse(input: string): string {
-  const q = input.toLowerCase();
+  const q = input.toLowerCase()
   if (q.includes("sync") || q.includes("offline") || q.includes("connect"))
-    return "Visit records sync automatically when connectivity is restored — no data is ever lost. The app queues all changes locally and uploads them the moment you're back online. You can monitor sync status under Admin → Sync Status.";
+    return "Visit records sync automatically when connectivity is restored — no data is ever lost. The app queues all changes locally and uploads them the moment you're back online. You can monitor sync status under Admin → Sync Status."
   if (q.includes("patient") || q.includes("record") || q.includes("find"))
-    return "Search for any patient by name, phone number, or patient ID from the Dashboard search bar. Full visit history, vitals, and triage assessments are accessible for each record.";
-  if (q.includes("clinic") || q.includes("status") || q.includes("ops") || q.includes("map"))
-    return "The Ops Map shows real-time connection status for all 18 clinics. Green = synced, amber = sync delay (30 min+), red = offline. Enable Emergency Mode to highlight affected zones for rapid dispatch.";
+    return "Search for any patient by name, phone number, or patient ID from the Dashboard search bar. Full visit history, vitals, and triage assessments are accessible for each record."
+  if (
+    q.includes("clinic") ||
+    q.includes("status") ||
+    q.includes("ops") ||
+    q.includes("map")
+  )
+    return "The Ops Map shows real-time connection status for all 18 clinics. Green = synced, amber = sync delay (30 min+), red = offline. Enable Emergency Mode to highlight affected zones for rapid dispatch."
   if (q.includes("triage") || q.includes("imci") || q.includes("assess"))
-    return "The triage module follows IMCI protocols and works fully offline. Field workers enter assessments on any device; results sync to the dashboard as soon as connectivity is available.";
+    return "The triage module follows IMCI protocols and works fully offline. Field workers enter assessments on any device; results sync to the dashboard as soon as connectivity is available."
   if (q.includes("emergency") || q.includes("alert") || q.includes("urgent"))
-    return "Activate Emergency Mode from the Ops Map to instantly highlight all offline clinics in red with pulsing zone indicators. Use Broadcast Alert to notify all connected clinics simultaneously.";
-  return "Thanks for your question! I can help with visit records, clinic connectivity, triage workflows, and patient data. What would you like to know more about?";
+    return "Activate Emergency Mode from the Ops Map to instantly highlight all offline clinics in red with pulsing zone indicators. Use Broadcast Alert to notify all connected clinics simultaneously."
+  return "Thanks for your question! I can help with visit records, clinic connectivity, triage workflows, and patient data. What would you like to know more about?"
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const IconChat = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="white"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-6 h-6"
+  >
     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
   </svg>
-);
+)
 const IconX = () => (
   <svg viewBox="0 0 20 20" fill="white" className="w-5 h-5">
-    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+    <path
+      fillRule="evenodd"
+      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+      clipRule="evenodd"
+    />
   </svg>
-);
+)
 const IconMinus = () => (
-  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    className="w-4 h-4"
+  >
     <path strokeLinecap="round" d="M4 10h12" />
   </svg>
-);
+)
 const IconSend = () => (
   <svg viewBox="0 0 20 20" fill="white" className="w-3.5 h-3.5">
     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
   </svg>
-);
+)
 const IconHeart = () => (
   <svg viewBox="0 0 20 20" fill="white" className="w-3 h-3">
-    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+    <path
+      fillRule="evenodd"
+      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+      clipRule="evenodd"
+    />
   </svg>
-);
+)
 
 // ── Component ───────────────────────────────────────────────────────────────
 export default function ChatWidget() {
-  const { dark } = useTheme();
-  const [open, setOpen]           = useState(false);
-  const [messages, setMessages]   = useState<Message[]>([GREETING]);
-  const [input, setInput]         = useState("");
-  const [typing, setTyping]       = useState(false);
-  const [unread, setUnread]       = useState(1);
-  const msgEndRef                 = useRef<HTMLDivElement>(null);
-  const inputRef                  = useRef<HTMLInputElement>(null);
+  const { dark } = useTheme()
+  const [open, setOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([GREETING])
+  const [input, setInput] = useState("")
+  const [typing, setTyping] = useState(false)
+  const [unread, setUnread] = useState(1)
+  const msgEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Scroll to latest message
   useEffect(() => {
-    msgEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+    msgEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, typing])
 
   // Clear unread + focus input when opened
   useEffect(() => {
     if (open) {
-      setUnread(0);
-      const t = setTimeout(() => inputRef.current?.focus(), 280);
-      return () => clearTimeout(t);
+      setUnread(0)
+      const t = setTimeout(() => inputRef.current?.focus(), 280)
+      return () => clearTimeout(t)
     }
-  }, [open]);
+  }, [open])
 
   function send(text = input) {
-    const trimmed = text.trim();
-    if (!trimmed || typing) return;
+    const trimmed = text.trim()
+    if (!trimmed || typing) return
 
-    const userMsg: Message = { id: Date.now(), role: "user", text: trimmed };
-    setMessages(m => [...m, userMsg]);
-    setInput("");
-    setTyping(true);
+    const userMsg: Message = { id: Date.now(), role: "user", text: trimmed }
+    setMessages((m) => [...m, userMsg])
+    setInput("")
+    setTyping(true)
 
-    const delay = 850 + Math.random() * 550;
+    const delay = 850 + Math.random() * 550
     setTimeout(() => {
-      setTyping(false);
-      const reply: Message = { id: Date.now() + 1, role: "assistant", text: getResponse(trimmed) };
-      setMessages(m => [...m, reply]);
-      if (!open) setUnread(u => u + 1);
-    }, delay);
+      setTyping(false)
+      const reply: Message = {
+        id: Date.now() + 1,
+        role: "assistant",
+        text: getResponse(trimmed),
+      }
+      setMessages((m) => [...m, reply])
+      if (!open) setUnread((u) => u + 1)
+    }, delay)
   }
 
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      send()
+    }
   }
 
-  const showQuickReplies = messages.length === 1 && !typing;
+  const showQuickReplies = messages.length === 1 && !typing
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 pointer-events-none select-none">
-
       {/* ──────────── Chat window ──────────── */}
       <div
         role="dialog"
         aria-label="HealthStats Assistant chat"
         aria-hidden={!open}
         className={`w-[360px] rounded-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 ease-out origin-bottom-right ${
-          open ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-3 pointer-events-none"
+          open
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 translate-y-3 pointer-events-none"
         }`}
         style={{
           height: 488,
           boxShadow: dark
             ? "0 32px 72px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)"
             : "0 32px 72px rgba(13,148,136,0.13), 0 8px 24px rgba(0,0,0,0.09)",
-          border: `1px solid ${dark ? "rgba(51,65,85,0.8)" : "rgba(204,239,233,0.9)"}`,
+          border: `1px solid ${
+            dark ? "rgba(51,65,85,0.8)" : "rgba(204,239,233,0.9)"
+          }`,
           background: dark ? "#0f172a" : "#ffffff",
         }}
       >
-
         {/* ── Header ── */}
         <div className="flex items-center gap-3 px-4 py-3.5 bg-teal-600 flex-shrink-0">
           {/* Avatar */}
@@ -138,10 +178,14 @@ export default function ChatWidget() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white tracking-tight leading-none">HealthStats Assistant</p>
+            <p className="text-sm font-bold text-white tracking-tight leading-none">
+              HealthStats Assistant
+            </p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-              <span className="text-[11px] text-teal-100 font-medium">Online · typically replies instantly</span>
+              <span className="text-[11px] text-teal-100 font-medium">
+                Online · typically replies instantly
+              </span>
             </div>
           </div>
 
@@ -180,7 +224,9 @@ export default function ChatWidget() {
                   </div>
                   <div
                     className={`max-w-[78%] px-4 py-2.5 shadow-sm ${
-                      dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-800"
+                      dark
+                        ? "bg-slate-800 text-slate-100"
+                        : "bg-slate-100 text-slate-800"
                     }`}
                     style={{ borderRadius: "4px 18px 18px 18px" }}
                   >
@@ -192,7 +238,7 @@ export default function ChatWidget() {
               {/* Quick reply chips — only shown after the greeting */}
               {msg.role === "assistant" && idx === 0 && showQuickReplies && (
                 <div className="flex flex-wrap gap-1.5 mt-3 pl-8">
-                  {QUICK_REPLIES.map(q => (
+                  {QUICK_REPLIES.map((q) => (
                     <button
                       key={q}
                       onClick={() => send(q)}
@@ -217,15 +263,22 @@ export default function ChatWidget() {
                 <IconHeart />
               </div>
               <div
-                className={`px-4 py-3 shadow-sm ${dark ? "bg-slate-800" : "bg-slate-100"}`}
+                className={`px-4 py-3 shadow-sm ${
+                  dark ? "bg-slate-800" : "bg-slate-100"
+                }`}
                 style={{ borderRadius: "4px 18px 18px 18px" }}
               >
                 <div className="flex items-center gap-1.5">
-                  {[0, 150, 300].map(delay => (
+                  {[0, 150, 300].map((delay) => (
                     <span
                       key={delay}
-                      className={`w-1.5 h-1.5 rounded-full animate-bounce ${dark ? "bg-slate-500" : "bg-slate-400"}`}
-                      style={{ animationDelay: `${delay}ms`, animationDuration: "900ms" }}
+                      className={`w-1.5 h-1.5 rounded-full animate-bounce ${
+                        dark ? "bg-slate-500" : "bg-slate-400"
+                      }`}
+                      style={{
+                        animationDelay: `${delay}ms`,
+                        animationDuration: "900ms",
+                      }}
                     />
                   ))}
                 </div>
@@ -239,7 +292,11 @@ export default function ChatWidget() {
         {/* ── Input area ── */}
         <div
           className="flex-shrink-0 px-3 pb-3 pt-2"
-          style={{ borderTop: `1px solid ${dark ? "rgba(51,65,85,0.6)" : "rgba(226,232,240,0.8)"}` }}
+          style={{
+            borderTop: `1px solid ${
+              dark ? "rgba(51,65,85,0.6)" : "rgba(226,232,240,0.8)"
+            }`,
+          }}
         >
           <div
             className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${
@@ -252,12 +309,14 @@ export default function ChatWidget() {
               ref={inputRef}
               type="text"
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKey}
               placeholder="Ask a question…"
               disabled={!open}
               className={`flex-1 bg-transparent text-sm outline-none ${
-                dark ? "text-slate-100 placeholder-slate-500" : "text-slate-800 placeholder-slate-400"
+                dark
+                  ? "text-slate-100 placeholder-slate-500"
+                  : "text-slate-800 placeholder-slate-400"
               }`}
             />
             <button
@@ -269,7 +328,11 @@ export default function ChatWidget() {
               <IconSend />
             </button>
           </div>
-          <p className={`text-center text-[10px] mt-1.5 ${dark ? "text-slate-700" : "text-slate-300"}`}>
+          <p
+            className={`text-center text-[10px] mt-1.5 ${
+              dark ? "text-slate-700" : "text-slate-300"
+            }`}
+          >
             HealthStats AI · Not a substitute for medical advice
           </p>
         </div>
@@ -277,7 +340,7 @@ export default function ChatWidget() {
 
       {/* ──────────── Toggle button ──────────── */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close chat assistant" : "Open chat assistant"}
         aria-expanded={open}
         className={`pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
@@ -291,7 +354,9 @@ export default function ChatWidget() {
           className="absolute transition-all duration-250"
           style={{
             opacity: open ? 0 : 1,
-            transform: open ? "rotate(-90deg) scale(0.7)" : "rotate(0deg) scale(1)",
+            transform: open
+              ? "rotate(-90deg) scale(0.7)"
+              : "rotate(0deg) scale(1)",
           }}
         >
           <IconChat />
@@ -302,7 +367,9 @@ export default function ChatWidget() {
           className="absolute transition-all duration-250"
           style={{
             opacity: open ? 1 : 0,
-            transform: open ? "rotate(0deg) scale(1)" : "rotate(90deg) scale(0.7)",
+            transform: open
+              ? "rotate(0deg) scale(1)"
+              : "rotate(90deg) scale(0.7)",
           }}
         >
           <IconX />
@@ -321,5 +388,5 @@ export default function ChatWidget() {
         )}
       </button>
     </div>
-  );
+  )
 }

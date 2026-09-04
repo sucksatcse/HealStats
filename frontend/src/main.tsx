@@ -1,10 +1,10 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./index.css";
-import { LanguageProvider } from "./LanguageContext";
-import { ThemeProvider } from "./ThemeContext";
-import { AuthProvider } from "./AuthContext";
+import React from "react"
+import ReactDOM from "react-dom/client"
+import App from "./App"
+import "./index.css"
+import { LanguageProvider } from "./LanguageContext"
+import { ThemeProvider } from "./ThemeContext"
+import { AuthProvider } from "./AuthContext"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -16,4 +16,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       </LanguageProvider>
     </ThemeProvider>
   </React.StrictMode>,
-);
+)

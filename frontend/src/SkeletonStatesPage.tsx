@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState } from "react"
 
 // ── Skeleton primitive ───────────────────────────────────────────────────────
 // A single shimmering block. `.skeleton` (in index.css) paints the teal-tinted
 // base + moving sheen; utility classes control size and shape.
-function Bar({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
-  return <div className={`skeleton ${className}`} style={style} />;
+function Bar({
+  className = "",
+  style,
+}: {
+  className?: string
+  style?: React.CSSProperties
+}) {
+  return <div className={`skeleton ${className}`} style={style} />
 }
 
 // ── Patient list skeleton ────────────────────────────────────────────────────
@@ -34,7 +40,10 @@ function PatientListSkeleton() {
           <div key={i} className="flex items-center gap-4 px-5 py-4">
             <Bar className="w-10 h-10 rounded-xl flex-shrink-0" />
             <div className="flex-1 min-w-0 space-y-2">
-              <Bar className="h-3 rounded-md" style={{ width: `${52 + ((i * 7) % 28)}%` }} />
+              <Bar
+                className="h-3 rounded-md"
+                style={{ width: `${52 + ((i * 7) % 28)}%` }}
+              />
               <Bar className="h-2.5 w-1/3 rounded-md" />
             </div>
             <Bar className="hidden sm:block h-3 w-36 rounded-md" />
@@ -44,7 +53,7 @@ function PatientListSkeleton() {
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 // ── Dashboard skeleton ───────────────────────────────────────────────────────
@@ -85,7 +94,10 @@ function DashboardSkeleton() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 space-y-3">
+          <div
+            key={i}
+            className="bg-white rounded-2xl border border-slate-100 p-5 space-y-3"
+          >
             <Bar className="h-2.5 w-24 rounded-md" />
             <Bar className="h-8 w-16 rounded-lg" />
             <Bar className="h-2.5 w-20 rounded-md" />
@@ -105,7 +117,11 @@ function DashboardSkeleton() {
         {/* Plot area: baseline + shimmering bars of varying height */}
         <div className="relative h-44 flex items-end gap-2 sm:gap-3 border-l border-b border-slate-100 pl-3 pb-0">
           {[52, 74, 40, 88, 63, 96, 58, 80, 46, 70, 60, 84].map((h, i) => (
-            <Bar key={i} className="flex-1 rounded-t-md rounded-b-none" style={{ height: `${h}%` }} />
+            <Bar
+              key={i}
+              className="flex-1 rounded-t-md rounded-b-none"
+              style={{ height: `${h}%` }}
+            />
           ))}
         </div>
         <div className="flex justify-between mt-3 px-3">
@@ -123,7 +139,10 @@ function DashboardSkeleton() {
         </div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5">
+            <div
+              key={i}
+              className="bg-white rounded-2xl border border-slate-100 p-5"
+            >
               <div className="flex items-start gap-3 mb-4">
                 <Bar className="w-10 h-10 rounded-xl flex-shrink-0" />
                 <div className="flex-1 space-y-2">
@@ -142,19 +161,23 @@ function DashboardSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // ── Showcase shell ───────────────────────────────────────────────────────────
-type View = "dashboard" | "patients";
+type View = "dashboard" | "patients"
 
-export default function SkeletonStatesPage({ onBack }: { onBack?: () => void }) {
-  const [view, setView] = useState<View>("dashboard");
+export default function SkeletonStatesPage({
+  onBack,
+}: {
+  onBack?: () => void
+}) {
+  const [view, setView] = useState<View>("dashboard")
 
-  const TABS: { id: View; label: string }[] = [
+  const TABS: { id: View label: string }[] = [
     { id: "dashboard", label: "Dashboard" },
     { id: "patients", label: "Patient List" },
-  ];
+  ]
 
   return (
     <div className="min-h-screen bg-slate-50 font-[Work_Sans,system-ui,sans-serif]">
@@ -164,8 +187,18 @@ export default function SkeletonStatesPage({ onBack }: { onBack?: () => void }) 
             onClick={onBack}
             className="flex items-center gap-1 text-sm font-semibold text-teal-700 hover:text-teal-900 transition-colors mb-6"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 6l-6 6 6 6" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.4}
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 6l-6 6 6 6"
+              />
             </svg>
             Home
           </button>
@@ -174,13 +207,16 @@ export default function SkeletonStatesPage({ onBack }: { onBack?: () => void }) 
         {/* Header + toggle */}
         <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
           <div>
-            <p className="text-xs font-bold tracking-[0.15em] uppercase text-teal-600 mb-3">Loading States</p>
+            <p className="text-xs font-bold tracking-[0.15em] uppercase text-teal-600 mb-3">
+              Loading States
+            </p>
             <h1 className="font-display text-4xl lg:text-5xl text-slate-900 leading-tight mb-3 max-w-2xl">
               Never a blank screen
             </h1>
             <p className="text-lg text-slate-500 max-w-xl leading-relaxed">
-              While records sync over a slow rural connection, HealthStats shows the shape of what's
-              coming — a teal-tinted shimmer instead of an empty page.
+              While records sync over a slow rural connection, HealthStats shows
+              the shape of what's coming — a teal-tinted shimmer instead of an
+              empty page.
             </p>
           </div>
 
@@ -190,7 +226,9 @@ export default function SkeletonStatesPage({ onBack }: { onBack?: () => void }) 
                 key={tab.id}
                 onClick={() => setView(tab.id)}
                 className={`px-4 py-2 rounded-lg transition-colors ${
-                  view === tab.id ? "bg-teal-600 text-white shadow-sm" : "text-slate-500 hover:text-teal-700"
+                  view === tab.id
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "text-slate-500 hover:text-teal-700"
                 }`}
               >
                 {tab.label}
@@ -207,9 +245,13 @@ export default function SkeletonStatesPage({ onBack }: { onBack?: () => void }) 
 
         {/* Skeleton */}
         <div aria-busy="true" aria-live="polite">
-          {view === "dashboard" ? <DashboardSkeleton /> : <PatientListSkeleton />}
+          {view === "dashboard" ? (
+            <DashboardSkeleton />
+          ) : (
+            <PatientListSkeleton />
+          )}
         </div>
       </div>
     </div>
-  );
+  )
 }

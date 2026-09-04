@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useState } from "react"
 
-type Role = "health-worker" | "clinic-admin" | "district-coordinator";
+type Role = "health-worker" | "clinic-admin" | "district-coordinator"
 
 interface Props {
-  onSelect: (role: Role) => void;
-  onBack: () => void;
+  onSelect: (role: Role) => void
+  onBack: () => void
 }
 
 const ROLES: {
-  id: Role;
-  label: string;
-  tagline: string;
-  desc: string;
-  icon: React.ReactNode;
-  accent: string;
-  accentLight: string;
+  id: Role
+  label: string
+  tagline: string
+  desc: string
+  icon: React.ReactNode
+  accent: string
+  accentLight: string
 }[] = [
   {
     id: "health-worker",
@@ -79,16 +79,16 @@ const ROLES: {
       </svg>
     ),
   },
-];
+]
 
 export default function RoleSelectionPage({ onSelect, onBack }: Props) {
-  const [hovered, setHovered] = useState<Role | null>(null);
-  const [selecting, setSelecting] = useState<Role | null>(null);
+  const [hovered, setHovered] = useState<Role | null>(null)
+  const [selecting, setSelecting] = useState<Role | null>(null)
 
   const handleSelect = (id: Role) => {
-    setSelecting(id);
-    setTimeout(() => onSelect(id), 320);
-  };
+    setSelecting(id)
+    setTimeout(() => onSelect(id), 320)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex flex-col">
@@ -107,7 +107,9 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
               />
             </svg>
           </div>
-          <span className="font-display text-teal-900 text-lg leading-none tracking-tight">HealthStats</span>
+          <span className="font-display text-teal-900 text-lg leading-none tracking-tight">
+            HealthStats
+          </span>
         </div>
 
         <button
@@ -147,90 +149,107 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
             How are you using HealthStats today?
           </h1>
           <p className="text-slate-500 text-base leading-relaxed">
-            Select your role to enter the right workspace. You can switch roles any time from your account settings.
+            Select your role to enter the right workspace. You can switch roles
+            any time from your account settings.
           </p>
         </div>
 
         {/* Role cards */}
         <div className="grid sm:grid-cols-3 gap-5 w-full max-w-3xl">
-          {ROLES.map(({ id, label, tagline, desc, icon, accentLight, accent }) => {
-            const isHovered = hovered === id;
-            const isSelecting = selecting === id;
+          {ROLES.map(
+            ({ id, label, tagline, desc, icon, accentLight, accent }) => {
+              const isHovered = hovered === id
+              const isSelecting = selecting === id
 
-            return (
-              <button
-                key={id}
-                onClick={() => handleSelect(id)}
-                onMouseEnter={() => setHovered(id)}
-                onMouseLeave={() => setHovered(null)}
-                className={`group relative text-left bg-white rounded-2xl border-2 p-7 flex flex-col gap-5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${
-                  isSelecting
-                    ? "border-teal-600 shadow-xl shadow-teal-100 scale-[0.98]"
-                    : isHovered
-                    ? "border-teal-400 shadow-lg shadow-teal-100 -translate-y-1"
-                    : "border-teal-100 shadow-sm hover:border-teal-300"
-                }`}
-              >
-                {/* Icon */}
-                <div
-                  className={`w-14 h-14 rounded-xl flex items-center justify-center ${accent} ${accentLight} transition-colors`}
-                >
-                  {icon}
-                </div>
-
-                {/* Text */}
-                <div className="flex-1">
-                  <p className="text-xs font-bold tracking-[0.12em] uppercase text-teal-500 mb-1.5">{tagline}</p>
-                  <h2 className="font-display text-xl text-teal-950 leading-snug mb-2.5">{label}</h2>
-                  <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
-                </div>
-
-                {/* CTA arrow */}
-                <div
-                  className={`flex items-center gap-2 text-sm font-semibold transition-colors ${
-                    isHovered || isSelecting ? "text-teal-700" : "text-teal-400"
+              return (
+                <button
+                  key={id}
+                  onClick={() => handleSelect(id)}
+                  onMouseEnter={() => setHovered(id)}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`group relative text-left bg-white rounded-2xl border-2 p-7 flex flex-col gap-5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${
+                    isSelecting
+                      ? "border-teal-600 shadow-xl shadow-teal-100 scale-[0.98]"
+                      : isHovered
+                        ? "border-teal-400 shadow-lg shadow-teal-100 -translate-y-1"
+                        : "border-teal-100 shadow-sm hover:border-teal-300"
                   }`}
                 >
-                  {isSelecting ? (
-                    <>
-                      <svg
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="w-4 h-4 animate-spin"
-                      >
-                        <path d="M8 2a6 6 0 100 12A6 6 0 008 2z" strokeDasharray="28" strokeDashoffset="10" />
-                      </svg>
-                      Entering workspace…
-                    </>
-                  ) : (
-                    <>
-                      Enter workspace
-                      <svg
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`w-4 h-4 transition-transform ${isHovered ? "translate-x-1" : ""}`}
-                      >
-                        <path d="M3 8h10M9 4l4 4-4 4" />
-                      </svg>
-                    </>
-                  )}
-                </div>
+                  {/* Icon */}
+                  <div
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center ${accent} ${accentLight} transition-colors`}
+                  >
+                    {icon}
+                  </div>
 
-                {/* Active indicator dot — top-right corner */}
-                {isSelecting && (
-                  <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-teal-600 animate-pulse" />
-                )}
-              </button>
-            );
-          })}
+                  {/* Text */}
+                  <div className="flex-1">
+                    <p className="text-xs font-bold tracking-[0.12em] uppercase text-teal-500 mb-1.5">
+                      {tagline}
+                    </p>
+                    <h2 className="font-display text-xl text-teal-950 leading-snug mb-2.5">
+                      {label}
+                    </h2>
+                    <p className="text-sm text-slate-500 leading-relaxed">
+                      {desc}
+                    </p>
+                  </div>
+
+                  {/* CTA arrow */}
+                  <div
+                    className={`flex items-center gap-2 text-sm font-semibold transition-colors ${
+                      isHovered || isSelecting
+                        ? "text-teal-700"
+                        : "text-teal-400"
+                    }`}
+                  >
+                    {isSelecting ? (
+                      <>
+                        <svg
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="w-4 h-4 animate-spin"
+                        >
+                          <path
+                            d="M8 2a6 6 0 100 12A6 6 0 008 2z"
+                            strokeDasharray="28"
+                            strokeDashoffset="10"
+                          />
+                        </svg>
+                        Entering workspace…
+                      </>
+                    ) : (
+                      <>
+                        Enter workspace
+                        <svg
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`w-4 h-4 transition-transform ${
+                            isHovered ? "translate-x-1" : ""
+                          }`}
+                        >
+                          <path d="M3 8h10M9 4l4 4-4 4" />
+                        </svg>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Active indicator dot — top-right corner */}
+                  {isSelecting && (
+                    <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-teal-600 animate-pulse" />
+                  )}
+                </button>
+              )
+            },
+          )}
         </div>
 
         {/* Footer hint */}
@@ -243,5 +262,5 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
       {/* Subtle bottom decoration */}
       <div className="h-1.5 bg-gradient-to-r from-teal-600 via-teal-400 to-teal-700" />
     </div>
-  );
+  )
 }

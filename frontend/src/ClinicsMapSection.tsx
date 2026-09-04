@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useLang } from "./LanguageContext";
-import { useTheme } from "./ThemeContext";
+import { useState } from "react"
+import { useLang } from "./LanguageContext"
+import { useTheme } from "./ThemeContext"
 
 const LABELS = {
   en: {
@@ -27,16 +27,16 @@ const LABELS = {
     clinicCount: "টি সক্রিয়",
     comingSoon: "শীঘ্রই আসছে",
   },
-};
+}
 
 interface Pin {
-  id: string;
-  name: string;
-  nameBn: string;
-  count: number;
-  type: "active" | "soon";
-  x: number;
-  y: number;
+  id: string
+  name: string
+  nameBn: string
+  count: number
+  type: "active" | "soon"
+  x: number
+  y: number
 }
 
 // SVG viewBox: 0 0 380 450
@@ -52,53 +52,186 @@ const BD_PATH =
   "C 195,428 175,424 165,422 " +
   "C 148,416 134,412 124,410 " +
   "C 106,402 96,394 88,390 " +
-  "L 58,354 L 38,300 L 16,244 L 20,194 L 28,144 L 38,86 Z";
+  "L 58,354 L 38,300 L 16,244 L 20,194 L 28,144 L 38,86 Z"
 
 // Major rivers — Jamuna (N-S), Padma (E-W), Meghna (N-S)
-const RIVER_JAMUNA = "M 155,18 C 150,72 148,132 150,188 C 152,224 156,255 160,282";
-const RIVER_PADMA  = "M 16,244 C 58,244 98,248 138,252 C 168,257 194,264 220,274";
-const RIVER_MEGHNA = "M 220,155 C 224,196 228,236 230,276 C 234,313 244,352 265,410";
+const RIVER_JAMUNA =
+  "M 155,18 C 150,72 148,132 150,188 C 152,224 156,255 160,282"
+const RIVER_PADMA = "M 16,244 C 58,244 98,248 138,252 C 168,257 194,264 220,274"
+const RIVER_MEGHNA =
+  "M 220,155 C 224,196 228,236 230,276 C 234,313 244,352 265,410"
 
 const PINS: Pin[] = [
-  { id: "dhaka",       name: "Dhaka",       nameBn: "ঢাকা",       count: 87, type: "active", x: 193, y: 210 },
-  { id: "chittagong",  name: "Chittagong",  nameBn: "চট্টগ্রাম",  count: 54, type: "active", x: 297, y: 318 },
-  { id: "sylhet",      name: "Sylhet",      nameBn: "সিলেট",      count: 32, type: "active", x: 314, y: 160 },
-  { id: "rajshahi",    name: "Rajshahi",    nameBn: "রাজশাহী",    count: 41, type: "active", x: 52,  y: 186 },
-  { id: "khulna",      name: "Khulna",      nameBn: "খুলনা",      count: 38, type: "active", x: 118, y: 340 },
-  { id: "barisal",     name: "Barisal",     nameBn: "বরিশাল",     count: 29, type: "active", x: 192, y: 326 },
-  { id: "mymensingh",  name: "Mymensingh",  nameBn: "ময়মনসিংহ",   count: 24, type: "active", x: 193, y: 162 },
-  { id: "comilla",     name: "Comilla",     nameBn: "কুমিল্লা",   count: 22, type: "active", x: 254, y: 256 },
-  { id: "rangpur",     name: "Rangpur",     nameBn: "রংপুর",      count: 18, type: "active", x: 92,  y: 88  },
-  { id: "jessore",     name: "Jessore",     nameBn: "যশোর",       count: 15, type: "active", x: 88,  y: 278 },
-  { id: "faridpur",    name: "Faridpur",    nameBn: "ফরিদপুর",    count: 12, type: "active", x: 152, y: 240 },
-  { id: "noakhali",    name: "Noakhali",    nameBn: "নোয়াখালী",   count: 8,  type: "active", x: 254, y: 300 },
-  { id: "coxsbazar",   name: "Cox's Bazar", nameBn: "কক্সবাজার",  count: 0,  type: "soon",   x: 322, y: 390 },
-  { id: "dinajpur",    name: "Dinajpur",    nameBn: "দিনাজপুর",   count: 0,  type: "soon",   x: 68,  y: 102 },
-  { id: "bogra",       name: "Bogra",       nameBn: "বগুড়া",      count: 0,  type: "soon",   x: 110, y: 144 },
-];
+  {
+    id: "dhaka",
+    name: "Dhaka",
+    nameBn: "ঢাকা",
+    count: 87,
+    type: "active",
+    x: 193,
+    y: 210,
+  },
+  {
+    id: "chittagong",
+    name: "Chittagong",
+    nameBn: "চট্টগ্রাম",
+    count: 54,
+    type: "active",
+    x: 297,
+    y: 318,
+  },
+  {
+    id: "sylhet",
+    name: "Sylhet",
+    nameBn: "সিলেট",
+    count: 32,
+    type: "active",
+    x: 314,
+    y: 160,
+  },
+  {
+    id: "rajshahi",
+    name: "Rajshahi",
+    nameBn: "রাজশাহী",
+    count: 41,
+    type: "active",
+    x: 52,
+    y: 186,
+  },
+  {
+    id: "khulna",
+    name: "Khulna",
+    nameBn: "খুলনা",
+    count: 38,
+    type: "active",
+    x: 118,
+    y: 340,
+  },
+  {
+    id: "barisal",
+    name: "Barisal",
+    nameBn: "বরিশাল",
+    count: 29,
+    type: "active",
+    x: 192,
+    y: 326,
+  },
+  {
+    id: "mymensingh",
+    name: "Mymensingh",
+    nameBn: "ময়মনসিংহ",
+    count: 24,
+    type: "active",
+    x: 193,
+    y: 162,
+  },
+  {
+    id: "comilla",
+    name: "Comilla",
+    nameBn: "কুমিল্লা",
+    count: 22,
+    type: "active",
+    x: 254,
+    y: 256,
+  },
+  {
+    id: "rangpur",
+    name: "Rangpur",
+    nameBn: "রংপুর",
+    count: 18,
+    type: "active",
+    x: 92,
+    y: 88,
+  },
+  {
+    id: "jessore",
+    name: "Jessore",
+    nameBn: "যশোর",
+    count: 15,
+    type: "active",
+    x: 88,
+    y: 278,
+  },
+  {
+    id: "faridpur",
+    name: "Faridpur",
+    nameBn: "ফরিদপুর",
+    count: 12,
+    type: "active",
+    x: 152,
+    y: 240,
+  },
+  {
+    id: "noakhali",
+    name: "Noakhali",
+    nameBn: "নোয়াখালী",
+    count: 8,
+    type: "active",
+    x: 254,
+    y: 300,
+  },
+  {
+    id: "coxsbazar",
+    name: "Cox's Bazar",
+    nameBn: "কক্সবাজার",
+    count: 0,
+    type: "soon",
+    x: 322,
+    y: 390,
+  },
+  {
+    id: "dinajpur",
+    name: "Dinajpur",
+    nameBn: "দিনাজপুর",
+    count: 0,
+    type: "soon",
+    x: 68,
+    y: 102,
+  },
+  {
+    id: "bogra",
+    name: "Bogra",
+    nameBn: "বগুড়া",
+    count: 0,
+    type: "soon",
+    x: 110,
+    y: 144,
+  },
+]
 
 function tooltipTransform(pin: Pin): string {
-  const goLeft = pin.x > 230;
-  const goBelow = pin.y < 112;
-  if (goBelow) return goLeft ? "translate(-108%, 18%)" : "translate(-5%, 18%)";
-  return goLeft ? "translate(-108%, -125%)" : "translate(-5%, -125%)";
+  const goLeft = pin.x > 230
+  const goBelow = pin.y < 112
+  if (goBelow) return goLeft ? "translate(-108%, 18%)" : "translate(-5%, 18%)"
+  return goLeft ? "translate(-108%, -125%)" : "translate(-5%, -125%)"
 }
 
 export default function ClinicsMapSection() {
-  const { lang } = useLang();
-  const { dark } = useTheme();
-  const t = LABELS[lang];
-  const [hovId, setHovId] = useState<string | null>(null);
-  const hovPin = PINS.find((p) => p.id === hovId) ?? null;
+  const { lang } = useLang()
+  const { dark } = useTheme()
+  const t = LABELS[lang]
+  const [hovId, setHovId] = useState<string | null>(null)
+  const hovPin = PINS.find((p) => p.id === hovId) ?? null
 
   const col = dark
-    ? { country: "#163b34", border: "#2a6b62", river: "#1d4ed8", divLine: "#1a4a42", seaBg: "#0a1628" }
-    : { country: "#c8e8e2", border: "#5eada0", river: "#60a5fa", divLine: "#a7d4cd", seaBg: "#dbeffe" };
+    ? {
+        country: "#163b34",
+        border: "#2a6b62",
+        river: "#1d4ed8",
+        divLine: "#1a4a42",
+        seaBg: "#0a1628",
+      }
+    : {
+        country: "#c8e8e2",
+        border: "#5eada0",
+        river: "#60a5fa",
+        divLine: "#a7d4cd",
+        seaBg: "#dbeffe",
+      }
 
   return (
     <section id="coverage" className="py-24 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-
         {/* Heading */}
         <div className="max-w-2xl mb-12">
           <p className="text-xs font-bold tracking-[0.15em] uppercase text-teal-600 dark:text-teal-400 mb-3">
@@ -107,7 +240,9 @@ export default function ClinicsMapSection() {
           <h2 className="font-display text-4xl lg:text-5xl text-teal-950 dark:text-white leading-tight mb-4">
             {t.h2}
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">{t.body}</p>
+          <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
+            {t.body}
+          </p>
         </div>
 
         {/* Map card */}
@@ -128,7 +263,6 @@ export default function ClinicsMapSection() {
           {/* SVG map */}
           <div className="relative flex justify-center items-center py-10 px-4 md:px-10 lg:px-20 min-h-[500px] lg:min-h-[580px]">
             <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
-
               <svg
                 viewBox="0 0 380 450"
                 className="w-full drop-shadow-lg"
@@ -136,8 +270,21 @@ export default function ClinicsMapSection() {
               >
                 <defs>
                   {/* Dot grid pattern for sea texture */}
-                  <pattern id="sea-grid" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-                    <circle cx="9" cy="9" r="0.9" fill={dark ? "#1a3a5c" : "#bae6fd"} opacity="0.6" />
+                  <pattern
+                    id="sea-grid"
+                    x="0"
+                    y="0"
+                    width="18"
+                    height="18"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <circle
+                      cx="9"
+                      cy="9"
+                      r="0.9"
+                      fill={dark ? "#1a3a5c" : "#bae6fd"}
+                      opacity="0.6"
+                    />
                   </pattern>
                 </defs>
 
@@ -154,21 +301,56 @@ export default function ClinicsMapSection() {
                 />
 
                 {/* Subtle internal division lines (Jamuna + Meghna corridors) */}
-                <path d="M 150,188 L 160,282" fill="none" stroke={col.divLine} strokeWidth="0.9" strokeDasharray="5 5" opacity="0.75" />
-                <path d="M 220,155 L 265,410" fill="none" stroke={col.divLine} strokeWidth="0.9" strokeDasharray="5 5" opacity="0.75" />
+                <path
+                  d="M 150,188 L 160,282"
+                  fill="none"
+                  stroke={col.divLine}
+                  strokeWidth="0.9"
+                  strokeDasharray="5 5"
+                  opacity="0.75"
+                />
+                <path
+                  d="M 220,155 L 265,410"
+                  fill="none"
+                  stroke={col.divLine}
+                  strokeWidth="0.9"
+                  strokeDasharray="5 5"
+                  opacity="0.75"
+                />
 
                 {/* Rivers */}
-                <path d={RIVER_JAMUNA} fill="none" stroke={col.river} strokeWidth="3"   strokeLinecap="round" opacity="0.7" />
-                <path d={RIVER_PADMA}  fill="none" stroke={col.river} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
-                <path d={RIVER_MEGHNA} fill="none" stroke={col.river} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+                <path
+                  d={RIVER_JAMUNA}
+                  fill="none"
+                  stroke={col.river}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  opacity="0.7"
+                />
+                <path
+                  d={RIVER_PADMA}
+                  fill="none"
+                  stroke={col.river}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  opacity="0.6"
+                />
+                <path
+                  d={RIVER_MEGHNA}
+                  fill="none"
+                  stroke={col.river}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  opacity="0.6"
+                />
 
                 {/* Pins */}
                 {PINS.map((pin, i) => {
-                  const isActive = pin.type === "active";
-                  const isHov = hovId === pin.id;
-                  const tealFill = "#0d9488";
-                  const slateFill = "#94a3b8";
-                  const ringOpacity = dark ? 0.28 : 0.18;
+                  const isActive = pin.type === "active"
+                  const isHov = hovId === pin.id
+                  const tealFill = "#0d9488"
+                  const slateFill = "#94a3b8"
+                  const ringOpacity = dark ? 0.28 : 0.18
 
                   return (
                     <g
@@ -177,11 +359,19 @@ export default function ClinicsMapSection() {
                       onMouseLeave={() => setHovId(null)}
                       style={{ cursor: "pointer" }}
                       role="button"
-                      aria-label={`${pin.name}: ${isActive ? pin.count + " clinics active" : "coming soon"}`}
+                      aria-label={`${pin.name}: ${
+                        isActive ? pin.count + " clinics active" : "coming soon"
+                      }`}
                     >
                       {/* Active: animated SVG pulse ring */}
                       {isActive && (
-                        <circle cx={pin.x} cy={pin.y} r="5" fill={tealFill} opacity="0">
+                        <circle
+                          cx={pin.x}
+                          cy={pin.y}
+                          r="5"
+                          fill={tealFill}
+                          opacity="0"
+                        >
                           <animate
                             attributeName="r"
                             values="5;20;5"
@@ -205,7 +395,11 @@ export default function ClinicsMapSection() {
                           cx={pin.x}
                           cy={pin.y}
                           r="14"
-                          fill={isActive ? `rgba(13,148,136,${dark ? 0.25 : 0.15})` : `rgba(148,163,184,${dark ? 0.2 : 0.12})`}
+                          fill={
+                            isActive
+                              ? `rgba(13,148,136,${dark ? 0.25 : 0.15})`
+                              : `rgba(148,163,184,${dark ? 0.2 : 0.12})`
+                          }
                         />
                       )}
 
@@ -233,7 +427,7 @@ export default function ClinicsMapSection() {
                         strokeWidth={isActive ? 1.5 : 1}
                       />
                     </g>
-                  );
+                  )
                 })}
               </svg>
 
@@ -311,8 +505,20 @@ export default function ClinicsMapSection() {
               <div className="flex items-center gap-2.5">
                 <div className="flex-shrink-0 w-5 h-5">
                   <svg viewBox="0 0 20 20" className="w-full h-full">
-                    <circle cx="10" cy="10" r="8" fill={dark ? "rgba(13,148,136,0.2)" : "#ccefe9"} />
-                    <circle cx="10" cy="10" r="5.5" fill="#0d9488" stroke="white" strokeWidth="1.5" />
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      fill={dark ? "rgba(13,148,136,0.2)" : "#ccefe9"}
+                    />
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r="5.5"
+                      fill="#0d9488"
+                      stroke="white"
+                      strokeWidth="1.5"
+                    />
                   </svg>
                 </div>
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
@@ -323,8 +529,23 @@ export default function ClinicsMapSection() {
               <div className="flex items-center gap-2.5">
                 <div className="flex-shrink-0 w-5 h-5">
                   <svg viewBox="0 0 20 20" className="w-full h-full">
-                    <circle cx="10" cy="10" r="8" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3 3" />
-                    <circle cx="10" cy="10" r="3.5" fill="#94a3b8" stroke="white" strokeWidth="1" />
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      fill="none"
+                      stroke="#94a3b8"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                    />
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r="3.5"
+                      fill="#94a3b8"
+                      stroke="white"
+                      strokeWidth="1"
+                    />
                   </svg>
                 </div>
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
@@ -336,5 +557,5 @@ export default function ClinicsMapSection() {
         </div>
       </div>
     </section>
-  );
+  )
 }

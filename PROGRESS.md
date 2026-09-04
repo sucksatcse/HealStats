@@ -109,8 +109,8 @@ The following components, infrastructure, and integrations are explicitly missin
 
 #### 3. Data Fetching & UI Wiring (CRUD)
 - *Note: All 30+ React pages are currently static "shells" and contain no actual data-fetching logic.*
-- [ ] **Patient Registration**: `NewPatientPage.tsx` needs to be wired to `supabase.from('patients').insert(...)`.
-- [ ] **Patient Retrieval**: `PatientRecordsPage.tsx` and `PatientDetailPage.tsx` need to execute `SELECT` queries to fetch patient history and visits.
+- [x] **Patient Registration**: `NewPatientPage.tsx` needs to be wired to `supabase.from('patients').insert(...)`.
+- [ ] **Patient Retrieval**: `PatientRecordsPage.tsx` (Completed: wired to fetch from Supabase) and `PatientDetailPage.tsx` (Pending) need to execute `SELECT` queries to fetch patient history and visits.
 - [ ] **Vitals & Forms**: `VitalsPage.tsx` needs mutation logic to save triage data to the `visits` table.
 - [ ] **Form Validation & State**: No robust form validation libraries (e.g., Zod, React Hook Form) are integrated. Form error states and toast notifications (except for static examples) are missing.
 - [ ] **Loading States**: Skeletons and spinners are not dynamically triggered by network/data loading states.

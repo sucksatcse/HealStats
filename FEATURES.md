@@ -23,7 +23,7 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Authentication | Security | Implemented | Critical |
 | Role-Based Access | Security | Implemented | Critical |
 | Patient Registration | Patient Records | Implemented | Critical |
-| Patient Search | Patient Records | In Progress | High |
+| Patient Search | Patient Records | Implemented | High |
 | Visit Records & Forms | Patient Records | In Progress | High |
 | Offline Storage | Offline-First | Not Started | Critical |
 | Automatic Sync | Offline-First | Not Started | Critical |
@@ -83,8 +83,8 @@ The intended production security architecture uses Supabase RLS to protect all t
   - Success behavior: Displays a confirmation screen and routes the user to the newly created Patient Detail view.
 
 ### Patient List & Search
-- **Status**: In Progress (UI scaffolded)
-- **Features**: Interface exists to list patients and search by name/ID. Currently pending Supabase `SELECT` query integration (displays static mock data).
+- **Status**: Implemented
+- **Features**: Interface successfully lists patients mapped to the user's clinic and allows search by name/ID/village. Dynamic urgency and recency filtering is fully wired to Supabase.
 
 ### Patient Details & History
 - **Status**: In Progress (UI scaffolded)
