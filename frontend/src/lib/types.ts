@@ -53,11 +53,13 @@ export interface VisitRow {
 /** Patient row augmented with its most recent visit (may be null if no visits). */
 export interface PatientWithLatestVisit extends PatientRow {
   latest_visit: VisitRow | null;
+  clinics?: Pick<ClinicRow, 'id' | 'name' | 'zone'> | null;
+  staff?: Pick<StaffRow, 'id' | 'name' | 'role'> | null;
 }
 
 /** Staff row with clinic data joined. */
 export interface StaffWithClinic extends StaffRow {
-  clinics: Pick<ClinicRow, 'name' | 'zone'> | null;
+  clinics: Pick<ClinicRow, 'id' | 'name' | 'zone'> | null;
 }
 
 // ── Urgency helpers ────────────────────────────────────────────────────────────
@@ -108,3 +110,78 @@ export function initials(fullName: string): string {
     .join('')
     .toUpperCase() || 'NA';
 }
+
+// ── Outbreak Surveillance & Cluster Detection Types (Task 14.5) ────────────────
+export interface OutbreakClusterCase {
+  visitId: string;
+  patientId: string;
+  patientName: string;
+  patientAge: number | null;
+  patientSex: string | null;
+  village: string | null;
+  symptoms: string | null;
+  diagnosis: string | null;
+  urgencyScore: number | null;
+  createdAt: string;
+}
+
+export type OutbreakRiskLevel = 'critical' | 'warning' | 'monitoring';
+
+export interface OutbreakCluster {
+  id: string;
+  syndromeKey: string;
+  syndromeName: string;
+  category: string;
+  zone: string;
+  clinicId: string;
+  clinicName: string;
+  caseCount: number;
+  urgencyMax: number;
+  urgencyAvg: number;
+  riskLevel: OutbreakRiskLevel;
+  dominantSymptoms: string[];
+  affectedVillages: string[];
+  cases: OutbreakClusterCase[];
+  firstDetected: string;
+  lastDetected: string;
+  recommendedActions: string[];
+}
+
+export interface OutbreakAnalysisResult {
+  clusters: OutbreakCluster[];
+  categoryCounts: Record<string, number>;
+  totalVisitsAnalyzed: number;
+  timeframeHours: number;
+  highestRiskLevel: OutbreakRiskLevel | 'normal';
+}
+
+// ── Emergency Triage Queue Types (Task 15) ───────────────────────────────────
+export type TriageBand = 'red' | 'yellow' | 'green';
+export type TriageLevel = 'Critical' | 'Severe' | 'Elevated';
+export type TriageStatus = 'waiting' | 'in_treatment' | 'discharged';
+
+export interface EmergencyTriagePatient {
+  id: string;          // Short ID
+  patientId: string;   // Full UUID
+  visitId?: string;
+  name: string;
+  age: number | null;
+  gender: string | null;
+  village?: string | null;
+  zone: string;
+  clinicId?: string;
+  clinicName?: string;
+  complaint: string;
+  vitalsSummary?: string;
+  score: number;       // 1–5 urgency score
+  urgencyScore?: number;
+  level: TriageLevel;
+  band: TriageBand;
+  wait: string;
+  initials: string;
+  status: TriageStatus;
+  createdAt: string;
+}
+
+
+
