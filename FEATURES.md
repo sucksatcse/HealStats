@@ -163,23 +163,24 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 ## 10. Staff Management
 
 - **Status**: Implemented
-- **Capabilities**: In-app UI for Admin staff management with real Supabase CRUD. Lists staff joined with clinics, provides Add Staff modal (with clear notice on Supabase Auth account creation), Edit Staff modal (name, email, role), and soft deactivation/reactivation toggle. Includes database migration `20260904000001_add_staff_is_active.sql`.
+- **Capabilities**: In-app UI for Admin staff management with real Supabase CRUD. Lists staff joined with clinics, provides Add Staff modal (with clinic assignment and clear notice on Supabase Auth account creation), Edit Staff modal (name, email, role, clinic), instant search, role/status/clinic filters, column sorting, pagination, and soft deactivation/reactivation toggle. Includes database migration `20260904000001_add_staff_is_active.sql`.
 
 ---
 
 ## 11. Emergency Mode
 
 ### Disaster Response Interface
-- **Status**: In Progress (Static UI exists: `EmergencyDashboard.tsx`)
-- **Purpose**: During floods or cyclones, health workers need rapid access to SOS protocols and priority patient lists without navigating complex menus.
-- **Capabilities**: The UI provides specialized alerts and simplified workflows. Live external alert feeds (e.g., flood warnings) are planned but not connected.
+- **Status**: Implemented
+- **Purpose**: During floods or cyclones, health workers and emergency coordinators need rapid access to SOS protocols, active zone severity, deployed responders, and priority patient lists without navigating complex menus.
+- **Capabilities**: Wired to live Supabase database (`clinics`, `visits` in past 48 hours, `patients`, and `staff`) via `adminService.fetchEmergencyMetrics()`. Features dynamic zone categorization by max urgency, live 1–5 triage priority queue with detail drill-down to `PatientDetailPage`, responder tracking per zone, interactive SOS incident broadcasting modal, and one-click situation report CSV export. External meteorological feeds remain planned.
 
 ---
 
 ## 12. Outbreak Detection
 
-- **Status**: Planned
-- **Purpose**: A symptom-cluster detection proof-of-concept. It will query visits from the last 48 hours to flag zones where a critical mass of similar symptoms (e.g., waterborne diseases) appear, alerting coordinators.
+- **Status**: Implemented
+- **Purpose**: A threshold-based symptom-cluster early warning surveillance system (`OutbreakDetectionPage.tsx`, `adminService.fetchOutbreakAnalysis()`).
+- **Capabilities**: Analyzes recent clinical visits in Supabase by syndrome categories (Waterborne/Cholera, Febrile/Malaria, Acute Respiratory Infection, Cutaneous/Measles), groups cases by geographic zone & clinic, calculates cluster metrics and urgency scores, flags emerging outbreaks on the main admin overview banner, provides interactive WHO/field protocol checklists, enables linked patient drill-down into `PatientDetailPage`, and exports epidemiological CSV situation reports.
 
 ---
 
@@ -281,16 +282,20 @@ flowchart LR
 |---|---|---|
 | Database Schema | Implemented | `clinics`, `staff`, `patients`, `visits`, `sync_log` created |
 | RLS | Planned / Production Required | RLS is the intended production security architecture but is disabled in the current MVP development schema |
-| Authentication | Implemented | UI + Context + Demo Bypass |
+| Authentication | Implemented | UI + Context + Demo Bypass + Admin role routing |
 | Patient Registration | Implemented | Task 4 completed; successfully saves to Supabase |
 | Patient Details/List | Implemented | Tasks 5/6; list and detail read from Supabase |
+| Admin Patient Records | Implemented | Task 11; multi-clinic joins, name/ID/UUID search, 1–5 urgency filter, skeleton loader, dual empty states, CSV export, detail navigation |
 | Vitals/Visits | Implemented | Task 6; `VitalsPage` inserts into `visits` |
-| Admin Dashboard | In Progress | UI MVP completed; pending real data |
-| Emergency Mode | In Progress | UI MVP completed; pending real data |
-| Offline Storage | Not Started | Dexie.js integration pending |
-| Background Sync | Not Started | Queue/Service Worker pending |
+| Admin Dashboard | Implemented | Task 10; live stat cards, weekly chart, clinics panel, staff CRUD, sync monitor wired to Supabase / Dexie |
+| High-Risk Patients View | Implemented | Task 13; visits score >= 3, clinics join, real staff doctor assignment with persistence, search, urgency/clinic/assignment filters, detail navigation, CSV export |
+| Emergency Mode | Implemented | Task 14; live database metrics (`clinics`, `visits` 48h, `patients`, `staff`), zone aggregation, 1–5 triage queue with detail drill-down, SOS broadcast modal, situation report CSV export |
+| Outbreak Detection | Implemented | Task 14.5; threshold-based symptom cluster engine (`adminService.fetchOutbreakAnalysis()`), syndrome classification, early-warning banner, WHO checklist, patient drill-down, CSV export (`OutbreakDetectionPage.tsx`) |
+| Emergency Triage Queue | Implemented | Task 15; authoritative 1–5 urgency scale, Red/Yellow/Green triage bands, interactive clinical status workflows (Start Care / In Treatment / Discharge / Revert), multi-attribute search, band filtering, CSV export, patient detail drill-down (`EmergencyTriagePage.tsx`) |
+| Offline Storage | Implemented | Task 7; Dexie.js offlineDb with pendingRecords queue |
+| Background Sync | Implemented | Task 8; SyncService automatic sync on reconnection + SyncMonitorPage |
 | PWA | Not Started | Manifest pending |
-| OCR | Not Started | Proof of concept pending |
+| OCR | Implemented | Task 9A; Tesseract.js client-side OCR on DigitizePage |
 
 ---
 
@@ -300,18 +305,18 @@ For exhibition purposes, the core story is: **"Healthcare records remain useful 
 
 Currently, the strongest demoable features are:
 1. The **Patient Registration → Record Visit → Patient Record** flow (live database mutations and reads).
-2. The **Bilingual & Dark Mode UI** (accessibility).
-3. The **Emergency Dashboard Shell** (UI concepts).
-
-*Note: True offline capability is not yet complete and cannot be demonstrated reliably until Phase 2 is finished. Do not fake offline functionality for the demo.*
+2. The **Admin Console & Operations** (live metrics, visits chart, clinics breakdown, staff management, and offline queue monitor).
+3. The **Emergency Mode & Crisis Operations Center** (zone severity grouping, real 1–5 triage queue, doctor dispatch, SOS incident broadcast, and situation report export).
+4. The **Outbreak Surveillance Radar & Early-Warning System** (syndrome-based clustering from clinical intake data, dashboard alerts, WHO action checklists, linked case tracing).
+5. The **Offline Visit & Patient Queueing** (IndexedDB queueing via Dexie, automatic background sync upon reconnection).
+6. The **Bilingual & Dark Mode UI** (accessibility).
 
 ---
 
 ## 22. Known Limitations
 
-- **Offline Engine:** Not currently functional. Network drops will cause mutations to fail.
-- **Data Fetching:** Admin, Emergency, Sync and Triage views still rely on hardcoded dummy data arrays. The worker dashboard home (recent patients, stats) is also static.
-- **Admin Configuration:** Creating clinics and staff accounts must be done manually via SQL.
+- **Emergency Mode:** External weather/flood sensor feeds remain planned (internal database metrics, zones, triage, and broadcast are fully implemented).
+- **Worker Home Dashboard:** Recent patients list and quick stats on the worker home screen are still placeholder figures.
 - **Translation:** Some deep UI elements lack complete Bangla translation strings.
 
 ---

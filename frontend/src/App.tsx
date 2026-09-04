@@ -285,8 +285,14 @@ export default function App() {
       "sync-progress",
     ].includes(page)
 
+    // No session at all → send to appropriate login
     if (isProtectedRoute && !session) {
-      setPage("login")
+      setPage(page === "admin-dashboard" ? "admin-login" : "login")
+    }
+
+    // Worker somehow on admin-dashboard → redirect to worker dashboard
+    if (page === "admin-dashboard" && session && profile && profile.role !== "admin") {
+      setPage("dashboard")
     }
 
     if (
@@ -300,6 +306,7 @@ export default function App() {
       setPage(profile.role === "admin" ? "admin-dashboard" : "dashboard")
     }
   }, [page, session, profile, loading])
+
 
   if (loading) {
     return (
@@ -347,7 +354,7 @@ export default function App() {
     return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} />
   if (page === "admin-login")
     return (
-      <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => {}} />
+      <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />
     )
   if (page === "dashboard")
     return (

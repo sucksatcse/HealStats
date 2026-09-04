@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   loginDemoUser: () => void
+  loginDemoAdmin: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   loginDemoUser: () => {},
+  loginDemoAdmin: () => {},
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -97,6 +99,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isDemo])
 
+  const loginDemoAdmin = () => {
+    setIsDemo(true)
+    setSession({} as Session)
+    setUser({ id: "admin-bypass-id" } as User)
+    setProfile({
+      id: "admin-bypass-staff-id",
+      name: "System Admin",
+      role: "admin",
+      clinic_id: null, // null = access to all clinics (system-level admin)
+    })
+    setLoading(false)
+
+    // Attempt to hydrate from DB if the seeded admin staff row exists
+    supabase
+      .from("staff")
+      .select("id, name, role, clinic_id")
+      .eq("email", "admin@healstats.org")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setProfile(data as AuthProfile)
+      })
+  }
+
   const loginDemoUser = () => {
     setIsDemo(true)
     setSession({} as Session)
@@ -134,7 +159,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, signOut, loginDemoUser }}
+      value={{ session, user, profile, loading, signOut, loginDemoUser, loginDemoAdmin }}
     >
       {children}
     </AuthContext.Provider>

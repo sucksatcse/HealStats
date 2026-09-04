@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { supabase } from "./lib/supabase"
+import { useAuth } from "./AuthContext"
 
 interface AdminLoginPageProps {
   onBack: () => void
@@ -252,6 +253,8 @@ export default function AdminLoginPage({
     setTimeout(() => setForgotSent(false), 4000)
   }
 
+  const { loginDemoAdmin } = useAuth()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim() || !password) {
@@ -260,6 +263,19 @@ export default function AdminLoginPage({
     }
     setError("")
     setLoading(true)
+
+    // ── Dev / exhibition bypass ─────────────────────────────────────────────
+    // Entering admin@healstats.org / Admin@123456 skips Supabase Auth and
+    // grants immediate access to the admin dashboard. Remove for production.
+    if (
+      email.trim() === "admin@healstats.org" &&
+      password === "Admin@123456"
+    ) {
+      loginDemoAdmin()  // Sets mock admin profile in AuthContext
+      onLogin()
+      return
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -273,6 +289,7 @@ export default function AdminLoginPage({
       onLogin() // App.tsx handles the actual role routing
     }
   }
+
 
   // subtle floating-dot animation offset
   const dots = Array.from({ length: 18 }, (_, i) => ({

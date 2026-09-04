@@ -92,9 +92,16 @@ Based on the original plan in `FEATURES.md`, the following checkboxes have been 
 - [x] English & Bangla (Bengali) context setup
 - [x] Dark Mode context setup
 - [x] Admin Dashboard stats cards wired to real Supabase metrics with resilient parallel fetching (`AdminDashboardPage.tsx`)
+- [x] Admin Dashboard 7-day/30-day/90-day visits chart dynamically aggregated from Supabase `visits` (`AdminDashboardPage.tsx`)
+- [x] Admin Dashboard Top Clinics Today panel dynamically queried from Supabase `clinics` and today's `visits` (`AdminDashboardPage.tsx`)
 - [x] Patient Directory wired to Supabase `patients` table with server-side ILIKE search, pagination, and latest visit urgency badge (`PatientRecordsPage.tsx`)
-- [x] Staff Management UI wired to Supabase `staff` table with clinic joins, Add/Edit modals, and soft deactivation (`StaffPage.tsx`)
-- [x] Flagged Patients page wired to Supabase `visits` with latest-visit deduplication and coordinator assignments (`FlaggedPatientsPage.tsx`)
+- [x] Admin Patient Records Table wired to Supabase `patients` with multi-clinic visibility, name/ID/UUID search, 1–5 urgency level filter, animated skeleton loader, dual empty states, resilient retry error banner, CSV export, and detail navigation to `PatientDetailPage` (`PatientRecordsPage.tsx`, `AdminDashboardPage.tsx`, `adminService.ts`) (Task 11)
+- [x] Staff Management UI wired to Supabase `staff` table with clinic joins, Add/Edit modals, clinic assignment dropdowns, search, role/status/clinic filters, column sorting, pagination, and soft deactivation (`StaffPage.tsx`, `adminService.ts`) (Task 12)
+- [x] High-Risk / Flagged Patients triage feed wired to Supabase `visits` (score >= 3) with clinics join, real staff doctor assignment with persistence, instant search, urgency tabs with counts, clinic/assignment filters, CSV export, and patient detail navigation (`FlaggedPatientsPage.tsx`, `AdminDashboardPage.tsx`, `adminService.ts`) (Task 13)
+- [x] Emergency Mode & Crisis Operations Center wired to Supabase database (`clinics`, `visits`, `patients`, `staff`) with zone aggregation, urgency 1–5 triage queue drill-down to `PatientDetailPage`, interactive SOS broadcast modal, situation report CSV export, and toggle activation (`EmergencyDashboard.tsx`, `AdminDashboardPage.tsx`, `adminService.ts`) (Task 14)
+- [x] Outbreak Detection & Symptom Clustering Radar wired to live Supabase clinical intake visits, grouping cases by syndrome & zone, triggering early-warning dashboard banners, interactive WHO protocol checklists, expandable linked patient case tables, and CSV situation report exports (`OutbreakDetectionPage.tsx`, `AdminDashboardPage.tsx`, `adminService.ts`) (Task 14.5)
+- [x] Emergency Mode Triage Queue wired to live Supabase visits joined with patients and clinics, using authoritative 1–5 urgency scale and Red/Yellow/Green bands, interactive clinical workflow actions (Start Care / In Treatment / Discharge / Revert), live band counters, multi-attribute search, CSV export, and two-way detail drill-down (`EmergencyTriagePage.tsx`, `DashboardPage.tsx`, `AdminDashboardPage.tsx`, `EmergencyDashboard.tsx`, `adminService.ts`) (Task 15)
+- [x] Sync Monitor Page wired to IndexedDB `offlineDb.pendingRecords` queue and `SyncService` (`SyncMonitorPage.tsx`)
 
 ### 🚨 Pending / Needs to be Added (⬜)
 
@@ -109,10 +116,10 @@ The following components, infrastructure, and integrations are explicitly missin
 - [x] **Local Storage DB**: A client-side database (Dexie.js) has been installed and configured to queue pending patient registrations and visits (Task 7).
 - [ ] **Service Workers**: No service workers are registered to intercept network requests and serve cached assets/data offline.
 - [x] **Background Sync Queue**: A background sync service monitors `navigator.onLine` and automatically processes the Dexie queue upon reconnection (Task 8).
-- [ ] **Sync Status UI Hookup**: The `SyncMonitorPage.tsx` and `SyncPage.tsx` are static placeholders; they need to read from the actual background queue to display true syncing status.
+- [x] **Sync Status UI Hookup**: `SyncMonitorPage.tsx` is fully wired to Dexie `offlineDb.pendingRecords` and `syncService` to display real-time queued records, network state, and force sync capabilities (Task 10).
 
 #### 3. Data Fetching & UI Wiring (CRUD)
-- *Note: Patient Registration, Patient List, Patient Detail and Visit Recording are wired to Supabase. All other pages (Admin, Emergency, Sync, Triage, Digitize, etc.) remain static shells.*
+- *Note: Patient Registration, Patient List, Patient Detail, Visit Recording, and Admin Management (Stats, Staff, Flagged, Sync, Chart, Clinics, Emergency, Outbreak) are wired to live data. Remaining modules (Alerts Center external feeds, Triage ML model) remain static shells.*
 - [x] **Patient Registration**: `NewPatientPage.tsx` needs to be wired to `supabase.from('patients').insert(...)`.
 - [x] **Patient Retrieval**: `PatientRecordsPage.tsx` (wired to fetch from Supabase) and `PatientDetailPage.tsx` (Task 6: fetches the patient plus their `visits` with `staff(name)` and `clinics(name)` joins; Vitals History, Visit History and Diagnoses tabs render real data with honest empty states).
 - [x] **Vitals & Forms**: `VitalsPage.tsx` (Task 6) inserts into `visits` with `patient_id` (from an in-form patient selector or pre-selected from Patient Detail), `staff_id` from `AuthContext.profile.id`, `vitals` JSONB, `symptoms` (free text + selected chips), `symptom_category` (dropdown: diarrhea/gastrointestinal, fever, respiratory, skin/rash, other), `diagnosis`, `urgency_score` (1–5, pre-filled by the AI check, worker can override) and `synced_at`.
@@ -124,8 +131,9 @@ The following components, infrastructure, and integrations are explicitly missin
 - [x] **OCR Digitization**: The `DigitizePage.tsx` uses Tesseract.js locally to extract Name, Age, and Diagnosis from images of paper records, allowing manual review before saving (Task 9A).
 
 #### 5. Emergency & Disaster Mode
-- [ ] **Live Alert Feeds**: `EmergencyDashboard.tsx` and `AlertsCenterPage.tsx` are not connected to any external real-time data sources (e.g., flood maps, weather APIs, shelter capacities).
-- [ ] **Outbreak Tracking**: Logic to aggregate and flag symptom trends (like waterborne diseases) across multiple clinics in real-time is missing.
+- [x] **Emergency Operations Dashboard**: `EmergencyDashboard.tsx` is wired to Supabase live database (`clinics`, `visits` in past 48h, `patients`, and `staff`) via `adminService.fetchEmergencyMetrics()`, aggregating active zones, urgency 1–5 triage queue, deployed responders, interactive SOS broadcast modal, and situation report CSV export (Task 14).
+- [x] **Outbreak Surveillance & Symptom Radar**: Threshold-based symptom clustering engine implemented in `adminService.fetchOutbreakAnalysis()` and `OutbreakDetectionPage.tsx`. Analyzes recent clinical visits in Supabase by syndrome (waterborne, febrile, respiratory, cutaneous), flags zone clusters with urgency weighting, surfaces top-level dashboard early warning alerts, and allows linked patient drill-down (Task 14.5).
+- [ ] **Live External Alert Feeds**: `AlertsCenterPage.tsx` and external real-time data sources (e.g. meteorological flood maps, weather APIs, shelter capacities) are not connected.
 
 #### 6. DevOps, PWA & Deployment
 - [ ] **PWA Manifest**: A `manifest.json` with icons and configurations is missing, which is required to allow health workers to install the app on their devices outside of an App Store.
