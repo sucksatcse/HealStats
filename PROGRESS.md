@@ -91,6 +91,10 @@ Based on the original plan in `FEATURES.md`, the following checkboxes have been 
 - [x] Implement role-based routing: Health Worker / Doctor / Admin / Coordinator
 - [x] English & Bangla (Bengali) context setup
 - [x] Dark Mode context setup
+- [x] Admin Dashboard stats cards wired to real Supabase metrics with resilient parallel fetching (`AdminDashboardPage.tsx`)
+- [x] Patient Directory wired to Supabase `patients` table with server-side ILIKE search, pagination, and latest visit urgency badge (`PatientRecordsPage.tsx`)
+- [x] Staff Management UI wired to Supabase `staff` table with clinic joins, Add/Edit modals, and soft deactivation (`StaffPage.tsx`)
+- [x] Flagged Patients page wired to Supabase `visits` with latest-visit deduplication and coordinator assignments (`FlaggedPatientsPage.tsx`)
 
 ### 🚨 Pending / Needs to be Added (⬜)
 
@@ -113,7 +117,6 @@ The following components, infrastructure, and integrations are explicitly missin
 - [x] **Patient Retrieval**: `PatientRecordsPage.tsx` (wired to fetch from Supabase) and `PatientDetailPage.tsx` (Task 6: fetches the patient plus their `visits` with `staff(name)` and `clinics(name)` joins; Vitals History, Visit History and Diagnoses tabs render real data with honest empty states).
 - [x] **Vitals & Forms**: `VitalsPage.tsx` (Task 6) inserts into `visits` with `patient_id` (from an in-form patient selector or pre-selected from Patient Detail), `staff_id` from `AuthContext.profile.id`, `vitals` JSONB, `symptoms` (free text + selected chips), `symptom_category` (dropdown: diarrhea/gastrointestinal, fever, respiratory, skin/rash, other), `diagnosis`, `urgency_score` (1–5, pre-filled by the AI check, worker can override) and `synced_at`.
 - [ ] **Form Validation & State**: No robust form validation libraries (e.g., Zod, React Hook Form) are integrated. Form error states and toast notifications (except for static examples) are missing.
-- [ ] **Loading States**: Skeletons and spinners are not dynamically triggered by network/data loading states.
 
 #### 4. AI, ML & OCR Integrations
 - [ ] **Triage Scoring Model**: The ML or rule-based algorithm to instantly score a patient's urgency during intake does not exist.

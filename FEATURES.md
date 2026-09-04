@@ -29,7 +29,8 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Automatic Sync | Offline-First | Not Started | Critical |
 | OCR | Intelligence | Not Started | Optional |
 | AI-Assisted Triage | Intelligence | Not Started | Optional |
-| Admin Dashboard | Administration | In Progress | Medium |
+| Admin Dashboard | Administration | Implemented | Medium |
+| Staff Management | Administration | Implemented | Medium |
 | Emergency Mode | Disaster Response | In Progress | High |
 | Outbreak Detection | Disaster Response | Planned | Medium |
 | Bangla/English | Accessibility | Implemented | Critical |
@@ -154,15 +155,15 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 ## 9. Administration & Dashboard
 
 ### Admin Dashboard
-- **Status**: In Progress (Static UI exists: `AdminDashboardPage.tsx`)
-- **Capabilities**: Displays high-level clinic statistics, patient counts, and flagged high-risk visits. Real-time metric fetching is not yet connected to Supabase.
+- **Status**: Implemented
+- **Capabilities**: Parallel Supabase queries for live metrics (Total Patients, Today's Records, Pending Syncs, High-Risk Flagged Patients), per-card loading skeletons and isolated error states, clinic analytics breakdowns, and high-risk patient review routing.
 
 ---
 
 ## 10. Staff Management
 
-- **Status**: Manual Setup
-- **Capabilities**: Currently, staff accounts and clinic assignments must be managed manually via the Supabase Dashboard / SQL Editor. An in-app UI for Admin staff management is planned but not implemented.
+- **Status**: Implemented
+- **Capabilities**: In-app UI for Admin staff management with real Supabase CRUD. Lists staff joined with clinics, provides Add Staff modal (with clear notice on Supabase Auth account creation), Edit Staff modal (name, email, role), and soft deactivation/reactivation toggle. Includes database migration `20260904000001_add_staff_is_active.sql`.
 
 ---
 

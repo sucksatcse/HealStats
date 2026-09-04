@@ -3,7 +3,7 @@ import PatientFormPage, { type PatientRecord } from "./PatientFormPage"
 import { supabase } from "./lib/supabase"
 import { useAuth } from "./AuthContext"
 
-// ── Icons ────────────────────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const Icon = {
   search: (
     <svg
@@ -129,7 +129,7 @@ function getUrgencyFromScore(score?: number): Urgency {
 
 const URGENCY_CLS: Record<Urgency, string> = {
   Critical: "bg-red-50 text-red-700 border-red-200",
-  High: "bg-orange-50 text-orange-700 border-orange-200",
+  High:     "bg-orange-50 text-orange-700 border-orange-200",
   Moderate: "bg-amber-50 text-amber-700 border-amber-200",
   Low: "bg-sky-50 text-sky-700 border-sky-200",
   Stable: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -137,7 +137,7 @@ const URGENCY_CLS: Record<Urgency, string> = {
 
 const URGENCY_DOT: Record<Urgency, string> = {
   Critical: "bg-red-500",
-  High: "bg-orange-500",
+  High:     "bg-orange-500",
   Moderate: "bg-amber-500",
   Low: "bg-sky-500",
   Stable: "bg-emerald-500",
@@ -498,11 +498,12 @@ export default function PatientRecordsPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 bg-white px-4 py-2.5 rounded-xl transition-all">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v8M4.5 6.5L8 10l3.5-3.5M2.5 13.5h11" />
-            </svg>
-            Export CSV
+          <button
+            onClick={load}
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 bg-white px-4 py-2.5 rounded-xl transition-all"
+          >
+            {Icon.refresh}
+            Refresh
           </button>
           <button
             onClick={() => onNewPatient ? onNewPatient() : setForm({ mode: "add" })}
@@ -516,7 +517,7 @@ export default function PatientRecordsPage({
         </div>
       </div>
 
-      {/* Toolbar: search + filters */}
+      {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[240px] max-w-md">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -562,7 +563,20 @@ export default function PatientRecordsPage({
             Clear filters ({activeFilters})
           </button>
         )}
+        {urgency !== "All" && (
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-lg">
+            Urgency filter fetches all matching patients — pagination counts reflect filtered results.
+          </p>
+        )}
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          {error}
+          <button onClick={load} className="ml-3 font-semibold underline">Retry</button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -672,7 +686,8 @@ export default function PatientRecordsPage({
           </table>
         </div>
 
-        {filtered.length === 0 && (
+        {/* Empty state */}
+        {!loading && !error && rows.length === 0 && (
           <div className="py-16 text-center">
             <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
               {Icon.search}
@@ -687,7 +702,7 @@ export default function PatientRecordsPage({
         )}
 
         {/* Pagination */}
-        {filtered.length > 0 && (
+        {!loading && rows.length > 0 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-slate-50/40 flex-wrap gap-3">
             <p className="text-xs text-slate-400">
               Showing{" "}
@@ -707,13 +722,13 @@ export default function PatientRecordsPage({
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
+                disabled={page === 1}
                 className="flex items-center gap-1 text-xs font-semibold text-slate-500 px-2.5 py-1.5 rounded-lg hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               >
                 {Icon.chevronLeft}
                 Prev
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
@@ -726,9 +741,10 @@ export default function PatientRecordsPage({
                   {p}
                 </button>
               ))}
+              {totalPages > 7 && <span className="text-slate-400 text-xs px-1">…{totalPages}</span>}
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
+                disabled={page === totalPages}
                 className="flex items-center gap-1 text-xs font-semibold text-slate-500 px-2.5 py-1.5 rounded-lg hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               >
                 Next

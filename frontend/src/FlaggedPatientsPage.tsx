@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 
-// ── Icons ────────────────────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const Icon = {
   alert: (
     <svg
@@ -292,7 +292,7 @@ function AssignMenu({
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded-lg shadow-sm transition-colors whitespace-nowrap"
       >
         {Icon.doctor}
-        Assign to Doctor
+        Assign
         {Icon.chevronDown}
       </button>
       {open && (
@@ -311,7 +311,7 @@ function AssignMenu({
                 }}
                 className="w-full text-left text-sm text-slate-600 hover:bg-teal-50 hover:text-teal-700 px-3.5 py-2 transition-colors"
               >
-                {d}
+                {c}
               </button>
             ))}
           </div>
@@ -358,10 +358,15 @@ export default function FlaggedPatientsPage() {
             {unassignedCount} awaiting assignment
           </p>
         </div>
-        <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-red-700 bg-white/70 border border-red-200 px-3 py-1.5 rounded-full">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          Live triage feed
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={load} className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-red-700 bg-white/70 border border-red-200 px-3 py-1.5 rounded-full hover:bg-white transition-colors">
+            {Icon.refresh} Refresh
+          </button>
+          <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-red-700 bg-white/70 border border-red-200 px-3 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            Live feed
+          </span>
+        </div>
       </div>
 
       {/* Filter row */}
@@ -399,10 +404,18 @@ export default function FlaggedPatientsPage() {
         </p>
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          {error}
+          <button onClick={load} className="ml-3 font-semibold underline">Retry</button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-left">
+          <table className="w-full min-w-[960px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {[
@@ -511,7 +524,7 @@ export default function FlaggedPatientsPage() {
           </table>
         </div>
 
-        {rows.length === 0 && (
+        {!loading && rows.length === 0 && !error && (
           <div className="py-16 text-center">
             <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-3 text-emerald-500">
               {Icon.check}
@@ -525,6 +538,11 @@ export default function FlaggedPatientsPage() {
           </div>
         )}
       </div>
+
+      {/* UI-only disclaimer for Mark Reviewed */}
+      <p className="text-xs text-slate-400 text-center">
+        "Mark reviewed" status is session-only — no database field exists yet. Assignments are also not persisted.
+      </p>
 
       {/* Toast */}
       {toast && (
