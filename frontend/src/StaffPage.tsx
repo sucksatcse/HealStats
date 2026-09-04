@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { fetchStaff, createStaffRecord, setStaffActive, type StaffWithClinic } from "./lib/adminService"
+import { useAuth } from "./AuthContext"
 
 // ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -129,190 +131,74 @@ const Icon = {
   ),
 }
 
-// ── Data ───────────────────────────────────────────────────────────────────────
-type Staff = {
-  id: string
-  name: string
-  email: string
-  role: "Nurse" | "Community Health Worker" | "Clinical Officer" | "Midwife" | "Pharmacist" | "Lab Technician"
-  zone: string
-  active: boolean
-  lastSync: string
-  syncTone: "recent" | "stale" | "never"
-  initials: string
-  color: string
-}
+// ── Data helpers ───────────────────────────────────────────────────────────────────────
 
-const INITIAL_STAFF: Staff[] = [
-  {
-    id: "HW-20451",
-    name: "Sr. Amara Diallo",
-    email: "a.diallo@kayes.health",
-    role: "Nurse",
-    zone: "Kayes District",
-    active: true,
-    lastSync: "12 min ago",
-    syncTone: "recent",
-    initials: "AD",
-    color: "bg-teal-100 text-teal-700",
-  },
-  {
-    id: "HW-20388",
-    name: "Ibrahim Traoré",
-    email: "i.traore@kayes.health",
-    role: "Community Health Worker",
-    zone: "Sikasso Rural",
-    active: true,
-    lastSync: "1 hr ago",
-    syncTone: "recent",
-    initials: "IT",
-    color: "bg-violet-100 text-violet-700",
-  },
-  {
-    id: "HW-20502",
-    name: "Dr. Fanta Diallo",
-    email: "f.diallo@segou.health",
-    role: "Clinical Officer",
-    zone: "Ségou Centre",
-    active: true,
-    lastSync: "3 hrs ago",
-    syncTone: "stale",
-    initials: "FD",
-    color: "bg-sky-100 text-sky-700",
-  },
-  {
-    id: "HW-20219",
-    name: "Kadiatou Baldé",
-    email: "k.balde@mopti.health",
-    role: "Midwife",
-    zone: "Mopti Outreach",
-    active: false,
-    lastSync: "6 days ago",
-    syncTone: "never",
-    initials: "KB",
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "HW-20477",
-    name: "Sekou Bah",
-    email: "s.bah@dhading.health",
-    role: "Pharmacist",
-    zone: "Dhading Community",
-    active: true,
-    lastSync: "28 min ago",
-    syncTone: "recent",
-    initials: "SB",
-    color: "bg-rose-100 text-rose-700",
-  },
-  {
-    id: "HW-20344",
-    name: "Oumar Coulibaly",
-    email: "o.coulibaly@kayes.health",
-    role: "Lab Technician",
-    zone: "Kayes District",
-    active: true,
-    lastSync: "2 hrs ago",
-    syncTone: "stale",
-    initials: "OC",
-    color: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    id: "HW-20291",
-    name: "Mariama Kouyaté",
-    email: "m.kouyate@sikasso.health",
-    role: "Nurse",
-    zone: "Sikasso Rural",
-    active: false,
-    lastSync: "12 days ago",
-    syncTone: "never",
-    initials: "MK",
-    color: "bg-pink-100 text-pink-700",
-  },
-  {
-    id: "HW-20515",
-    name: "Aminata Sané",
-    email: "a.sane@segou.health",
-    role: "Community Health Worker",
-    zone: "Ségou Centre",
-    active: true,
-    lastSync: "44 min ago",
-    syncTone: "recent",
-    initials: "AS",
-    color: "bg-indigo-100 text-indigo-700",
-  },
+const AVATAR_COLORS = [
+  "bg-teal-100 text-teal-700",
+  "bg-violet-100 text-violet-700",
+  "bg-sky-100 text-sky-700",
+  "bg-amber-100 text-amber-700",
+  "bg-rose-100 text-rose-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-indigo-100 text-indigo-700",
 ]
 
-const ROLE_CLS: Record<Staff["role"], string> = {
-  Nurse: "bg-teal-50 text-teal-700 border-teal-200",
-  "Community Health Worker": "bg-violet-50 text-violet-700 border-violet-200",
-  "Clinical Officer": "bg-sky-50 text-sky-700 border-sky-200",
-  Midwife: "bg-pink-50 text-pink-700 border-pink-200",
-  Pharmacist: "bg-rose-50 text-rose-700 border-rose-200",
-  "Lab Technician": "bg-emerald-50 text-emerald-700 border-emerald-200",
+function roleLabel(role: string): string {
+  if (role === "admin") return "Administrator"
+  return "Health Worker"
 }
 
-const SYNC_DOT: Record<Staff["syncTone"], string> = {
-  recent: "bg-emerald-500",
-  stale: "bg-amber-500",
-  never: "bg-slate-300",
+function roleCls(role: string): string {
+  return role === "admin"
+    ? "bg-violet-50 text-violet-700 border-violet-200"
+    : "bg-teal-50 text-teal-700 border-teal-200"
 }
 
-const ROLE_OPTIONS: Staff["role"][] = [
-  "Nurse",
-  "Community Health Worker",
-  "Clinical Officer",
-  "Midwife",
-  "Pharmacist",
-  "Lab Technician",
-]
-const ZONE_OPTIONS = [
-  "Kayes District",
-  "Sikasso Rural",
-  "Ségou Centre",
-  "Mopti Outreach",
-  "Dhading Community",
-]
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase()
+}
 
-// ── Add Staff modal ────────────────────────────────────────────────────────────
+
+
+
+// ── Add Staff modal ──────────────────────────────────────────────────────────────────────
 function AddStaffModal({
+  clinicId,
   onClose,
-  onAdd,
+  onAdded,
 }: {
+  clinicId: string | null
   onClose: () => void
-  onAdd: (s: Staff) => void
+  onAdded: (s: StaffWithClinic) => void
 }) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [role, setRole] = useState<Staff["role"]>("Nurse")
-  const [zone, setZone] = useState(ZONE_OPTIONS[0])
+  const [role, setRole] = useState<"worker" | "admin">("worker")
   const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
 
-  const submit = (e: React.FormEvent) => {
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !email.trim()) {
       setError("Name and email are required.")
       return
     }
-    const initials = name
-      .trim()
-      .split(/\s+/)
-      .filter((w) => !/^(sr\.?|dr\.?|mr\.?|ms\.?)$/i.test(w))
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase()
-    onAdd({
-      id: `HW-${20000 + Math.floor(Math.random() * 9999)}`,
+    setSaving(true)
+    setError("")
+    const { data, error: apiError } = await createStaffRecord({
       name: name.trim(),
       email: email.trim(),
       role,
-      zone,
-      active: true,
-      lastSync: "Never",
-      syncTone: "never",
-      initials: initials || "NA",
-      color: "bg-teal-100 text-teal-700",
+      clinic_id: clinicId,
     })
+    setSaving(false)
+    if (apiError || !data) {
+      setError(apiError ?? "Failed to create staff record.")
+      return
+    }
+    onAdded(data)
   }
 
   return (
@@ -356,7 +242,7 @@ function AddStaffModal({
                 setName(e.target.value)
                 setError("")
               }}
-              placeholder="e.g. Sr. Amara Diallo"
+              placeholder="e.g. Amara Diallo"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all"
             />
           </div>
@@ -372,66 +258,44 @@ function AddStaffModal({
                 setEmail(e.target.value)
                 setError("")
               }}
-              placeholder="name@district.health"
+              placeholder="name@clinic.org"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-                Role
-              </label>
-              <div className="relative">
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as Staff["role"])}
-                  className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all cursor-pointer"
-                >
-                  {ROLE_OPTIONS.map((r) => (
-                    <option key={r}>{r}</option>
-                  ))}
-                </select>
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                  {Icon.chevronDown}
-                </span>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-                Zone
-              </label>
-              <div className="relative">
-                <select
-                  value={zone}
-                  onChange={(e) => setZone(e.target.value)}
-                  className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all cursor-pointer"
-                >
-                  {ZONE_OPTIONS.map((z) => (
-                    <option key={z}>{z}</option>
-                  ))}
-                </select>
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                  {Icon.chevronDown}
-                </span>
-              </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+              Role
+            </label>
+            <div className="relative">
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as "worker" | "admin")}
+                className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all cursor-pointer"
+              >
+                <option value="worker">Health Worker</option>
+                <option value="admin">Administrator</option>
+              </select>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                {Icon.chevronDown}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 py-2.5 rounded-xl transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all"
+              disabled={saving}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-md shadow-teal-600/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {Icon.plus}
-              Create Account
+              {saving ? "Adding…" : "Add Staff Member"}
             </button>
           </div>
         </form>
@@ -442,32 +306,47 @@ function AddStaffModal({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function StaffPage() {
-  const [staff, setStaff] = useState<Staff[]>(INITIAL_STAFF)
+  const { profile } = useAuth()
+  const [staff, setStaff] = useState<StaffWithClinic[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] =
     useState<"all" | "active" | "inactive">("all")
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState("")
 
+  useEffect(() => {
+    setIsLoading(true)
+    fetchStaff(profile?.clinic_id ?? null)
+      .then(({ data, error }) => {
+        if (error) setFetchError(error)
+        else setStaff(data ?? [])
+      })
+      .finally(() => setIsLoading(false))
+  }, [profile?.clinic_id])
+
   const flash = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(""), 2600)
   }
 
-  const toggleActive = (id: string) => {
-    setStaff((prev) =>
-      prev.map((s) => {
-        if (s.id !== id) return s
-        flash(s.active ? `${s.name} deactivated` : `${s.name} reactivated`)
-        return { ...s, active: !s.active }
-      }),
-    )
+  const toggleActive = async (id: string, currentActive: boolean) => {
+    const s = staff.find((x) => x.id === id)
+    if (!s) return
+    const { error } = await setStaffActive(id, !currentActive)
+    if (error) {
+      flash(`Error: ${error}`)
+    } else {
+      setStaff((prev) => prev.map((x) => x.id === id ? { ...x, is_active: !currentActive } : x))
+      flash(currentActive ? `${s.name} deactivated` : `${s.name} reactivated`)
+    }
   }
 
-  const addStaff = (s: Staff) => {
+  const handleAdded = (s: StaffWithClinic) => {
     setStaff((prev) => [s, ...prev])
     setShowModal(false)
-    flash(`${s.name} added to ${s.zone}`)
+    flash(`${s.name} added successfully`)
   }
 
   const filtered = useMemo(
@@ -477,17 +356,17 @@ export default function StaffPage() {
           query === "" ||
           s.name.toLowerCase().includes(query.toLowerCase()) ||
           s.role.toLowerCase().includes(query.toLowerCase()) ||
-          s.zone.toLowerCase().includes(query.toLowerCase()) ||
-          s.id.toLowerCase().includes(query.toLowerCase())
+          (s.email ?? "").toLowerCase().includes(query.toLowerCase())
+        const active = s.is_active ?? true
         const matchesStatus =
           statusFilter === "all" ||
-          (statusFilter === "active" ? s.active : !s.active)
+          (statusFilter === "active" ? active : !active)
         return matchesQuery && matchesStatus
       }),
     [staff, query, statusFilter],
   )
 
-  const activeCount = staff.filter((s) => s.active).length
+  const activeCount = staff.filter((s) => s.is_active ?? true).length
 
   return (
     <div className="space-y-6">
@@ -498,8 +377,7 @@ export default function StaffPage() {
             Staff Management
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {staff.length} healthcare workers · {activeCount} active across 5
-            zones
+            {isLoading ? "Loading…" : `${staff.length} staff members · ${activeCount} active`}
           </p>
         </div>
         <button
@@ -520,7 +398,7 @@ export default function StaffPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, role, zone, or ID…"
+            placeholder="Search by name, role, or email…"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
           />
         </div>
@@ -541,7 +419,21 @@ export default function StaffPage() {
         </div>
       </div>
 
+      {/* Loading / error */}
+      {isLoading && (
+        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
+          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Loading staff…</p>
+        </div>
+      )}
+      {!isLoading && fetchError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <strong>Error loading staff:</strong> {fetchError}
+        </div>
+      )}
+
       {/* Table */}
+      {!isLoading && !fetchError && (
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-left">
@@ -550,9 +442,8 @@ export default function StaffPage() {
                 {[
                   { label: "Name", w: "" },
                   { label: "Role", w: "" },
-                  { label: "Assigned Zone", w: "" },
+                  { label: "Assigned Clinic", w: "" },
                   { label: "Status", w: "" },
-                  { label: "Last Sync", w: "" },
                 ].map((col) => (
                   <th
                     key={col.label}
@@ -574,23 +465,23 @@ export default function StaffPage() {
                 <tr
                   key={s.id}
                   className={`group hover:bg-teal-50/40 transition-colors ${
-                    !s.active ? "opacity-70" : ""
+                    !(s.is_active ?? true) ? "opacity-70" : ""
                   }`}
                 >
                   {/* Name */}
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${s.color}`}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${AVATAR_COLORS[s.id.charCodeAt(0) % AVATAR_COLORS.length]}`}
                       >
-                        {s.initials}
+                        {initials(s.name)}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-800 truncate">
                           {s.name}
                         </p>
                         <p className="text-[11px] text-slate-400 truncate">
-                          {s.email} · {s.id}
+                          {s.email} · {s.id.slice(0, 8).toUpperCase()}
                         </p>
                       </div>
                     </div>
@@ -598,61 +489,47 @@ export default function StaffPage() {
                   {/* Role */}
                   <td className="px-5 py-4">
                     <span
-                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${ROLE_CLS[s.role]}`}
+                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${roleCls(s.role)}`}
                     >
-                      {s.role}
+                      {roleLabel(s.role)}
                     </span>
                   </td>
-                  {/* Zone */}
+                  {/* Clinic / Zone */}
                   <td className="px-5 py-4">
-                    <span className="text-sm text-slate-600">{s.zone}</span>
+                    <span className="text-sm text-slate-600">
+                      {s.clinics?.zone ?? s.clinics?.name ?? "—"}
+                    </span>
                   </td>
                   {/* Status */}
                   <td className="px-5 py-4">
                     <span
                       className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        s.active
+                        (s.is_active ?? true)
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          s.active ? "bg-emerald-500" : "bg-slate-400"
+                          (s.is_active ?? true) ? "bg-emerald-500" : "bg-slate-400"
                         }`}
                       />
-                      {s.active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  {/* Last Sync */}
-                  <td className="px-5 py-4">
-                    <span className="inline-flex items-center gap-2 text-sm text-slate-500">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${SYNC_DOT[s.syncTone]}`}
-                      />
-                      {s.lastSync}
+                      {(s.is_active ?? true) ? "Active" : "Inactive"}
                     </span>
                   </td>
                   {/* Actions */}
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => flash(`Editing ${s.name}`)}
-                        className="p-2 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50 transition-colors"
-                        title="Edit"
-                      >
-                        {Icon.edit}
-                      </button>
-                      <button
-                        onClick={() => toggleActive(s.id)}
+                        onClick={() => toggleActive(s.id, s.is_active ?? true)}
                         className={`p-2 rounded-lg transition-colors ${
-                          s.active
+                          (s.is_active ?? true)
                             ? "text-slate-400 hover:text-red-600 hover:bg-red-50"
                             : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
                         }`}
-                        title={s.active ? "Deactivate" : "Reactivate"}
+                        title={(s.is_active ?? true) ? "Deactivate" : "Reactivate"}
                       >
-                        {s.active ? Icon.deactivate : Icon.reactivate}
+                        {(s.is_active ?? true) ? Icon.deactivate : Icon.reactivate}
                       </button>
                     </div>
                   </td>
@@ -704,6 +581,8 @@ export default function StaffPage() {
         )}
       </div>
 
+      )} {/* end !isLoading && !fetchError */}
+
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-teal-950 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-2xl animate-slide-up">
@@ -716,7 +595,11 @@ export default function StaffPage() {
 
       {/* Modal */}
       {showModal && (
-        <AddStaffModal onClose={() => setShowModal(false)} onAdd={addStaff} />
+        <AddStaffModal
+          clinicId={profile?.clinic_id ?? null}
+          onClose={() => setShowModal(false)}
+          onAdded={handleAdded}
+        />
       )}
     </div>
   )

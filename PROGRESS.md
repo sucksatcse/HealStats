@@ -92,9 +92,12 @@ Based on the original plan in `FEATURES.md`, the following checkboxes have been 
 - [x] English & Bangla (Bengali) context setup
 - [x] Dark Mode context setup
 - [x] Admin Dashboard stats cards wired to real Supabase metrics with resilient parallel fetching (`AdminDashboardPage.tsx`)
+- [x] Admin Dashboard 7-day/30-day/90-day visits chart dynamically aggregated from Supabase `visits` (`AdminDashboardPage.tsx`)
+- [x] Admin Dashboard Top Clinics Today panel dynamically queried from Supabase `clinics` and today's `visits` (`AdminDashboardPage.tsx`)
 - [x] Patient Directory wired to Supabase `patients` table with server-side ILIKE search, pagination, and latest visit urgency badge (`PatientRecordsPage.tsx`)
 - [x] Staff Management UI wired to Supabase `staff` table with clinic joins, Add/Edit modals, and soft deactivation (`StaffPage.tsx`)
 - [x] Flagged Patients page wired to Supabase `visits` with latest-visit deduplication and coordinator assignments (`FlaggedPatientsPage.tsx`)
+- [x] Sync Monitor Page wired to IndexedDB `offlineDb.pendingRecords` queue and `SyncService` (`SyncMonitorPage.tsx`)
 
 ### 🚨 Pending / Needs to be Added (⬜)
 
@@ -109,10 +112,10 @@ The following components, infrastructure, and integrations are explicitly missin
 - [x] **Local Storage DB**: A client-side database (Dexie.js) has been installed and configured to queue pending patient registrations and visits (Task 7).
 - [ ] **Service Workers**: No service workers are registered to intercept network requests and serve cached assets/data offline.
 - [x] **Background Sync Queue**: A background sync service monitors `navigator.onLine` and automatically processes the Dexie queue upon reconnection (Task 8).
-- [ ] **Sync Status UI Hookup**: The `SyncMonitorPage.tsx` and `SyncPage.tsx` are static placeholders; they need to read from the actual background queue to display true syncing status.
+- [x] **Sync Status UI Hookup**: `SyncMonitorPage.tsx` is fully wired to Dexie `offlineDb.pendingRecords` and `syncService` to display real-time queued records, network state, and force sync capabilities (Task 10).
 
 #### 3. Data Fetching & UI Wiring (CRUD)
-- *Note: Patient Registration, Patient List, Patient Detail and Visit Recording are wired to Supabase. All other pages (Admin, Emergency, Sync, Triage, Digitize, etc.) remain static shells.*
+- *Note: Patient Registration, Patient List, Patient Detail, Visit Recording, and Admin Management (Stats, Staff, Flagged, Sync, Chart, Clinics) are wired to live data. Remaining modules (Emergency, Triage, Alerts) remain static shells.*
 - [x] **Patient Registration**: `NewPatientPage.tsx` needs to be wired to `supabase.from('patients').insert(...)`.
 - [x] **Patient Retrieval**: `PatientRecordsPage.tsx` (wired to fetch from Supabase) and `PatientDetailPage.tsx` (Task 6: fetches the patient plus their `visits` with `staff(name)` and `clinics(name)` joins; Vitals History, Visit History and Diagnoses tabs render real data with honest empty states).
 - [x] **Vitals & Forms**: `VitalsPage.tsx` (Task 6) inserts into `visits` with `patient_id` (from an in-form patient selector or pre-selected from Patient Detail), `staff_id` from `AuthContext.profile.id`, `vitals` JSONB, `symptoms` (free text + selected chips), `symptom_category` (dropdown: diarrhea/gastrointestinal, fever, respiratory, skin/rash, other), `diagnosis`, `urgency_score` (1–5, pre-filled by the AI check, worker can override) and `synced_at`.

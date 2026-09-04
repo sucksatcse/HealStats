@@ -1,4 +1,7 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { fetchHighRiskPatients } from "./lib/adminService"
+import { urgencyFromScore } from "./lib/types"
+import { useAuth } from "./AuthContext"
 
 // ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -91,7 +94,7 @@ type Flagged = {
   age: number
   gender: "F" | "M"
   village: string
-  score: number // 0-100 AI urgency
+  score: number  // 1–5 from DB; displayed as score/5*100% on bar
   level: Level
   symptoms: string
   vitals: string
@@ -100,134 +103,62 @@ type Flagged = {
   color: string
 }
 
-const INITIAL: Flagged[] = [
-  {
-    id: "PT-00376",
-    name: "Oumar Coulibaly",
-    age: 8,
-    gender: "M",
-    village: "Diamou",
-    score: 94,
-    level: "Critical",
-    symptoms: "High fever (40.1°C), rapid breathing, chest indrawing",
-    vitals: "RR 48 · SpO₂ 89%",
-    flaggedAt: "4 min ago",
-    initials: "OC",
-    color: "bg-sky-100 text-sky-700",
-  },
-  {
-    id: "PT-00331",
-    name: "Modibo Keïta",
-    age: 70,
-    gender: "M",
-    village: "Yélimané",
-    score: 91,
-    level: "Critical",
-    symptoms: "Chest pain radiating to arm, sweating, shortness of breath",
-    vitals: "BP 178/104 · HR 112",
-    flaggedAt: "12 min ago",
-    initials: "MK",
-    color: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    id: "PT-00251",
-    name: "Hawa Camara",
-    age: 41,
-    gender: "F",
-    village: "Kéniéba",
-    score: 88,
-    level: "Critical",
-    symptoms: "Severe abdominal pain, vomiting blood, dizziness",
-    vitals: "BP 88/56 · HR 128",
-    flaggedAt: "26 min ago",
-    initials: "HC",
-    color: "bg-rose-100 text-rose-700",
-  },
-  {
-    id: "PT-00412",
-    name: "Mariama Kouyaté",
-    age: 34,
-    gender: "F",
-    village: "Diamou",
-    score: 79,
-    level: "High",
-    symptoms: "Persistent high fever, chills, confirmed malaria smear",
-    vitals: "Temp 39.4°C · HR 104",
-    flaggedAt: "38 min ago",
-    initials: "MK",
-    color: "bg-violet-100 text-violet-700",
-  },
-  {
-    id: "PT-00365",
-    name: "Kadiatou Baldé",
-    age: 61,
-    gender: "F",
-    village: "Yélimané",
-    score: 74,
-    level: "High",
-    symptoms: "Uncontrolled hypertension, blurred vision, headache",
-    vitals: "BP 192/110",
-    flaggedAt: "1 hr ago",
-    initials: "KB",
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "PT-00281",
-    name: "Yacouba Sidibé",
-    age: 56,
-    gender: "M",
-    village: "Yélimané",
-    score: 71,
-    level: "High",
-    symptoms: "Diabetic, non-healing foot ulcer with early necrosis",
-    vitals: "Glucose 21 mmol/L",
-    flaggedAt: "1 hr ago",
-    initials: "YS",
-    color: "bg-lime-100 text-lime-700",
-  },
-  {
-    id: "PT-00318",
-    name: "Rokia Cissé",
-    age: 3,
-    gender: "F",
-    village: "Diamou",
-    score: 68,
-    level: "High",
-    symptoms: "Dehydration from acute diarrhoea, lethargy, sunken eyes",
-    vitals: "Weight -8% · HR 138",
-    flaggedAt: "2 hrs ago",
-    initials: "RC",
-    color: "bg-fuchsia-100 text-fuchsia-700",
-  },
-  {
-    id: "PT-00292",
-    name: "Assitan Doumbia",
-    age: 29,
-    gender: "F",
-    village: "Kéniéba",
-    score: 61,
-    level: "Moderate",
-    symptoms: "3rd-trimester pregnancy, elevated BP, mild oedema",
-    vitals: "BP 148/94 · 34 wks",
-    flaggedAt: "3 hrs ago",
-    initials: "AD",
-    color: "bg-orange-100 text-orange-700",
-  },
-  {
-    id: "PT-00240",
-    name: "Adama Fofana",
-    age: 24,
-    gender: "M",
-    village: "Yélimané",
-    score: 57,
-    level: "Moderate",
-    symptoms: "Deep laceration, signs of local infection, low-grade fever",
-    vitals: "Temp 38.1°C",
-    flaggedAt: "4 hrs ago",
-    initials: "AF",
-    color: "bg-teal-100 text-teal-700",
-  },
-]
+/** Map a PatientWithLatestVisit from adminService into the local Flagged display type */
+function toFlagged(p: import("./lib/types").PatientWithLatestVisit, colorIndex: number): Flagged | null {
+  const visit = p.latest_visit
+  const level = urgencyFromScore(visit?.urgency_score)
+  // Only show Moderate, High, Critical (score >= 3)
+  if (level === "Stable" || level === "Low") return null
+
+  const COLORS = [
+    "bg-sky-100 text-sky-700",
+    "bg-emerald-100 text-emerald-700",
+    "bg-rose-100 text-rose-700",
+    "bg-violet-100 text-violet-700",
+    "bg-amber-100 text-amber-700",
+    "bg-lime-100 text-lime-700",
+    "bg-fuchsia-100 text-fuchsia-700",
+    "bg-orange-100 text-orange-700",
+    "bg-teal-100 text-teal-700",
+  ]
+
+  const parts = p.name.trim().split(/\s+/)
+  const initials = (parts.length > 1 ? parts[0][0] + parts[1][0] : p.name.slice(0, 2)).toUpperCase()
+
+  // Format relative time from created_at
+  let flaggedAt = "Unknown"
+  if (visit?.created_at) {
+    const diff = Date.now() - new Date(visit.created_at).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) flaggedAt = `${mins} min ago`
+    else if (mins < 1440) flaggedAt = `${Math.floor(mins / 60)} hr ago`
+    else flaggedAt = `${Math.floor(mins / 1440)} days ago`
+  }
+
+  // Format vitals from JSONB
+  const vitalsStr = visit?.vitals
+    ? Object.entries(visit.vitals as Record<string, unknown>)
+        .slice(0, 2)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(" · ")
+    : ""
+
+  return {
+    id: p.id.slice(0, 8).toUpperCase(),
+    name: p.name,
+    age: p.age ?? 0,
+    gender: (p.sex === "F" || p.sex === "Female") ? "F" : "M",
+    village: p.village ?? "—",
+    score: visit?.urgency_score ?? 3,
+    level: level as Level,
+    symptoms: visit?.symptoms ?? "No symptom data recorded.",
+    vitals: vitalsStr,
+    flaggedAt,
+    initials,
+    color: COLORS[colorIndex % COLORS.length],
+  }
+}
+
 
 const DOCTORS = [
   "Dr. Priya Suresh",
@@ -323,9 +254,32 @@ function AssignMenu({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function FlaggedPatientsPage() {
+  const { profile } = useAuth()
+  const [patients, setPatients] = useState<Flagged[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [filter, setFilter] = useState<Level | "All">("All")
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [toast, setToast] = useState("")
+
+  useEffect(() => {
+    setIsLoading(true)
+    setFetchError(null)
+    fetchHighRiskPatients(profile?.clinic_id ?? null)
+      .then(({ data, error }) => {
+        if (error) {
+          setFetchError(error)
+        } else {
+          const mapped: Flagged[] = []
+          data.forEach((p, i) => {
+            const f = toFlagged(p, i)
+            if (f) mapped.push(f)
+          })
+          setPatients(mapped)
+        }
+      })
+      .finally(() => setIsLoading(false))
+  }, [profile?.clinic_id])
 
   const assign = (id: string, name: string, doctor: string) => {
     setAssignments((prev) => ({ ...prev, [id]: doctor }))
@@ -334,11 +288,11 @@ export default function FlaggedPatientsPage() {
   }
 
   const rows = useMemo(
-    () => INITIAL.filter((r) => filter === "All" || r.level === filter),
-    [filter],
+    () => patients.filter((r) => filter === "All" || r.level === filter),
+    [filter, patients],
   )
 
-  const criticalCount = INITIAL.filter((r) => r.level === "Critical").length
+  const criticalCount = patients.filter((r) => r.level === "Critical").length
   const unassignedCount = rows.filter((r) => !assignments[r.id]).length
 
   return (
@@ -352,11 +306,17 @@ export default function FlaggedPatientsPage() {
           <h1 className="font-display text-2xl text-red-950 leading-tight">
             High-Risk Patients
           </h1>
-          <p className="text-sm text-red-700/80 mt-0.5">
-            {INITIAL.length} patients flagged by on-device AI triage ·{" "}
-            <span className="font-semibold">{criticalCount} critical</span> ·{" "}
-            {unassignedCount} awaiting assignment
-          </p>
+          {isLoading ? (
+            <p className="text-sm text-red-700/80 mt-0.5">Loading patient data…</p>
+          ) : fetchError ? (
+            <p className="text-sm text-red-700 mt-0.5">{fetchError}</p>
+          ) : (
+            <p className="text-sm text-red-700/80 mt-0.5">
+              {patients.length} patients flagged by on-device AI triage · 
+              <span className="font-semibold">{criticalCount} critical</span> · 
+              {unassignedCount} awaiting assignment
+            </p>
+          )}
         </div>
         <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-red-700 bg-white/70 border border-red-200 px-3 py-1.5 rounded-full">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -399,7 +359,21 @@ export default function FlaggedPatientsPage() {
         </p>
       </div>
 
+      {/* Loading / error states */}
+      {isLoading && (
+        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
+          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Loading high-risk patients…</p>
+        </div>
+      )}
+      {!isLoading && fetchError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <strong>Error:</strong> {fetchError}
+        </div>
+      )}
+
       {/* Table */}
+      {!isLoading && !fetchError && (
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-left">
@@ -462,6 +436,7 @@ export default function FlaggedPatientsPage() {
                           >
                             {r.score}
                           </span>
+                          <span className="text-xs text-slate-400">/5</span>
                         </div>
                         <div className="flex-1">
                           <span
@@ -472,7 +447,7 @@ export default function FlaggedPatientsPage() {
                           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${meta.bar}`}
-                              style={{ width: `${r.score}%` }}
+                              style={{ width: `${(r.score / 5) * 100}%` }}
                             />
                           </div>
                         </div>
@@ -520,11 +495,14 @@ export default function FlaggedPatientsPage() {
               No patients at this urgency level
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              Adjust the filter to see other flagged cases
+              {filter === "All"
+                ? "No high-risk visits recorded yet"
+                : "Adjust the filter to see other flagged cases"}
             </p>
           </div>
         )}
       </div>
+      )} {/* end !isLoading && !fetchError */}
 
       {/* Toast */}
       {toast && (

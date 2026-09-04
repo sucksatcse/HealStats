@@ -281,16 +281,16 @@ flowchart LR
 |---|---|---|
 | Database Schema | Implemented | `clinics`, `staff`, `patients`, `visits`, `sync_log` created |
 | RLS | Planned / Production Required | RLS is the intended production security architecture but is disabled in the current MVP development schema |
-| Authentication | Implemented | UI + Context + Demo Bypass |
+| Authentication | Implemented | UI + Context + Demo Bypass + Admin role routing |
 | Patient Registration | Implemented | Task 4 completed; successfully saves to Supabase |
 | Patient Details/List | Implemented | Tasks 5/6; list and detail read from Supabase |
 | Vitals/Visits | Implemented | Task 6; `VitalsPage` inserts into `visits` |
-| Admin Dashboard | In Progress | UI MVP completed; pending real data |
-| Emergency Mode | In Progress | UI MVP completed; pending real data |
-| Offline Storage | Not Started | Dexie.js integration pending |
-| Background Sync | Not Started | Queue/Service Worker pending |
+| Admin Dashboard | Implemented | Task 10; live stat cards, weekly chart, clinics panel, staff CRUD, sync monitor wired to Supabase / Dexie |
+| Emergency Mode | In Progress | UI MVP completed; pending real alert feeds |
+| Offline Storage | Implemented | Task 7; Dexie.js offlineDb with pendingRecords queue |
+| Background Sync | Implemented | Task 8; SyncService automatic sync on reconnection + SyncMonitorPage |
 | PWA | Not Started | Manifest pending |
-| OCR | Not Started | Proof of concept pending |
+| OCR | Implemented | Task 9A; Tesseract.js client-side OCR on DigitizePage |
 
 ---
 
@@ -300,18 +300,17 @@ For exhibition purposes, the core story is: **"Healthcare records remain useful 
 
 Currently, the strongest demoable features are:
 1. The **Patient Registration → Record Visit → Patient Record** flow (live database mutations and reads).
-2. The **Bilingual & Dark Mode UI** (accessibility).
-3. The **Emergency Dashboard Shell** (UI concepts).
-
-*Note: True offline capability is not yet complete and cannot be demonstrated reliably until Phase 2 is finished. Do not fake offline functionality for the demo.*
+2. The **Admin Console & Operations** (live metrics, visits chart, clinics breakdown, staff management, and offline queue monitor).
+3. The **Offline Visit & Patient Queueing** (IndexedDB queueing via Dexie, automatic background sync upon reconnection).
+4. The **Bilingual & Dark Mode UI** (accessibility).
+5. The **Emergency Dashboard Shell** (UI concepts).
 
 ---
 
 ## 22. Known Limitations
 
-- **Offline Engine:** Not currently functional. Network drops will cause mutations to fail.
-- **Data Fetching:** Admin, Emergency, Sync and Triage views still rely on hardcoded dummy data arrays. The worker dashboard home (recent patients, stats) is also static.
-- **Admin Configuration:** Creating clinics and staff accounts must be done manually via SQL.
+- **Emergency Mode:** Alert feeds and real-time disaster triggers remain static shells.
+- **Worker Home Dashboard:** Recent patients list and quick stats on the worker home screen are still placeholder figures.
 - **Translation:** Some deep UI elements lack complete Bangla translation strings.
 
 ---

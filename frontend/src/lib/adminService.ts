@@ -75,17 +75,17 @@ export async function fetchAdminStats(clinicId: string | null): Promise<AdminSta
           .select('*', { count: 'exact', head: true })
           .is('synced_at', null),
 
-    // 4. High-risk flagged — visits with urgency_score >= 70, count DISTINCT patients
+    // 4. High-risk flagged — visits with urgency_score >= 4 (High or Critical on 1–5 scale)
     clinicId
       ? supabase
           .from('visits')
           .select('patient_id, patients!inner(clinic_id)')
           .eq('patients.clinic_id', clinicId)
-          .gte('urgency_score', 70)
+          .gte('urgency_score', 4)
       : supabase
           .from('visits')
           .select('patient_id')
-          .gte('urgency_score', 70),
+          .gte('urgency_score', 4),
   ]);
 
   // High-risk: deduplicate patient_ids client-side (avoids N+1 or custom RPC)
@@ -345,7 +345,7 @@ export async function fetchHighRiskPatients(
       .select(
         'id, patient_id, staff_id, vitals, symptoms, symptom_category, diagnosis, urgency_score, created_at, synced_at, patients!inner(id, name, age, sex, village, clinic_id, created_at)',
       )
-      .gte('urgency_score', 40)
+      .gte('urgency_score', 3)  // Moderate (3), High (4), Critical (5) on the 1–5 scale
       .order('urgency_score', { ascending: false })
       .order('created_at', { ascending: false });
 

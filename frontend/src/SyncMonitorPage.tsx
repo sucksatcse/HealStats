@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
+import { offlineDb, PendingRecord } from "./lib/offlineDb"
+import { syncService } from "./lib/syncService"
 
 // ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -41,18 +43,6 @@ const Icon = {
       />
     </svg>
   ),
-  device: (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      className="w-4 h-4"
-    >
-      <rect x="5" y="2" width="10" height="16" rx="2.5" />
-      <path strokeLinecap="round" d="M9 15.5h2" />
-    </svg>
-  ),
   clock: (
     <svg
       viewBox="0 0 16 16"
@@ -80,431 +70,346 @@ const Icon = {
       />
     </svg>
   ),
+  check: (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      className="w-4 h-4"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 10l4 4L16 6" />
+    </svg>
+  ),
+  alert: (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      className="w-4 h-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10 3.5L1.7 17.5h16.6L10 3.5zM10 8v4.5M10 15h.01"
+      />
+    </svg>
+  ),
 }
 
-// ── Data ───────────────────────────────────────────────────────────────────────
-type DeviceStatus = "online" | "syncing" | "offline"
-
-type Worker = {
-  id: string
-  name: string
-  zone: string
-  device: string
-  status: DeviceStatus
-  lastSync: string
-  pending: number
-  battery: number
-  initials: string
-  color: string
-}
-
-const INITIAL: Worker[] = [
-  {
-    id: "HW-20451",
-    name: "Sr. Amara Diallo",
-    zone: "Kayes District",
-    device: "Tablet · A-114",
-    status: "online",
-    lastSync: "Just now",
-    pending: 0,
-    battery: 82,
-    initials: "AD",
-    color: "bg-teal-100 text-teal-700",
-  },
-  {
-    id: "HW-20388",
-    name: "Ibrahim Traoré",
-    zone: "Sikasso Rural",
-    device: "Phone · P-207",
-    status: "syncing",
-    lastSync: "Syncing…",
-    pending: 6,
-    battery: 54,
-    initials: "IT",
-    color: "bg-violet-100 text-violet-700",
-  },
-  {
-    id: "HW-20502",
-    name: "Dr. Fanta Diallo",
-    zone: "Ségou Centre",
-    device: "Tablet · A-089",
-    status: "online",
-    lastSync: "3 min ago",
-    pending: 2,
-    battery: 91,
-    initials: "FD",
-    color: "bg-sky-100 text-sky-700",
-  },
-  {
-    id: "HW-20219",
-    name: "Kadiatou Baldé",
-    zone: "Mopti Outreach",
-    device: "Phone · P-142",
-    status: "offline",
-    lastSync: "6 hrs ago",
-    pending: 28,
-    battery: 12,
-    initials: "KB",
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "HW-20477",
-    name: "Sekou Bah",
-    zone: "Dhading Community",
-    device: "Tablet · A-201",
-    status: "online",
-    lastSync: "8 min ago",
-    pending: 1,
-    battery: 67,
-    initials: "SB",
-    color: "bg-rose-100 text-rose-700",
-  },
-  {
-    id: "HW-20344",
-    name: "Oumar Coulibaly",
-    zone: "Kayes District",
-    device: "Phone · P-318",
-    status: "offline",
-    lastSync: "1 day ago",
-    pending: 41,
-    battery: 0,
-    initials: "OC",
-    color: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    id: "HW-20515",
-    name: "Aminata Sané",
-    zone: "Ségou Centre",
-    device: "Tablet · A-156",
-    status: "syncing",
-    lastSync: "Syncing…",
-    pending: 14,
-    battery: 45,
-    initials: "AS",
-    color: "bg-indigo-100 text-indigo-700",
-  },
-  {
-    id: "HW-20291",
-    name: "Mariama Kouyaté",
-    zone: "Sikasso Rural",
-    device: "Phone · P-093",
-    status: "online",
-    lastSync: "22 min ago",
-    pending: 3,
-    battery: 78,
-    initials: "MK",
-    color: "bg-pink-100 text-pink-700",
-  },
-]
-
-const STATUS_META: Record<DeviceStatus, {
-  label: string
-  text: string
-  dot: string
-  ring: string
-  chip: string
-}> = {
-  online: {
-    label: "Online",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
-    ring: "border-emerald-200",
-    chip: "bg-emerald-50 text-emerald-700",
-  },
-  syncing: {
-    label: "Syncing",
-    text: "text-teal-700",
-    dot: "bg-teal-500 animate-pulse",
-    ring: "border-teal-200",
-    chip: "bg-teal-50 text-teal-700",
-  },
-  offline: {
-    label: "Offline",
-    text: "text-slate-500",
-    dot: "bg-slate-400",
-    ring: "border-slate-200",
-    chip: "bg-slate-100 text-slate-500",
-  },
-}
-
-// ── Page ───────────────────────────────────────────────────────────────────────
 export default function SyncMonitorPage() {
-  const [workers, setWorkers] = useState<Worker[]>(INITIAL)
-  const [forcing, setForcing] = useState(false)
+  const [records, setRecords] = useState<PendingRecord[]>([])
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  )
+  const [isSyncing, setIsSyncing] = useState(false)
   const [toast, setToast] = useState("")
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const [filter, setFilter] = useState<"all" | "pending" | "syncing" | "failed">("all")
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
-
-  const onlineCount = workers.filter((w) => w.status === "online").length
-  const syncingCount = workers.filter((w) => w.status === "syncing").length
-  const offlineCount = workers.filter((w) => w.status === "offline").length
-  const totalPending = workers.reduce((s, w) => s + w.pending, 0)
-
-  const forceSyncAll = () => {
-    if (forcing) return
-    setForcing(true)
-    // Mark every non-offline worker as syncing
-    setWorkers((prev) =>
-      prev.map((w) =>
-        w.status === "offline"
-          ? w
-          : { ...w, status: "syncing", lastSync: "Syncing…" },
-      ),
-    )
-    const t = setTimeout(() => {
-      setWorkers((prev) =>
-        prev.map((w) =>
-          w.status === "offline"
-            ? w
-            : { ...w, status: "online", lastSync: "Just now", pending: 0 },
-        ),
-      )
-      setForcing(false)
-      setToast("Sync complete for all reachable devices")
-      const t2 = setTimeout(() => setToast(""), 2800)
-      timers.current.push(t2)
-    }, 2400)
-    timers.current.push(t)
+  // Load records from local Dexie database
+  const loadRecords = async () => {
+    try {
+      const list = await offlineDb.pendingRecords
+        .orderBy("createdAt")
+        .reverse()
+        .toArray()
+      setRecords(list)
+    } catch (err) {
+      console.error("[SyncMonitorPage] Error loading pending records:", err)
+    }
   }
 
-  const syncOne = (id: string) => {
-    setWorkers((prev) =>
-      prev.map((w) =>
-        w.id === id && w.status !== "offline"
-          ? { ...w, status: "syncing", lastSync: "Syncing…" }
-          : w,
-      ),
-    )
-    const t = setTimeout(() => {
-      setWorkers((prev) =>
-        prev.map((w) =>
-          w.id === id && w.status === "syncing"
-            ? { ...w, status: "online", lastSync: "Just now", pending: 0 }
-            : w,
-        ),
-      )
-    }, 1600)
-    timers.current.push(t)
+  useEffect(() => {
+    loadRecords()
+
+    const handleOnline = () => {
+      setIsOnline(true)
+      loadRecords()
+    }
+    const handleOffline = () => {
+      setIsOnline(false)
+      loadRecords()
+    }
+
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+
+    // Polling interval to reflect background sync completion
+    const interval = setInterval(loadRecords, 3000)
+
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+      clearInterval(interval)
+    }
+  }, [])
+
+  const pendingCount = records.filter((r) => r.status === "pending").length
+  const syncingCount = records.filter((r) => r.status === "syncing").length
+  const failedCount = records.filter((r) => r.status === "failed").length
+  const totalCount = records.length
+
+  const filteredRecords = records.filter((r) => {
+    if (filter === "all") return true
+    return r.status === filter
+  })
+
+  // Trigger sync via syncService
+  const handleForceSync = async () => {
+    if (isSyncing || !isOnline) return
+    setIsSyncing(true)
+    try {
+      await syncService.syncPendingRecords()
+      await loadRecords()
+      setToast("Sync process completed.")
+    } catch (err: any) {
+      setToast(err?.message ?? "Sync encountered an error.")
+    } finally {
+      setIsSyncing(false)
+      setTimeout(() => setToast(""), 3500)
+    }
   }
 
-  const batteryColor = (b: number) =>
-    b === 0
-      ? "bg-red-400"
-      : b < 20
-        ? "bg-red-400"
-        : b < 50
-          ? "bg-amber-400"
-          : "bg-emerald-500"
+  // Retry an individual failed record
+  const handleRetryRecord = async (id: string) => {
+    try {
+      await offlineDb.pendingRecords.update(id, { status: "pending" })
+      await loadRecords()
+      if (isOnline) {
+        syncService.syncPendingRecords().then(loadRecords)
+      }
+    } catch (err) {
+      console.error("[SyncMonitorPage] Retry failed:", err)
+    }
+  }
+
+  const formatTime = (ms: number) => {
+    const diff = Date.now() - ms
+    const secs = Math.floor(diff / 1000)
+    if (secs < 60) return "Just now"
+    const mins = Math.floor(secs / 60)
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    return new Date(ms).toLocaleDateString()
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+          <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
             Sync Monitor
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Real-time sync status across {workers.length} field devices ·{" "}
-            {totalPending} records pending
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            IndexedDB offline queue status · {totalCount} local record{totalCount === 1 ? "" : "s"} waiting for Supabase sync
           </p>
         </div>
-        <button
-          onClick={forceSyncAll}
-          disabled={forcing}
-          className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 disabled:cursor-wait text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5 disabled:translate-y-0"
-        >
-          <span className={forcing ? "animate-spin" : ""}>{Icon.sync}</span>
-          {forcing ? "Syncing all devices…" : "Force Sync All"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleForceSync}
+            disabled={isSyncing || !isOnline || totalCount === 0}
+            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5 disabled:translate-y-0"
+          >
+            <span className={isSyncing ? "animate-spin" : ""}>{Icon.sync}</span>
+            {isSyncing ? "Syncing queue…" : "Force Sync Queue"}
+          </button>
+        </div>
       </div>
 
-      {/* Summary + legend strip */}
-      <div className="bg-white rounded-2xl border border-slate-100 px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-4">
-        {/* Counts */}
-        <div className="flex items-center gap-6">
-          {[
-            { label: "Online", count: onlineCount, dot: "bg-emerald-500" },
-            { label: "Syncing", count: syncingCount, dot: "bg-teal-500" },
-            { label: "Offline", count: offlineCount, dot: "bg-slate-400" },
-          ].map(({ label, count, dot }) => (
-            <div key={label} className="flex items-center gap-2.5">
-              <span className={`w-2.5 h-2.5 rounded-full ${dot}`} />
-              <div>
-                <p className="font-display text-xl text-teal-950 leading-none">
-                  {count}
-                </p>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                  {label}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="h-8 w-px bg-slate-100 hidden sm:block" />
-
-        {/* Pending total */}
-        <div className="flex items-center gap-2.5">
-          <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            {Icon.stack}
-          </span>
+      {/* Summary + network strip */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-4 transition-colors">
+        {/* Network Status */}
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+              isOnline
+                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+            }`}
+          >
+            {isOnline ? Icon.online : Icon.offline}
+          </div>
           <div>
-            <p className="font-display text-xl text-teal-950 leading-none">
-              {totalPending}
+            <p className="font-display text-base text-teal-950 dark:text-white leading-none">
+              {isOnline ? "Network Connected" : "Offline Mode"}
             </p>
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Records queued
+              {isOnline ? "Online — Ready to sync" : "Offline — Changes saved locally"}
             </p>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 ml-auto text-[11px] font-medium text-slate-500">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Legend
+        <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+
+        {/* Counts */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+            <div>
+              <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
+                {pendingCount}
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Pending</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
+            <div>
+              <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
+                {syncingCount}
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Syncing</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <div>
+              <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
+                {failedCount}
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Failed</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+
+        {/* Total Queued */}
+        <div className="flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+            {Icon.stack}
           </span>
-          {(["online", "syncing", "offline"] as DeviceStatus[]).map((s) => (
-            <span key={s} className="inline-flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${STATUS_META[s].dot}`} />
-              {STATUS_META[s].label}
-            </span>
+          <div>
+            <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
+              {totalCount}
+            </p>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Total in Queue</p>
+          </div>
+        </div>
+
+        {/* Filter buttons */}
+        <div className="flex items-center gap-1 ml-auto bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+          {(["all", "pending", "syncing", "failed"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-2.5 py-1.5 rounded-lg capitalize transition-all ${
+                filter === f
+                  ? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              }`}
+            >
+              {f}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Worker card grid */}
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {workers.map((w) => {
-          const meta = STATUS_META[w.status]
-          return (
-            <div
-              key={w.id}
-              className={`bg-white rounded-2xl border p-5 transition-all hover:shadow-md ${
-                w.status === "offline" ? "border-slate-100" : meta.ring
-              }`}
-            >
-              {/* Header */}
-              <div className="flex items-start gap-3 mb-4">
+      {/* Queue items list */}
+      {filteredRecords.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-12 text-center transition-colors">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
+            {Icon.check}
+          </div>
+          <h3 className="font-display text-lg text-teal-950 dark:text-white">
+            Sync Queue is Clear
+          </h3>
+          <p className="text-sm text-slate-400 dark:text-slate-500 max-w-md mx-auto mt-1">
+            {filter === "all"
+              ? "All offline records are fully synced to Supabase. Any new records created offline will queue here automatically."
+              : `No records currently with status "${filter}".`}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors shadow-sm">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="font-semibold text-slate-800 dark:text-white text-sm">
+              Queued Offline Records ({filteredRecords.length})
+            </h3>
+            <span className="text-xs text-slate-400">IndexedDB: pendingRecords</span>
+          </div>
+
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {filteredRecords.map((rec) => {
+              const isPatient = rec.type === "patient"
+              const payload = rec.payload || {}
+              const label = isPatient
+                ? payload.name || "Unnamed Patient"
+                : `Visit for patient ${payload.patient_id?.slice(0, 8) ?? "—"}`
+
+              const subtitle = isPatient
+                ? `Age: ${payload.age ?? "—"} · Gender: ${payload.sex ?? "—"} · Village: ${payload.village ?? "—"}`
+                : `Urgency: ${payload.urgency_score ?? "—"} · Symptoms: ${payload.symptoms ?? "None recorded"}`
+
+              return (
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${w.color}`}
+                  key={rec.id}
+                  className="p-5 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                 >
-                  {w.initials}
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        isPatient
+                          ? "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"
+                          : "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
+                      }`}
+                    >
+                      {isPatient ? "PT" : "VT"}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                          {label}
+                        </p>
+                        <span
+                          className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${
+                            rec.status === "pending"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400"
+                              : rec.status === "syncing"
+                                ? "bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/30 dark:text-teal-400 animate-pulse"
+                                : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400"
+                          }`}
+                        >
+                          {rec.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                        {subtitle}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        ID: <code className="font-mono text-[10px]">{rec.id.slice(0, 12)}…</code> · Queued {formatTime(rec.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {rec.status === "failed" && (
+                      <button
+                        onClick={() => handleRetryRecord(rec.id)}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">
-                    {w.name}
-                  </p>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {w.zone} · {w.id}
-                  </p>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${meta.chip}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                  {meta.label}
-                </span>
-              </div>
-
-              {/* Device + battery */}
-              <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5 mb-3">
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className="text-slate-400">{Icon.device}</span>
-                  {w.device}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-8 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <span
-                      className={`block h-full rounded-full ${batteryColor(w.battery)}`}
-                      style={{ width: `${w.battery}%` }}
-                    />
-                  </span>
-                  <span className="text-[11px] font-medium text-slate-500 w-8 text-right">
-                    {w.battery}%
-                  </span>
-                </span>
-              </div>
-
-              {/* Sync detail */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className="text-slate-400">{Icon.clock}</span>
-                  {w.lastSync}
-                </span>
-                <span
-                  className={`flex items-center gap-1.5 text-xs font-semibold ${
-                    w.pending === 0
-                      ? "text-emerald-600"
-                      : w.pending > 20
-                        ? "text-red-600"
-                        : "text-amber-600"
-                  }`}
-                >
-                  <span
-                    className={
-                      w.pending === 0 ? "text-emerald-400" : "text-slate-400"
-                    }
-                  >
-                    {Icon.stack}
-                  </span>
-                  {w.pending === 0 ? "All synced" : `${w.pending} pending`}
-                </span>
-              </div>
-
-              {/* Action */}
-              <button
-                onClick={() => syncOne(w.id)}
-                disabled={w.status !== "online" || w.pending === 0}
-                className={`w-full flex items-center justify-center gap-2 text-xs font-semibold py-2.5 rounded-xl transition-all ${
-                  w.status === "offline"
-                    ? "bg-slate-50 text-slate-400 cursor-not-allowed"
-                    : w.status === "syncing"
-                      ? "bg-teal-50 text-teal-600 cursor-wait"
-                      : w.pending === 0
-                        ? "bg-emerald-50 text-emerald-600 cursor-default"
-                        : "bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
-                }`}
-              >
-                {w.status === "syncing" ? (
-                  <>
-                    <span className="animate-spin">{Icon.sync}</span> Syncing…
-                  </>
-                ) : w.status === "offline" ? (
-                  <>
-                    <span>{Icon.offline}</span> Device unreachable
-                  </>
-                ) : w.pending === 0 ? (
-                  <>Up to date</>
-                ) : (
-                  <>
-                    <span>{Icon.sync}</span> Sync now
-                  </>
-                )}
-              </button>
-            </div>
-          )
-        })}
-      </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-teal-950 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-2xl animate-slide-up">
           <span className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.2}
-              className="w-3.5 h-3.5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 8l3.5 3.5L13 4"
-              />
-            </svg>
+            {Icon.check}
           </span>
           {toast}
         </div>

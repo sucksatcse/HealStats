@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { fetchAdminStats, type AdminStats } from "./lib/adminService";
+import { supabase } from "./lib/supabase";
+import { offlineDb } from "./lib/offlineDb";
 import AppNavbar from "./AppNavbar";
 import { useLang } from "./LanguageContext";
 import { useTheme } from "./ThemeContext";
@@ -113,7 +115,7 @@ const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: Icon.dashboard },
   { id: "patients", label: "Patients", icon: Icon.patients },
   { id: "staff", label: "Staff", icon: Icon.staff },
-  { id: "sync", label: "Sync Status", icon: Icon.sync, badge: "14" },
+  { id: "sync", label: "Sync Status", icon: Icon.sync },
   { id: "analytics", label: "Analytics", icon: Icon.analytics },
   { id: "resources", label: "Resource Ops", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
@@ -148,34 +150,14 @@ function StatSkeleton() {
   );
 }
 
-// ── Weekly visits data ───────────────────────────────────────────────────────────
-const WEEK = [
-  { day: "Mon", date: "Aug 22", visits: 312 },
-  { day: "Tue", date: "Aug 23", visits: 389 },
-  { day: "Wed", date: "Aug 24", visits: 274 },
-  { day: "Thu", date: "Aug 25", visits: 421 },
-  { day: "Fri", date: "Aug 26", visits: 468 },
-  { day: "Sat", date: "Aug 27", visits: 356 },
-  { day: "Sun", date: "Aug 28", visits: 436 },
-];
+export interface VisitChartPoint {
+  day: string;
+  date: string;
+  visits: number;
+}
 
-// ── Clinic breakdown for right column ──────────────────────────────────────────────
-const CLINICS = [
-  { name: "Kayes District Clinic", visits: 128, share: 92, status: "online" },
-  { name: "Dhading Community Hosp.", visits: 96, share: 71, status: "online" },
-  { name: "Sikasso Rural Post", visits: 74, share: 54, status: "syncing" },
-  { name: "Ségou Health Centre", visits: 61, share: 44, status: "offline" },
-  { name: "Mopti Outreach Unit", visits: 38, share: 27, status: "offline" },
-];
-
-const CLINIC_STATUS: Record<string, { label: string; cls: string; dot: string }> = {
-  online: { label: "Online", cls: "text-emerald-600", dot: "bg-emerald-500" },
-  syncing: { label: "Syncing", cls: "text-teal-600", dot: "bg-teal-500 animate-pulse" },
-  offline: { label: "Offline", cls: "text-slate-400", dot: "bg-slate-300" },
-};
-
-// ── Line chart ─────────────────────────────────────────────────────────────────────
-function VisitsLineChart() {
+// ── Dynamic Line chart (Task 10: Supabase-backed) ──────────────────────────────────
+function VisitsLineChart({ data, loading }: { data: VisitChartPoint[]; loading: boolean }) {
   const [hover, setHover] = useState<number | null>(null);
 
   const W = 720;
@@ -184,25 +166,48 @@ function VisitsLineChart() {
   const padTop = 24;
   const padBottom = 40;
 
-  const values = WEEK.map((d) => d.visits);
-  const maxV = 500;
-  const minV = 200;
+  const innerW = W - padX * 2;
+  const innerH = H - padTop - padBottom;
+
+  const values = data.map((d) => d.visits);
+  const maxVal = Math.max(...values, 0);
+  const maxV = Math.max(Math.ceil(maxVal / 5) * 5, 10);
+  const minV = 0;
 
   const geometry = useMemo(() => {
-    const innerW = W - padX * 2;
-    const innerH = H - padTop - padBottom;
-    return WEEK.map((d, i) => {
-      const x = padX + (innerW * i) / (WEEK.length - 1);
+    if (data.length === 0) return [];
+    return data.map((d, i) => {
+      const x = padX + (innerW * i) / Math.max(data.length - 1, 1);
       const y = padTop + innerH * (1 - (d.visits - minV) / (maxV - minV));
       return { x, y, ...d };
     });
-  }, []);
+  }, [data, innerW, innerH, maxV]);
+
+  if (loading) {
+    return (
+      <div className="h-[260px] flex items-center justify-center">
+        <div className="flex items-center gap-2 text-slate-400 text-sm">
+          <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+          Loading visit analytics…
+        </div>
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="h-[260px] flex items-center justify-center text-slate-400 text-sm">
+        No visit data available for this time range.
+      </div>
+    );
+  }
 
   const linePath = geometry.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = `${linePath} L${geometry[geometry.length - 1].x},${H - padBottom} L${geometry[0].x},${H - padBottom} Z`;
+  const areaPath = geometry.length > 0
+    ? `${linePath} L${geometry[geometry.length - 1].x},${H - padBottom} L${geometry[0].x},${H - padBottom} Z`
+    : "";
 
-  const gridLines = [200, 275, 350, 425, 500];
-  const innerH = H - padTop - padBottom;
+  const gridLines = [0, Math.round(maxV * 0.25), Math.round(maxV * 0.5), Math.round(maxV * 0.75), maxV];
 
   return (
     <div className="relative">
@@ -228,15 +233,17 @@ function VisitsLineChart() {
         })}
 
         {/* Area + line */}
-        <path d={areaPath} fill="url(#visitsArea)" />
-        <path d={linePath} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {areaPath && <path d={areaPath} fill="url(#visitsArea)" />}
+        {linePath && <path d={linePath} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
 
         {/* X labels + hit areas + points */}
         {geometry.map((p, i) => (
-          <g key={p.day}>
-            <text x={p.x} y={H - padBottom + 20} textAnchor="middle" className="fill-slate-500 dark:fill-slate-400" fontSize="11.5" fontWeight={hover === i ? 700 : 500}>
-              {p.day}
-            </text>
+          <g key={p.date + i}>
+            {p.day && (
+              <text x={p.x} y={H - padBottom + 20} textAnchor="middle" className="fill-slate-500 dark:fill-slate-400" fontSize="11" fontWeight={hover === i ? 700 : 500}>
+                {p.day}
+              </text>
+            )}
             {hover === i && (
               <line x1={p.x} y1={padTop} x2={p.x} y2={H - padBottom} stroke="#0d9488" strokeWidth="1" strokeDasharray="3 3" opacity="0.4" />
             )}
@@ -250,9 +257,9 @@ function VisitsLineChart() {
             />
             {/* Invisible wide hit target */}
             <rect
-              x={p.x - (W - padX * 2) / (WEEK.length - 1) / 2}
+              x={p.x - (innerW / Math.max(geometry.length - 1, 1)) / 2}
               y={0}
-              width={(W - padX * 2) / (WEEK.length - 1)}
+              width={innerW / Math.max(geometry.length - 1, 1)}
               height={H}
               fill="transparent"
               onMouseEnter={() => setHover(i)}
@@ -263,9 +270,9 @@ function VisitsLineChart() {
       </svg>
 
       {/* Tooltip */}
-      {hover !== null && (
+      {hover !== null && geometry[hover] && (
         <div
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full bg-teal-950 text-white rounded-lg px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full bg-teal-950 text-white rounded-lg px-3 py-2 shadow-lg z-10"
           style={{
             left: `${(geometry[hover].x / W) * 100}%`,
             top: `${(geometry[hover].y / H) * 100}%`,
@@ -313,8 +320,176 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.clinic_id]);
 
-  const totalWeek = WEEK.reduce((s, d) => s + d.visits, 0);
-  const avgWeek = Math.round(totalWeek / WEEK.length);
+  /* ── Live offline sync badge count (Task 10 Step 7) ───────────────────────── */
+  const [offlinePendingCount, setOfflinePendingCount] = useState(0);
+
+  useEffect(() => {
+    const checkOfflineCount = async () => {
+      try {
+        const count = await offlineDb.pendingRecords.where("status").equals("pending").count();
+        setOfflinePendingCount(count);
+      } catch {
+        // ignore
+      }
+    };
+    checkOfflineCount();
+    const iv = setInterval(checkOfflineCount, 3000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const navItems = useMemo(() => {
+    return NAV_ITEMS.map((item) => {
+      if (item.id === "sync") {
+        return {
+          ...item,
+          badge: offlinePendingCount > 0 ? String(offlinePendingCount) : undefined,
+        };
+      }
+      return item;
+    });
+  }, [offlinePendingCount]);
+
+  /* ── Live visit analytics chart (Task 10 Step 8) ─────────────────────────── */
+  const [chartData, setChartData] = useState<VisitChartPoint[]>([]);
+  const [chartLoading, setChartLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchChartData = async () => {
+      setChartLoading(true);
+      const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      startDate.setDate(startDate.getDate() - (days - 1));
+
+      try {
+        const res = profile?.clinic_id
+          ? await supabase
+              .from("visits")
+              .select("created_at, patients!inner(clinic_id)")
+              .eq("patients.clinic_id", profile.clinic_id)
+              .gte("created_at", startDate.toISOString())
+              .order("created_at", { ascending: true })
+          : await supabase
+              .from("visits")
+              .select("created_at")
+              .gte("created_at", startDate.toISOString())
+              .order("created_at", { ascending: true });
+
+        if (cancelled) return;
+        const data = res.data;
+
+        const counts = new Map<string, number>();
+        if (data) {
+          for (const v of data) {
+            if (v.created_at) {
+              const d = v.created_at.slice(0, 10);
+              counts.set(d, (counts.get(d) ?? 0) + 1);
+            }
+          }
+        }
+
+        const points: VisitChartPoint[] = [];
+        for (let i = 0; i < days; i++) {
+          const cur = new Date(startDate);
+          cur.setDate(cur.getDate() + i);
+          const key = cur.toISOString().slice(0, 10);
+          const dayName = cur.toLocaleDateString("en-US", { weekday: "short" });
+          const dateLabel = cur.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          points.push({
+            day: days > 14 ? (i % Math.ceil(days / 6) === 0 ? dateLabel : "") : dayName,
+            date: dateLabel,
+            visits: counts.get(key) ?? 0,
+          });
+        }
+        setChartData(points);
+      } catch (err) {
+        console.error("[AdminDashboard] Error fetching chart data:", err);
+      } finally {
+        if (!cancelled) setChartLoading(false);
+      }
+    };
+
+    fetchChartData();
+    return () => {
+      cancelled = true;
+    };
+  }, [range, profile?.clinic_id]);
+
+  /* ── Live top clinics today (Task 10 Step 9) ───────────────────────────────── */
+  interface ClinicActivity {
+    id: string;
+    name: string;
+    zone: string | null;
+    visits: number;
+    share: number;
+  }
+  const [clinicsActivity, setClinicsActivity] = useState<ClinicActivity[]>([]);
+  const [clinicsLoading, setClinicsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadClinicsActivity = async () => {
+      setClinicsLoading(true);
+      try {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const [clinicsRes, visitsRes] = await Promise.all([
+          supabase.from("clinics").select("id, name, zone"),
+          supabase
+            .from("visits")
+            .select("id, patients!inner(clinic_id)")
+            .gte("created_at", todayStart.toISOString()),
+        ]);
+
+        if (cancelled) return;
+        const clinicList = clinicsRes.data ?? [];
+        const visitsList = visitsRes.data ?? [];
+
+        const countMap = new Map<string, number>();
+        for (const v of visitsList) {
+          const cId = (v as any).patients?.clinic_id;
+          if (cId) {
+            countMap.set(cId, (countMap.get(cId) ?? 0) + 1);
+          }
+        }
+
+        const maxVisits = Math.max(...clinicList.map((c) => countMap.get(c.id) ?? 0), 1);
+
+        const combined: ClinicActivity[] = clinicList.map((c) => {
+          const visits = countMap.get(c.id) ?? 0;
+          const share = Math.round((visits / maxVisits) * 100);
+          return {
+            id: c.id,
+            name: c.name,
+            zone: c.zone ?? null,
+            visits,
+            share,
+          };
+        });
+
+        combined.sort((a, b) => b.visits - a.visits);
+        setClinicsActivity(combined.slice(0, 6));
+      } catch (err) {
+        console.error("[AdminDashboard] Error loading clinics activity:", err);
+      } finally {
+        if (!cancelled) setClinicsLoading(false);
+      }
+    };
+
+    loadClinicsActivity();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const totalRangeVisits = chartData.reduce((s, d) => s + d.visits, 0);
+  const avgRangeVisits = chartData.length > 0 ? Math.round(totalRangeVisits / chartData.length) : 0;
+  const peakDay = chartData.reduce(
+    (max, d) => (d.visits > max.visits ? d : max),
+    chartData[0] ?? { day: "—", date: "—", visits: 0 },
+  );
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
@@ -345,7 +520,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <p className="text-[10px] font-bold uppercase tracking-widest text-teal-500 px-3 mb-3">Management</p>
-          {NAV_ITEMS.map(({ id, label, icon, badge }) => {
+          {navItems.map(({ id, label, icon, badge }) => {
             const active = activeNav === id;
             return (
               <button
@@ -370,11 +545,15 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
         <div className="px-3 py-4 border-t border-teal-800">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-teal-800/60 transition-colors group">
             <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              PS
+              {profile?.name
+                ? profile.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+                : "SA"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Dr. Priya Suresh</p>
-              <p className="text-[10px] text-teal-400">District Health Officer</p>
+              <p className="text-sm font-semibold text-white truncate">{profile?.name ?? "System Admin"}</p>
+              <p className="text-[10px] text-teal-400">
+                {profile?.role === "admin" ? "Administrator" : "Health Staff"}
+              </p>
             </div>
             <button
               onClick={onLogout}
@@ -397,11 +576,13 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           searchValue={adminSearch}
           onSearchChange={setAdminSearch}
           searchPlaceholder="Search clinics, staff, records…"
-          isOnline={true}
-          onlineText="12 clinics online"
+          isOnline={typeof navigator !== "undefined" ? navigator.onLine : true}
+          onlineText={typeof navigator !== "undefined" && navigator.onLine ? "System Connected" : "Offline"}
           onNotifications={() => setActiveNav("alerts")}
           notificationCount={1}
-          userInitials="PS"
+          userInitials={profile?.name
+            ? profile.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+            : "SA"}
           userColor="violet"
           breadcrumb={
             activeNav === "staff" ? "Staff"
@@ -621,8 +802,10 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 <div>
                   <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">Patient Visits</h2>
                   <div className="flex items-baseline gap-3 mt-1">
-                    <span className="font-display text-2xl text-teal-950 dark:text-white">{totalWeek.toLocaleString()}</span>
-                    <span className="text-xs text-slate-400 dark:text-slate-500">total this week · avg {avgWeek}/day</span>
+                    <span className="font-display text-2xl text-teal-950 dark:text-white">{totalRangeVisits.toLocaleString()}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
+                      total in {range === "7d" ? "past 7 days" : range === "30d" ? "past 30 days" : "past 90 days"} · avg {avgRangeVisits}/day
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
@@ -640,14 +823,18 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 </div>
               </div>
 
-              <VisitsLineChart />
+              <VisitsLineChart data={chartData} loading={chartLoading} />
 
               <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <span className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                   <span className="w-3 h-0.5 rounded-full bg-teal-600" />
-                  Daily visits (all clinics)
+                  Daily visits ({profile?.clinic_id ? "Assigned clinic" : "All clinics"})
                 </span>
-                <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">Peak: Fri, 468 visits</span>
+                {peakDay && peakDay.visits > 0 && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
+                    Peak: {peakDay.date}, {peakDay.visits} visits
+                  </span>
+                )}
               </div>
             </div>
 
@@ -655,32 +842,53 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 lg:p-6 transition-colors">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">Top Clinics Today</h2>
-                <button className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 flex items-center gap-1 transition-colors">
-                  All
+                <button
+                  onClick={() => setActiveNav("ops-map")}
+                  className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 flex items-center gap-1 transition-colors"
+                >
+                  Ops Map
                   {Icon.chevronRight}
                 </button>
               </div>
               <div className="space-y-4">
-                {CLINICS.map((c) => {
-                  const s = CLINIC_STATUS[c.status];
-                  return (
-                    <div key={c.name}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{c.name}</p>
-                          <span className={`flex items-center gap-1.5 text-[11px] font-medium mt-0.5 ${s.cls}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                            {s.label}
+                {clinicsLoading ? (
+                  <div className="space-y-3 py-2">
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="animate-pulse space-y-1.5">
+                        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-3/4" />
+                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : clinicsActivity.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-slate-400">
+                    No clinics recorded in system.
+                  </div>
+                ) : (
+                  clinicsActivity.map((c) => {
+                    return (
+                      <div key={c.id}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{c.name}</p>
+                            <span className="text-[11px] text-slate-400 font-medium mt-0.5">
+                              {c.zone ?? "Zone not specified"}
+                            </span>
+                          </div>
+                          <span className="font-display text-lg text-teal-950 dark:text-white flex-shrink-0 ml-3">
+                            {c.visits}
                           </span>
                         </div>
-                        <span className="font-display text-lg text-teal-950 dark:text-white flex-shrink-0 ml-3">{c.visits}</span>
+                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-teal-500 rounded-full transition-all"
+                            style={{ width: `${Math.max(c.share, c.visits > 0 ? 5 : 0)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${c.share}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

@@ -43,7 +43,7 @@ export interface VisitRow {
   symptoms: string | null;
   symptom_category: string | null;
   diagnosis: string | null;
-  /** Integer 0–100. Null means no urgency score recorded. */
+  /** Integer 1–5 (1=Stable, 2=Low, 3=Moderate, 4=High, 5=Critical). Null means no score recorded. */
   urgency_score: number | null;
   created_at: string;
   /** Null means the record has NOT been synced yet (pending). */
@@ -64,15 +64,16 @@ export interface StaffWithClinic extends StaffRow {
 export type UrgencyLevel = 'Critical' | 'High' | 'Moderate' | 'Low' | 'Stable';
 
 /**
- * Derive a categorical urgency level from a numeric urgency_score (0–100).
- * Thresholds: Critical ≥90 | High ≥70 | Moderate ≥40 | Low ≥20 | Stable <20
+ * Derive a categorical urgency level from a numeric urgency_score (1–5).
+ * Scale matches VitalsPage and PatientRecordsPage:
+ *   5 = Critical | 4 = High | 3 = Moderate | 2 = Low | 1 (or null) = Stable
  */
 export function urgencyFromScore(score: number | null | undefined): UrgencyLevel {
   if (score === null || score === undefined) return 'Stable';
-  if (score >= 90) return 'Critical';
-  if (score >= 70) return 'High';
-  if (score >= 40) return 'Moderate';
-  if (score >= 20) return 'Low';
+  if (score >= 5) return 'Critical';
+  if (score >= 4) return 'High';
+  if (score >= 3) return 'Moderate';
+  if (score >= 2) return 'Low';
   return 'Stable';
 }
 
@@ -82,11 +83,11 @@ export function urgencyFromScore(score: number | null | undefined): UrgencyLevel
  */
 export function urgencyScoreRange(level: UrgencyLevel): { min: number; max: number | null } {
   switch (level) {
-    case 'Critical': return { min: 90, max: null };
-    case 'High':     return { min: 70, max: 90 };
-    case 'Moderate': return { min: 40, max: 70 };
-    case 'Low':      return { min: 20, max: 40 };
-    case 'Stable':   return { min: 0,  max: 20 };
+    case 'Critical': return { min: 5, max: null };
+    case 'High':     return { min: 4, max: 5 };
+    case 'Moderate': return { min: 3, max: 4 };
+    case 'Low':      return { min: 2, max: 3 };
+    case 'Stable':   return { min: 0, max: 2 };
   }
 }
 
