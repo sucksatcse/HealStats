@@ -102,9 +102,9 @@ The following components, infrastructure, and integrations are explicitly missin
 - [ ] **Database Triggers & Webhooks**: No automation exists for database events (e.g., triggering an alert when a high urgency score visit is synced).
 
 #### 2. Offline Sync & Storage Engine (Crucial)
-- [ ] **Local Storage DB**: A client-side database (like IndexedDB via Dexie.js or WatermelonDB) has not been installed or configured.
+- [x] **Local Storage DB**: A client-side database (Dexie.js) has been installed and configured to queue pending patient registrations and visits (Task 7).
 - [ ] **Service Workers**: No service workers are registered to intercept network requests and serve cached assets/data offline.
-- [ ] **Background Sync Queue**: A robust queue system to monitor `navigator.onLine` and automatically dispatch queued mutations to Supabase upon reconnection is completely unwritten.
+- [x] **Background Sync Queue**: A background sync service monitors `navigator.onLine` and automatically processes the Dexie queue upon reconnection (Task 8).
 - [ ] **Sync Status UI Hookup**: The `SyncMonitorPage.tsx` and `SyncPage.tsx` are static placeholders; they need to read from the actual background queue to display true syncing status.
 
 #### 3. Data Fetching & UI Wiring (CRUD)
@@ -118,7 +118,7 @@ The following components, infrastructure, and integrations are explicitly missin
 #### 4. AI, ML & OCR Integrations
 - [ ] **Triage Scoring Model**: The ML or rule-based algorithm to instantly score a patient's urgency during intake does not exist.
 - [ ] **On-Device Inference**: No setup for running lightweight ML models directly in the browser for offline triage support.
-- [ ] **OCR Pipeline (DigitizePage)**: The `DigitizePage.tsx` is static. It needs an integration (like Google Cloud Vision API or Tesseract.js) to scan and extract text from physical paper records.
+- [x] **OCR Digitization**: The `DigitizePage.tsx` uses Tesseract.js locally to extract Name, Age, and Diagnosis from images of paper records, allowing manual review before saving (Task 9A).
 
 #### 5. Emergency & Disaster Mode
 - [ ] **Live Alert Feeds**: `EmergencyDashboard.tsx` and `AlertsCenterPage.tsx` are not connected to any external real-time data sources (e.g., flood maps, weather APIs, shelter capacities).

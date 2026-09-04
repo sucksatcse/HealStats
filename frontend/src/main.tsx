@@ -5,6 +5,7 @@ import "./index.css"
 import { LanguageProvider } from "./LanguageContext"
 import { ThemeProvider } from "./ThemeContext"
 import { AuthProvider } from "./AuthContext"
+import "./lib/syncService"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -38,7 +38,7 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 - **Database Schema**: ✅ Initialized (`clinics`, `staff`, `patients`, `visits`, `sync_log`).
 - **UI & Design**: ✅ Scaffolding complete. Bilingual and Dark Mode contexts active.
 - **Data Fetching (CRUD)**: 🟡 In Progress. Patient Registration, Patient List, Patient Detail and Visit Recording are wired to Supabase. Admin/Emergency/Sync views remain static.
-- **Offline Engine**: ❌ Not Started.
+- **Offline Engine**: 🟡 In Progress (Local storage configured).
 - **Intelligence (OCR)**: ❌ Not Started.
 
 ## 6. Feature Status Board
@@ -50,7 +50,7 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 | Role-Based Dashboards | IN PROGRESS | Views for Admin, Emergency, and Worker created. Worker registration works, others static. |
 | Patient Records | DONE | `NewPatientPage`, `PatientRecordsPage` and `PatientDetailPage` wired to Supabase. |
 | Clinical Forms | DONE | `VitalsPage` inserts into `visits` (vitals JSONB, symptoms, symptom_category, diagnosis, urgency_score). |
-| Offline-First Engine | NOT STARTED | Core requirement. Needs Dexie.js integration. |
+| Offline-First Engine | IN PROGRESS | Dexie.js integrated for pending records. |
 | OCR Digitization | NOT STARTED | Primary intelligence path for digitizing paper records. |
 | AI Triage | OPTIONAL / FUTURE | Deferred feature. |
 | Emergency Mode | IN PROGRESS | UI shell exists. Pending live data. |
@@ -159,12 +159,12 @@ HealthStats/
 ## 20. Implementation Roadmap
 1. **Foundation**: Complete (UI Scaffolding, DB Schema, Auth).
 2. **Data Wiring**: In Progress (Patient Registration, List, Detail and Visit Recording done. Admin/Emergency live data pending).
-3. **Offline Engine**: Pending (IndexedDB, Sync Queue).
-4. **Intelligence**: Pending (OCR Digitization).
+3. **Offline Engine**: Completed (IndexedDB and Background Sync Queue implemented).
+4. **Intelligence**: In Progress (OCR Digitization implemented, Triage pending).
 5. **Admin / Emergency**: Pending (Live data connection).
 
 ## 21. Known Limitations
-- Offline Sync is not functional.
+- Offline Sync is functional (Dexie background queue syncs to Supabase on reconnection).
 - RLS is temporarily disabled in the MVP schema.
 - Admin, Emergency, Sync, Triage and the worker dashboard home still display static mock data.
 - Clinical forms (Vitals/Visit) are English-only; visits cannot be edited after saving.
@@ -206,5 +206,6 @@ Based on the current repository state, the next implementation priorities are:
 1. ~~**Task 5 — Patient List/Search**~~: Done.
 2. ~~**Task 5b — Patient Details**~~: Done (Task 6).
 3. ~~**Task 6 — Visit Records**~~: Done.
-4. **Task 7 — Offline Storage**: Integrate Dexie.js.
-5. **Task 8 — Background Sync**: Implement the Service Worker sync queue.
+4. ~~**Task 7 — Offline Storage**: Integrate Dexie.js~~: Done.
+5. ~~**Task 8 — Background Sync**: Implement the Service Worker sync queue~~: Done.
+6. ~~**Task 9A — OCR Digitization**: Integrate local Tesseract OCR~~: Done.

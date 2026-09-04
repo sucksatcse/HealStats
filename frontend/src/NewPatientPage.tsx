@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { supabase } from "./lib/supabase"
 import { useAuth } from "./AuthContext"
+import { offlineDb } from "./lib/offlineDb"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface FormData {
@@ -820,6 +821,7 @@ export default function NewPatientPage({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [createdPatientId, setCreatedPatientId] = useState<string | null>(null)
+  const [savedOffline, setSavedOffline] = useState(false)
 
   const update = (k: keyof FormData, v: string | string[]) => {
     setData((d) => ({ ...d, [k]: v }))
@@ -853,24 +855,51 @@ export default function NewPatientPage({
       setSubmitError(null)
 
       try {
-        const { data: newPatient, error } = await supabase
-          .from("patients")
-          .insert([
-            {
-              name: data.fullName,
-              age: parseInt(data.age, 10),
-              sex: data.sex,
-              village: data.village,
-              clinic_id: profile.clinic_id,
-            },
-          ])
-          .select("id")
-          .single()
+        const newPatientId = crypto.randomUUID()
+        const payload = {
+          id: newPatientId,
+          name: data.fullName,
+          age: parseInt(data.age, 10),
+          sex: data.sex,
+          village: data.village,
+          clinic_id: profile.clinic_id,
+        }
 
-        if (error) throw error
+        if (!navigator.onLine) {
+          await offlineDb.pendingRecords.add({
+            id: newPatientId,
+            type: "patient",
+            payload,
+            status: "pending",
+            createdAt: Date.now(),
+          })
+          setCreatedPatientId(newPatientId)
+          setSavedOffline(true)
+          setSubmitted(true)
+        } else {
+          const { error } = await supabase.from("patients").insert([payload])
 
-        setCreatedPatientId(newPatient.id)
-        setSubmitted(true)
+          if (error) {
+            if (error.message === "Failed to fetch" || error.message.includes("fetch")) {
+              await offlineDb.pendingRecords.add({
+                id: newPatientId,
+                type: "patient",
+                payload,
+                status: "pending",
+                createdAt: Date.now(),
+              })
+              setCreatedPatientId(newPatientId)
+              setSavedOffline(true)
+              setSubmitted(true)
+            } else {
+              throw error
+            }
+          } else {
+            setCreatedPatientId(newPatientId)
+            setSavedOffline(false)
+            setSubmitted(true)
+          }
+        }
       } catch (err: any) {
         setSubmitError(
           err.message ||
@@ -917,7 +946,7 @@ export default function NewPatientPage({
             <span className="font-mono bg-teal-50 px-1 rounded">
               {createdPatientId}
             </span>
-            . The record will sync automatically when connected.
+            . {savedOffline ? "Saved offline. Will sync automatically when connected." : "Record synced successfully."}
           </p>
         </div>
         <div className="flex gap-3">
@@ -927,6 +956,7 @@ export default function NewPatientPage({
               setStep(1)
               setSubmitted(false)
               setCreatedPatientId(null)
+              setSavedOffline(false)
             }}
             className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
           >

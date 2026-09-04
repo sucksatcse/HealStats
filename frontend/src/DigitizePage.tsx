@@ -1,68 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from "react"
-
-// ── OCR simulation data ────────────────────────────────────────────────────────
-const OCR_RESULT = {
-  fields: [
-    {
-      key: "patientName",
-      label: "Patient Name",
-      value: "Kadiatou Sylla",
-      confidence: 94,
-      type: "text",
-    },
-    { key: "age", label: "Age", value: "47", confidence: 91, type: "number" },
-    {
-      key: "sex",
-      label: "Sex",
-      value: "F",
-      confidence: 88,
-      type: "select",
-      options: ["F", "M", "Other"],
-    },
-    {
-      key: "date",
-      label: "Visit Date",
-      value: "2026-08-15",
-      confidence: 82,
-      type: "date",
-    },
-    {
-      key: "village",
-      label: "Village / Zone",
-      value: "Mahina",
-      confidence: 78,
-      type: "text",
-    },
-    {
-      key: "chiefComplaint",
-      label: "Chief Complaint",
-      value: "Persistent cough, 3 weeks",
-      confidence: 71,
-      type: "text",
-    },
-    {
-      key: "diagnosis",
-      label: "Diagnosis",
-      value: "Pulmonary Tuberculosis (suspect)",
-      confidence: 63,
-      type: "text",
-    },
-    {
-      key: "treatment",
-      label: "Treatment / Plan",
-      value: "Refer to district hospital for sputum test. Start empiric ORS.",
-      confidence: 58,
-      type: "textarea",
-    },
-    {
-      key: "clinician",
-      label: "Clinician Name",
-      value: "Dr. B. Coulibaly",
-      confidence: 85,
-      type: "text",
-    },
-  ],
-}
+import { useState, useRef, useCallback } from "react"
+import Tesseract from "tesseract.js"
+import { parseOcrText, OcrField } from "./lib/ocrParser"
+import { supabase } from "./lib/supabase"
+import { offlineDb } from "./lib/offlineDb"
+import { useAuth } from "./AuthContext"
 
 type ConfidenceTier = "high" | "medium" | "low"
 
@@ -134,7 +75,7 @@ function ExtractedField({
   confirmed,
   onToggle,
 }: {
-  field: typeof OCR_RESULT.fields[0]
+  field: OcrField
   value: string
   onChange: (v: string) => void
   confirmed: boolean
@@ -212,19 +153,6 @@ function ExtractedField({
           disabled={confirmed}
           className={`${inputCls} resize-none`}
         />
-      ) : field.type === "select" ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={confirmed}
-          className={inputCls}
-        >
-          {field.options!.map((o) => (
-            <option key={o} value={o}>
-              {o === "F" ? "Female" : o === "M" ? "Male" : o}
-            </option>
-          ))}
-        </select>
       ) : (
         <input
           type={field.type}
@@ -259,59 +187,67 @@ function ExtractedField({
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function DigitizePage() {
-  const [stage, setStage] =
-    useState<"upload" | "scanning" | "review" | "saved">("upload")
+  const { profile } = useAuth()
+  const [stage, setStage] = useState<"upload" | "scanning" | "review" | "saved">("upload")
   const [dragging, setDragging] = useState(false)
   const [imageURL, setImageURL] = useState<string | null>(null)
   const [scanProgress, setScanProgress] = useState(0)
+  
+  const [ocrFields, setOcrFields] = useState<OcrField[]>([])
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({})
+  
+  const [ocrFailed, setOcrFailed] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedOffline, setSavedOffline] = useState(false)
+  
   const [toast, setToast] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const scanTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const totalFields = OCR_RESULT.fields.length
+  const totalFields = ocrFields.length
   const confirmedCount = Object.values(confirmed).filter(Boolean).length
-  const allConfirmed = confirmedCount === totalFields
-  const lowConfidenceCount = OCR_RESULT.fields.filter(
+  const allConfirmed = totalFields > 0 && confirmedCount === totalFields
+  const lowConfidenceCount = ocrFields.filter(
     (f) => getConfidenceTier(f.confidence) === "low",
   ).length
 
-  // initialise field values from OCR
-  const initFields = () => {
-    const vals: Record<string, string> = {}
-    OCR_RESULT.fields.forEach((f) => {
-      vals[f.key] = f.value
-    })
-    setFieldValues(vals)
-    setConfirmed({})
-  }
-
-  const beginScan = (url: string) => {
+  const beginScan = async (url: string) => {
     setImageURL(url)
     setStage("scanning")
     setScanProgress(0)
-    let p = 0
-    scanTimer.current = setInterval(() => {
-      p += Math.random() * 14 + 4
-      if (p >= 100) {
-        p = 100
-        clearInterval(scanTimer.current!)
-        setTimeout(() => {
-          initFields()
-          setStage("review")
-        }, 400)
+    setOcrFailed(false)
+    
+    try {
+      const worker = await Tesseract.createWorker("eng", 1, {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            setScanProgress(Math.floor(m.progress * 100))
+          }
+        }
+      });
+      const { data: { text } } = await worker.recognize(url);
+      await worker.terminate();
+      
+      const parsedFields = parseOcrText(text);
+      const hasData = parsedFields.some(f => f.value.trim() !== "");
+      
+      if (!hasData) {
+        setOcrFailed(true);
+        setStage("upload");
+      } else {
+        setOcrFields(parsedFields);
+        const vals: Record<string, string> = {}
+        parsedFields.forEach(f => { vals[f.key] = f.value })
+        setFieldValues(vals)
+        setConfirmed({})
+        setStage("review")
       }
-      setScanProgress(Math.min(p, 100))
-    }, 140)
+    } catch (err) {
+      console.error(err)
+      setOcrFailed(true)
+      setStage("upload")
+    }
   }
-
-  useEffect(
-    () => () => {
-      if (scanTimer.current) clearInterval(scanTimer.current)
-    },
-    [],
-  )
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return
@@ -334,25 +270,101 @@ export default function DigitizePage() {
 
   const handleConfirmAll = () => {
     const all: Record<string, boolean> = {}
-    OCR_RESULT.fields.forEach((f) => {
+    ocrFields.forEach((f) => {
       all[f.key] = true
     })
     setConfirmed(all)
   }
 
-  const handleSave = () => {
-    setStage("saved")
-    setToast("Record saved locally — will sync when connected")
-    setTimeout(() => setToast(null), 3500)
+  const handleSave = async () => {
+    if (!profile) return
+    setIsSaving(true)
+    
+    try {
+      const newPatientId = crypto.randomUUID()
+      const patientPayload = {
+        id: newPatientId,
+        name: fieldValues["patientName"] || "Unknown Patient",
+        age: parseInt(fieldValues["age"], 10) || null,
+        clinic_id: profile.clinic_id,
+        // Optional fields left null: sex, phone, address, village
+      }
+      
+      let visitPayload: any = null;
+      let newVisitId: string | null = null;
+      if (fieldValues["diagnosis"] && fieldValues["diagnosis"].trim()) {
+        newVisitId = crypto.randomUUID()
+        visitPayload = {
+          id: newVisitId,
+          patient_id: newPatientId,
+          staff_id: profile.id,
+          diagnosis: fieldValues["diagnosis"].trim(),
+          synced_at: navigator.onLine ? new Date().toISOString() : null
+        }
+      }
+
+      let isOffline = !navigator.onLine;
+
+      if (!isOffline) {
+        const { error: patientErr } = await supabase.from("patients").insert([patientPayload])
+        
+        if (patientErr && (patientErr.message === "Failed to fetch" || patientErr.message.includes("fetch"))) {
+          isOffline = true;
+        } else if (patientErr) {
+          throw patientErr
+        } else {
+          if (visitPayload && newVisitId) {
+            const { error: visitErr } = await supabase.from("visits").insert([visitPayload])
+            if (visitErr && (visitErr.message === "Failed to fetch" || visitErr.message.includes("fetch"))) {
+              isOffline = true;
+            } else if (visitErr) {
+              throw visitErr
+            }
+          }
+        }
+      }
+
+      if (isOffline) {
+        await offlineDb.pendingRecords.add({
+          id: newPatientId,
+          type: "patient",
+          payload: patientPayload,
+          status: "pending",
+          createdAt: Date.now()
+        })
+        if (visitPayload && newVisitId) {
+          await offlineDb.pendingRecords.add({
+            id: newVisitId,
+            type: "visit",
+            payload: { ...visitPayload, synced_at: null },
+            status: "pending",
+            createdAt: Date.now()
+          })
+        }
+        setSavedOffline(true)
+      }
+
+      setStage("saved")
+      setToast(isOffline ? "Record saved locally — will sync when connected" : "Record synced successfully")
+      setTimeout(() => setToast(null), 3500)
+    } catch (err) {
+      console.error(err)
+      setToast("Failed to save record.")
+      setTimeout(() => setToast(null), 3500)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleReset = () => {
     if (imageURL) URL.revokeObjectURL(imageURL)
     setImageURL(null)
+    setOcrFields([])
     setFieldValues({})
     setConfirmed({})
     setScanProgress(0)
     setStage("upload")
+    setOcrFailed(false)
   }
 
   // ── Saved state ──────────────────────────────────────────────────────────────
@@ -380,10 +392,9 @@ export default function DigitizePage() {
           </h2>
           <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
             <strong className="text-teal-700">
-              {fieldValues["patientName"]}
+              {fieldValues["patientName"] || "The patient"}
             </strong>
-            's paper record has been digitized and saved. It will sync to the
-            central server automatically.
+            's paper record has been digitized and saved. {savedOffline ? "It will sync to the central server automatically." : "It has been synced successfully."}
           </p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl px-5 py-4 text-left w-full max-w-sm">
@@ -393,8 +404,9 @@ export default function DigitizePage() {
           {[
             ["Patient", fieldValues["patientName"]],
             ["Diagnosis", fieldValues["diagnosis"]],
-            ["Visit Date", fieldValues["date"]],
-          ].map(([k, v]) => (
+          ].map(([k, v]) => {
+            if (!v) return null;
+            return (
             <div
               key={k}
               className="flex justify-between text-sm py-1.5 border-b border-slate-50 last:border-0"
@@ -402,7 +414,7 @@ export default function DigitizePage() {
               <span className="text-slate-400">{k}</span>
               <span className="font-medium text-slate-700">{v}</span>
             </div>
-          ))}
+          )})}
         </div>
         <div className="flex gap-3">
           <button
@@ -410,9 +422,6 @@ export default function DigitizePage() {
             className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
           >
             Digitize Another
-          </button>
-          <button className="text-sm font-semibold text-teal-700 border border-teal-200 hover:border-teal-400 px-5 py-2.5 rounded-xl transition-colors">
-            View Patient Record
           </button>
         </div>
       </div>
@@ -485,6 +494,14 @@ export default function DigitizePage() {
       >
         {/* ── LEFT: upload / preview ── */}
         <div className="flex flex-col gap-4">
+          
+          {ocrFailed && stage === "upload" && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
+              <p className="text-sm font-semibold text-red-800 mb-2">OCR could not identify useful information.</p>
+              <p className="text-sm text-red-600 mb-3">Please enter the patient details manually.</p>
+            </div>
+          )}
+
           {/* Upload zone */}
           {stage === "upload" && (
             <div
@@ -597,7 +614,7 @@ export default function DigitizePage() {
                     Scanning document…
                   </p>
                   <span className="text-sm font-bold text-teal-600">
-                    {Math.round(scanProgress)}%
+                    {scanProgress}%
                   </span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -608,9 +625,9 @@ export default function DigitizePage() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {[
+                    "Loading OCR Engine",
                     "Detecting text regions",
                     "Extracting fields",
-                    "Applying clinical NLP",
                     "Validating output",
                   ].map((step, i) => {
                     const done = scanProgress > (i + 1) * 25
@@ -686,7 +703,7 @@ export default function DigitizePage() {
                 <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   {
-                    OCR_RESULT.fields.filter(
+                    ocrFields.filter(
                       (f) => getConfidenceTier(f.confidence) === "high",
                     ).length
                   }{" "}
@@ -695,7 +712,7 @@ export default function DigitizePage() {
                 <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
                   <span className="w-2 h-2 rounded-full bg-amber-400" />
                   {
-                    OCR_RESULT.fields.filter(
+                    ocrFields.filter(
                       (f) => getConfidenceTier(f.confidence) === "medium",
                     ).length
                   }{" "}
@@ -710,8 +727,8 @@ export default function DigitizePage() {
                 <span className="ml-auto text-[10px] text-teal-600 font-medium">
                   Avg{" "}
                   {Math.round(
-                    OCR_RESULT.fields.reduce((s, f) => s + f.confidence, 0) /
-                      totalFields,
+                    ocrFields.reduce((s, f) => s + f.confidence, 0) /
+                      Math.max(1, totalFields),
                   )}
                   % confidence
                 </span>
@@ -768,7 +785,7 @@ export default function DigitizePage() {
                   <div
                     className="h-full bg-teal-500 rounded-full transition-all"
                     style={{
-                      width: `${(confirmedCount / totalFields) * 100}%`,
+                      width: `${(confirmedCount / Math.max(1, totalFields)) * 100}%`,
                     }}
                   />
                 </div>
@@ -780,7 +797,7 @@ export default function DigitizePage() {
               className="flex flex-col gap-2.5 overflow-y-auto flex-1"
               style={{ maxHeight: "calc(100vh - 340px)" }}
             >
-              {OCR_RESULT.fields.map((field) => (
+              {ocrFields.map((field) => (
                 <ExtractedField
                   key={field.key}
                   field={field}
@@ -810,29 +827,33 @@ export default function DigitizePage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={!allConfirmed}
+                disabled={!allConfirmed || isSaving}
                 className={`flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl transition-all ml-auto ${
                   allConfirmed
                     ? "bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-600/20 hover:-translate-y-0.5"
                     : "bg-slate-100 text-slate-400 cursor-not-allowed"
                 }`}
               >
-                <svg
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                  className="w-4 h-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13 11v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2M8 2v8m-3-3l3 3 3-3"
-                  />
-                </svg>
-                {allConfirmed
-                  ? "Save Record"
-                  : `Confirm ${totalFields - confirmedCount} more to save`}
+                {isSaving ? "Saving..." : (
+                  <>
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      className="w-4 h-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13 11v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2M8 2v8m-3-3l3 3 3-3"
+                      />
+                    </svg>
+                    {allConfirmed
+                      ? "Save Record"
+                      : `Confirm ${totalFields - confirmedCount} more to save`}
+                  </>
+                )}
               </button>
             </div>
           </div>

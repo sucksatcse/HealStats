@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { supabase } from "./lib/supabase"
 import { useAuth } from "./AuthContext"
+import { offlineDb } from "./lib/offlineDb"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type RangeStatus = "normal" | "low" | "high" | "critical" | "empty"
@@ -459,6 +460,7 @@ export default function VitalsPage({
     patient: PatientOption
     time: string
   } | null>(null)
+  const [savedOffline, setSavedOffline] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -558,6 +560,7 @@ export default function VitalsPage({
     setAiResult(null)
     setSaveError(null)
     setSavedVisit(null)
+    setSavedOffline(false)
     if (!patientId) setSelected(null)
   }
 
@@ -591,33 +594,72 @@ export default function VitalsPage({
         : complaint.trim()
 
     try {
-      const { data, error } = await supabase
-        .from("visits")
-        .insert([
-          {
-            patient_id: selected.id,
-            staff_id: profile.id,
-            vitals: Object.keys(vitals).length > 0 ? vitals : null,
-            symptoms,
-            symptom_category: category || null,
-            diagnosis: diagnosis.trim() || null,
-            urgency_score: urgencyScore,
-            synced_at: new Date().toISOString(),
-          },
-        ])
-        .select("id")
-        .single()
+      const newVisitId = crypto.randomUUID()
+      const payload = {
+        id: newVisitId,
+        patient_id: selected.id,
+        staff_id: profile.id,
+        vitals: Object.keys(vitals).length > 0 ? vitals : null,
+        symptoms,
+        symptom_category: category || null,
+        diagnosis: diagnosis.trim() || null,
+        urgency_score: urgencyScore,
+      }
 
-      if (error) throw error
+      if (!navigator.onLine) {
+        await offlineDb.pendingRecords.add({
+          id: newVisitId,
+          type: "visit",
+          payload: { ...payload, synced_at: null },
+          status: "pending",
+          createdAt: Date.now(),
+        })
+        setSavedOffline(true)
+        setSavedVisit({
+          id: newVisitId,
+          patient: selected,
+          time: new Date().toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        })
+      } else {
+        const payloadOnline = { ...payload, synced_at: new Date().toISOString() }
+        const { error } = await supabase.from("visits").insert([payloadOnline])
 
-      setSavedVisit({
-        id: data.id,
-        patient: selected,
-        time: new Date().toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      })
+        if (error) {
+          if (error.message === "Failed to fetch" || error.message.includes("fetch")) {
+            await offlineDb.pendingRecords.add({
+              id: newVisitId,
+              type: "visit",
+              payload: { ...payload, synced_at: null },
+              status: "pending",
+              createdAt: Date.now(),
+            })
+            setSavedOffline(true)
+            setSavedVisit({
+              id: newVisitId,
+              patient: selected,
+              time: new Date().toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            })
+          } else {
+            throw error
+          }
+        } else {
+          setSavedOffline(false)
+          setSavedVisit({
+            id: newVisitId,
+            patient: selected,
+            time: new Date().toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          })
+        }
+      }
     } catch (err: any) {
       console.error(err)
       setSaveError(
@@ -680,7 +722,7 @@ export default function VitalsPage({
             <span className="font-semibold text-teal-700">
               {savedVisit.patient.name}
             </span>{" "}
-            at {savedVisit.time} and synced to the clinic database.
+            at {savedVisit.time} and {savedOffline ? "saved offline locally" : "synced to the clinic database"}.
           </p>
           <p className="font-mono text-[11px] text-slate-400 mt-2">
             Visit {shortId(savedVisit.id)}
