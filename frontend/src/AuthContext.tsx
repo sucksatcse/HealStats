@@ -110,15 +110,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isDemo])
 
   const loginDemoAdmin = async () => {
-    // Preferred path: a real Supabase session so auth.uid() exists (required
-    // once RLS is enabled). Falls back to the client-side bypass below only
-    // while the seeded demo user does not exist / RLS is still disabled.
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: "admin@healstats.org",
-      password: "Admin@123456",
-    })
-    if (!error && data.session) return // onAuthStateChange loads the profile
-
+    // Instant client-side demo bypass (dev/exhibition only). Kept network-free so
+    // it is deterministic and works offline; real staff use signInWithPassword.
     setIsDemo(true)
     setSession({} as Session)
     setUser({ id: "admin-bypass-id" } as User)
@@ -143,14 +136,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loginDemoUser = async () => {
-    // Preferred path: a real Supabase session (RLS-ready). Falls back to the
-    // client-side bypass below only while the seeded demo user does not exist.
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: "worker@clinic.org",
-      password: "password123",
-    })
-    if (!error && data.session) return // onAuthStateChange loads the profile
-
+    // Instant client-side demo bypass (dev/exhibition only). Kept network-free so
+    // it is deterministic and works offline; real staff use signInWithPassword.
     setIsDemo(true)
     setSession({} as Session)
     setUser({ id: "demo-user-id" } as User)

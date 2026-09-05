@@ -17,9 +17,9 @@
   code-ready to turn it on:
   - `20260905000000_enable_rls.sql` defines clinic-scoped policies (admin = all
     clinics, worker = own clinic; self-signup INSERT guarded to `role='worker'`).
-  - The demo logins (`AuthContext.loginDemoUser/loginDemoAdmin`) now establish a
-    **real Supabase session** first (so `auth.uid()` exists under RLS) and only
-    fall back to the client-side bypass while the demo users are absent.
+  - The demo logins (`AuthContext.loginDemoUser/loginDemoAdmin`) use an instant
+    client-side bypass (no `auth.uid()`); enabling RLS will additionally require
+    switching demo mode to real, confirmed + `staff`-linked Supabase sessions.
   Remaining to fully enable (needs Supabase credentials / dashboard access):
   (1) seed the two demo Auth users (`worker@clinic.org`, `admin@healstats.org`)
   and link their `staff` rows; (2) apply the migration to the project;

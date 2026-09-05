@@ -74,10 +74,10 @@ HealthStats is designed around:
   dead-end); no flash of protected/admin content before authorization resolves; sign-in
   network/unexpected failures surface a plain-language error.
 - **Demo Mode**: For development and exhibition testing, `worker@clinic.org` /
-  `password123` (and the `admin@healstats.org` admin creds) first attempt a **real**
-  Supabase session (so authorization works under RLS); if that demo user does not exist,
-  it falls back to an injected mock session. The mock fallback is valid only while RLS is
-  disabled.
+  `password123` (and the `admin@healstats.org` admin creds) use an **instant
+  client-side bypass** (network-free, deterministic, works offline). Real staff
+  credentials always go through Supabase Auth. The mock bypass is valid only
+  while RLS is disabled; enabling RLS will require real, confirmed demo sessions.
 
 ### Self-Registration (Sign Up)
 - **Status**: Implemented (`SignUpPage.tsx`).
