@@ -12,6 +12,12 @@ logs/
 .claude-replay.*
 .tmp-*
 
+# Playwright E2E artefacts
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
 # Platform-managed agentplat state, not project source. In the
 # client-initiated single-repo workspace layout (make's `Path: "."` spec) the
 # repo root IS the workspace root, so these land inside this repo rather than

@@ -292,9 +292,10 @@ flowchart LR
 - Emergency mode alert feeds
 - Symptom clustering (Outbreak Detection)
 
-### Phase 5 — Testing & Demo (Pending)
-- PWA manifests
-- Exhibition preparations
+### Phase 5 — Testing & Demo (In Progress)
+- End-to-end tests with Playwright (auth, landing desktop/mobile, i18n, dark mode, chatbot) — implemented (Task 22); run against a production preview server using the demo-login bypass (no real DB writes). DB-mutating flow coverage and unit tests pending an isolated test DB.
+- PWA manifests (pending)
+- Exhibition preparations (pending)
 
 ---
 
