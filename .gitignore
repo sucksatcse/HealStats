@@ -27,3 +27,18 @@ blob-report/
 
 # Supabase CLI local scratch
 supabase/.temp/
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf
