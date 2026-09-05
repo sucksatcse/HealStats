@@ -98,7 +98,7 @@ export default function OutbreakDetectionPage({
     if (!analysis) return;
     const now = new Date().toISOString();
     const headers = [
-      "HealStats Epidemiological Outbreak Surveillance Report",
+      "HealthStats Epidemiological Outbreak Surveillance Report",
       `Generated At: ${now}`,
       `Surveillance Timeframe: ${hours} Hours`,
       `Sensitivity Mode: ${sensitivity}`,
@@ -154,7 +154,7 @@ export default function OutbreakDetectionPage({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `healstats_outbreak_surveillance_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `healthstats_outbreak_surveillance_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

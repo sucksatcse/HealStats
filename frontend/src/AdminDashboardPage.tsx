@@ -832,7 +832,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
               type="button"
               onClick={() => {
                 const reportData = [
-                  ["HealStats Emergency Situation Report", today],
+                  ["HealthStats Emergency Situation Report", today],
                   ["District", "Kayes Health District"],
                   ["Emergency Mode Status", emergency ? "ACTIVE EMERGENCY" : "STANDARD SURVEILLANCE"],
                   ["Generated At", new Date().toISOString()],
@@ -847,7 +847,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.setAttribute("download", `healstats_situation_report_${new Date().toISOString().slice(0, 10)}.csv`);
+                link.setAttribute("download", `healthstats_situation_report_${new Date().toISOString().slice(0, 10)}.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
