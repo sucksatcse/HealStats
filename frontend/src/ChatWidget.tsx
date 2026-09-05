@@ -201,7 +201,7 @@ export default function ChatWidget() {
           style={{ scrollbarWidth: "none" }}
         >
           {messages.map((msg, idx) => (
-            <div key={msg.id}>
+            <div key={msg.id} className="animate-slide-up">
               {msg.role === "user" ? (
                 /* User: right-aligned teal bubble */
                 <div className="flex justify-end">

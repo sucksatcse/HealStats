@@ -876,7 +876,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
               <StatSkeleton /><StatSkeleton /><StatSkeleton /><StatSkeleton />
             </div>
           ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
 
             {/* 1. Total Patients */}
             <button

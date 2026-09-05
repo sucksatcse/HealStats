@@ -393,14 +393,14 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-[1fr_1fr] gap-0 min-h-[calc(100vh-64px)]">
             {/* Left: copy */}
             <div className="flex flex-col justify-center py-16 lg:py-24 lg:pr-16 z-10">
-              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit">
+              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit animate-fade-up">
                 <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
                 <span className="text-xs font-semibold text-teal-700 dark:text-teal-300 tracking-wide uppercase">
                   {t.hero.badge}
                 </span>
               </div>
 
-              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6">
+              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6 animate-fade-up stagger-1">
                 {t.hero.h1a}
                 <br />
                 <em className="not-italic text-teal-600 dark:text-teal-400">
@@ -414,11 +414,11 @@ export default function App() {
                 )}
               </h1>
 
-              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10">
+              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10 animate-fade-up stagger-2">
                 {t.hero.body}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4 animate-fade-up stagger-3">
                 <a
                   href="#get-started"
                   className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
@@ -445,7 +445,7 @@ export default function App() {
               </div>
 
               {/* Trust signals */}
-              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60">
+              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60 animate-fade-up stagger-4">
                 {[
                   {
                     icon: (
@@ -485,7 +485,7 @@ export default function App() {
             </div>
 
             {/* Right: image panel */}
-            <div className="relative hidden lg:block">
+            <div className="relative hidden lg:block animate-fade-up stagger-2">
               <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #115e59 100%)'}} />
               <img
                 src="https://images.unsplash.com/photo-1621353880071-4752fa42cbc7?w=900&h=1000&fit=crop&auto=format"
