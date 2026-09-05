@@ -1,3 +1,6 @@
+// @ts-nocheck  — this file targets the Deno (Supabase Edge) runtime, not the
+// frontend's Node/browser TypeScript toolchain; `Deno`, esm.sh URL imports, etc.
+// are valid at deploy time. Skips false-positive errors from the workspace TS server.
 // Supabase Edge Function: groq-chat
 // ---------------------------------------------------------------------------
 // Server-side proxy for the HealthStats AI assistant. Holds the Groq API key as

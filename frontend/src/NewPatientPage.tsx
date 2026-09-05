@@ -130,7 +130,7 @@ function FieldInput({
             : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900"
         }`}
       />
-      {error && <p className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
+      {error && <p role="alert" className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
     </div>
   )
 }
@@ -169,7 +169,7 @@ function FieldSelect({
       >
         {children}
       </select>
-      {error && <p className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
+      {error && <p role="alert" className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
     </div>
   )
 }

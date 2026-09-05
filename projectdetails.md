@@ -174,7 +174,7 @@ HealthStats/
 ## 21. Known Limitations
 - Offline Sync is functional (Dexie background queue syncs to Supabase on reconnection).
 - RLS is temporarily disabled in the MVP schema.
-- Admin, Emergency, Sync, Triage, the Clinic Operations Map and the worker home dashboard are wired to live Supabase data; the Alerts Center external feeds and a few header labels (Worker ID, "last synced") remain static.
+- Admin, Emergency, Sync, Triage, the Clinic Operations Map and the worker home dashboard are wired to live Supabase data; the Alerts Center external feeds remain static (the worker header now shows the real short staff ID and an honest last-synced value).
 - The AI Assistant is a grounded intent engine (real queries + fixed platform facts), not a generative model; it answers a bounded set of questions and defers anything outside that set to a capabilities prompt.
 - Internationalization: the i18n foundation is complete and the language switcher works app-wide, but only the Ops Map, AI Assistant and shared labels are translated via `t()`; many deep admin/clinical pages still render English strings pending incremental migration.
 - Clinical forms (Vitals/Visit) are English-only; visits cannot be edited after saving.

@@ -329,7 +329,7 @@ export default function PatientFormPage({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3">
+        <div role="alert" className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3">
           <svg
             viewBox="0 0 16 16"
             fill="currentColor"

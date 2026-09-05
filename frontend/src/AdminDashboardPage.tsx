@@ -13,6 +13,7 @@ import SyncMonitorPage from "./SyncMonitorPage";
 import FlaggedPatientsPage from "./FlaggedPatientsPage";
 import AnalyticsPage from "./AnalyticsPage";
 import SettingsPage from "./SettingsPage";
+import StaffProfilePage from "./StaffProfilePage";
 import EmergencyDashboard from "./EmergencyDashboard";
 import ResourceAllocationPage from "./ResourceAllocationPage";
 import AlertsCenterPage from "./AlertsCenterPage";
@@ -617,6 +618,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             ? profile.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
             : "SA"}
           userColor="violet"
+          onProfile={() => setActiveNav("profile")}
           breadcrumb={
             activeNav === "staff" ? "Staff"
             : activeNav === "patients" ? "Patients"
@@ -627,6 +629,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             : activeNav === "resources" ? "Resource Ops"
             : activeNav === "alerts" ? "Notifications"
             : activeNav === "settings" ? "Settings"
+            : activeNav === "profile" ? "My Profile"
             : activeNav === "ops-map" ? "Ops Map"
             : activeNav === "outbreak" ? "Outbreak Radar"
             : "Overview"
@@ -639,7 +642,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
         {/* All other content views */}
         {activeNav !== "ops-map" && (
         <main className={`flex-1 overflow-y-auto px-4 lg:px-8 py-6 space-y-6 transition-colors duration-500 ${
-          emergency && !["staff", "patients", "patient-detail", "sync", "flagged", "analytics", "resources", "alerts", "settings", "outbreak"].includes(activeNav)
+          emergency && !["staff", "patients", "patient-detail", "sync", "flagged", "analytics", "resources", "alerts", "settings", "outbreak", "profile"].includes(activeNav)
             ? "bg-gradient-to-b from-red-50 to-slate-50"
             : ""
         }`}>
@@ -704,6 +707,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           {activeNav === "resources" && <ResourceAllocationPage />}
           {activeNav === "alerts" && <AlertsCenterPage />}
           {activeNav === "settings" && <SettingsPage />}
+          {activeNav === "profile" && <StaffProfilePage />}
           {activeNav === "emergency-triage" && (
             <EmergencyTriagePage
               onViewPatient={(id) => {
@@ -715,7 +719,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             />
           )}
 
-          {!["staff", "patients", "patient-detail", "sync", "flagged", "analytics", "outbreak", "resources", "alerts", "settings", "emergency-triage"].includes(activeNav) && (<>
+          {!["staff", "patients", "patient-detail", "sync", "flagged", "analytics", "outbreak", "resources", "alerts", "settings", "emergency-triage", "profile"].includes(activeNav) && (<>
 
           {/* Outbreak Surveillance Alert Banner (Task 14.5) */}
           {outbreakAnalysis && outbreakAnalysis.clusters.length > 0 && (

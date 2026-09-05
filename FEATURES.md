@@ -41,7 +41,7 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Motion & Animation | UI/UX | Implemented | Medium |
 | Error/Empty/Loading States | UI/UX | Implemented | High |
 | End-to-End Testing | Quality | Implemented (safe flows) | Medium |
-| PWA | Platform | Not Started | High |
+| PWA | Platform | Implemented | High |
 
 ---
 
@@ -63,8 +63,21 @@ HealthStats is designed around:
 ### Login
 - **Who can log in**: Pre-approved community health workers and clinic administrators.
 - **Authentication Provider**: Supabase Auth (Email/Password).
-- **Session Handling**: Managed globally via `AuthContext.tsx`. Unauthenticated users are redirected to `/login`.
-- **Demo Mode**: For development and exhibition testing, entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session.
+- **Session Handling**: Managed globally via `AuthContext.tsx`. On load the session is
+  restored from Supabase and the staff profile (role + `clinic_id`) is resolved before
+  any protected view renders (a loading spinner is shown meanwhile). Unauthenticated
+  users on a protected page are redirected to the appropriate login screen. On sign-out
+  the session is cleared and protected content becomes inaccessible.
+- **Edge cases handled (Task 25)**: session restored across browser refresh; expired/
+  invalid sessions fall back to login; a valid session with **no linked `staff` profile**
+  shows an explicit "Account not linked" screen with a Sign out action (instead of a
+  dead-end); no flash of protected/admin content before authorization resolves; sign-in
+  network/unexpected failures surface a plain-language error.
+- **Demo Mode**: For development and exhibition testing, `worker@clinic.org` /
+  `password123` (and the `admin@healstats.org` admin creds) first attempt a **real**
+  Supabase session (so authorization works under RLS); if that demo user does not exist,
+  it falls back to an injected mock session. The mock fallback is valid only while RLS is
+  disabled.
 
 ### Self-Registration (Sign Up)
 - **Status**: Implemented (`SignUpPage.tsx`).
@@ -75,13 +88,25 @@ HealthStats is designed around:
 ### Role-Based Access
 - **Worker**: Authorized to log visits and register patients only for their assigned clinic.
 - **Admin**: Authorized to view aggregated analytics across all clinics.
+- **Enforcement**: Route access is gated in `App.tsx` by session + resolved `role` (not
+  merely by hiding navigation links) — a worker cannot land on the admin dashboard, and
+  unauthenticated users cannot render protected pages. The admin login screen additionally
+  rejects a valid non-admin account (signs out with a clear message) rather than routing it
+  onward. Note this is **client-side** enforcement; true server-side isolation requires
+  enabling RLS (see below).
 
 ### Clinic-Level Access
 Users are mapped to physical clinics via the `staff` table (`clinic_id`). The application strictly relies on this injected ID for mutations (like patient registration) rather than trusting user-provided inputs.
 
+### Profiles (Task 26)
+- **Staff "My Profile"** (`StaffProfilePage.tsx`): a read-only profile for the signed-in user, sourced entirely from the authenticated staff record — full name, role label (Health Worker / Administrator), assigned clinic (resolved from Supabase; "All clinics" for system-level admins), short staff ID, and best-effort account email. Reached from the shared user-menu avatar → **My Profile** in both the worker and admin dashboards. Read-only by design — name/role/clinic changes are directed to an administrator (no fake save).
+- **Patient profile** (`PatientDetailPage.tsx`): the existing patient detail experience serves as the patient profile — header (name, short ID, urgency badge on the 1–5 scale, symptom category, clinic, registered/total-visits/last-visit), plus Vitals History, Visit History and Diagnoses tabs, all from live Supabase data with honest loading/empty/error states. Only accessible to authenticated staff through the existing Patient Records / triage / outbreak navigation (no public patient route). No invented medical fields.
+
+
 ### Row Level Security (RLS)
 The intended production security architecture uses Supabase RLS to protect all tables (`clinics`, `staff`, `patients`, `visits`, `sync_log`) and Security Definer functions to enforce that workers only interact with their own clinic's data. 
 *(Note: In the current MVP development state, RLS is intentionally disabled in `initial_schema.sql` to facilitate rapid prototyping. Therefore, RLS does not currently protect the deployed MVP).*
+A prepared migration `20260905000000_enable_rls.sql` defines the clinic-scoped policies and the demo logins now establish real sessions, but RLS is **not yet applied** — it requires seeding the demo Auth users and end-to-end testing first. See `LIMITATIONS.md`.
 
 ---
 
@@ -236,8 +261,12 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ## 15. Progressive Web App (PWA)
 
-- **Status**: Planned
-- **Capabilities**: Missing `manifest.json` and service worker caching required for true PWA installation and offline asset serving.
+- **Status**: Implemented (basic)
+- **Capabilities**: `frontend/public/manifest.webmanifest` + `icon.svg` are linked
+  from `index.html`, and a network-first service worker (`frontend/public/sw.js`,
+  registered in production only) provides an offline app-shell cache fallback
+  without risking stale online content. Advanced precaching of hashed assets and
+  richer offline strategies remain future work.
 
 ---
 
@@ -317,7 +346,8 @@ flowchart LR
 |---|---|---|
 | Database Schema | Implemented | `clinics`, `staff`, `patients`, `visits`, `sync_log` created |
 | RLS | Planned / Production Required | RLS is the intended production security architecture but is disabled in the current MVP development schema |
-| Authentication | Implemented | UI + Context + Demo Bypass + Admin role routing |
+| Authentication | Implemented | UI + Context + Demo Bypass + Admin role routing; hardened session restore, missing-profile handling, route-level role enforcement, no-flash guards (Task 25) |
+| Profiles (Patient & Staff) | Implemented | Task 26; read-only staff My Profile from auth record + existing patient detail profile; user-menu navigation; no schema change |
 | Patient Registration | Implemented | Task 4 completed; successfully saves to Supabase |
 | Patient Details/List | Implemented | Tasks 5/6; list and detail read from Supabase |
 | Admin Patient Records | Implemented | Task 11; multi-clinic joins, name/ID/UUID search, 1–5 urgency filter, skeleton loader, dual empty states, CSV export, detail navigation |
@@ -331,7 +361,7 @@ flowchart LR
 | AI Assistant (Chatbot) | Implemented | Task 17; grounded intent engine (`chatbotService.ts`) reusing `adminService` queries for patient counts, records today, pending sync, high-risk list, outbreak status, clinic activity and patient look-up; auth/role scoped; platform how-to when signed out; never fabricates data (`ChatWidget.tsx`) |
 | Offline Storage | Implemented | Task 7; Dexie.js offlineDb with pendingRecords queue |
 | Background Sync | Implemented | Task 8; SyncService automatic sync on reconnection + SyncMonitorPage |
-| PWA | Not Started | Manifest pending |
+| PWA | Implemented | Manifest + network-first service worker (basic) |
 | OCR | Implemented | Task 9A; Tesseract.js client-side OCR on DigitizePage |
 
 ---
@@ -353,7 +383,7 @@ Currently, the strongest demoable features are:
 ## 22. Known Limitations
 
 - **Emergency Mode:** External weather/flood sensor feeds remain planned (internal database metrics, zones, triage, and broadcast are fully implemented).
-- **Worker Home Dashboard:** Quick stats (Patients Today, Total Patients, Pending Sync, High-Risk) and the recently-visited list are wired to live Supabase data (Task 24); the header "Worker ID" and "last synced" label remain display placeholders.
+- **Worker Home Dashboard:** Quick stats (Patients Today, Total Patients, Pending Sync, High-Risk) and the recently-visited list are wired to live Supabase data (Task 24); the header shows the real (shortened) staff ID and an honest last-synced value (— until a sync occurs in-session) — no fabricated placeholders.
 - **Translation:** Some deep UI elements lack complete Bangla translation strings.
 
 ---

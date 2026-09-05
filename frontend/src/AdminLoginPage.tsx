@@ -271,22 +271,45 @@ export default function AdminLoginPage({
       email.trim() === "admin@healstats.org" &&
       password === "Admin@123456"
     ) {
-      loginDemoAdmin()  // Sets mock admin profile in AuthContext
+      await loginDemoAdmin()  // Sets mock admin profile in AuthContext
       onLogin()
       return
     }
     // ────────────────────────────────────────────────────────────────────────
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
 
-    if (authError) {
-      setError(authError.message)
-      setLoading(false)
-    } else {
+      if (authError) {
+        setError(authError.message)
+        setLoading(false)
+        return
+      }
+
+      // Enforce admin-only access at this entry point: a valid non-admin login
+      // must not be granted admin routing. Reject and sign back out.
+      const userId = authData.user?.id
+      const { data: staff } = await supabase
+        .from("staff")
+        .select("role")
+        .eq("auth_user_id", userId)
+        .maybeSingle()
+
+      if (staff?.role !== "admin") {
+        await supabase.auth.signOut()
+        setError("This account is not authorized for admin access.")
+        setLoading(false)
+        return
+      }
+
       onLogin() // App.tsx handles the actual role routing
+    } catch {
+      setError("Unable to reach the server. Check your connection and try again.")
+      setLoading(false)
     }
   }
 
@@ -469,7 +492,7 @@ export default function AdminLoginPage({
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-2xl px-4 py-3 mb-5">
+            <div role="alert" className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-2xl px-4 py-3 mb-5">
               <svg
                 viewBox="0 0 16 16"
                 fill="currentColor"

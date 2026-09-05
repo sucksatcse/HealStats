@@ -273,7 +273,7 @@ export default function App() {
   /* Global language from context — drives all landing page text */
   const { lang } = useLang()
   const t = LANDING[lang]
-  const { session, profile, loading } = useAuth()
+  const { session, profile, loading, profileResolved, signOut } = useAuth()
 
   useEffect(() => {
     if (loading) return
@@ -309,32 +309,87 @@ export default function App() {
     }
   }, [page, session, profile, loading])
 
+  const authSpinner = (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "var(--an-bg)" }}
+    >
+      <svg
+        className="animate-spin w-8 h-8 text-teal-600"
+        viewBox="0 0 24 24"
+        fill="none"
+        role="status"
+        aria-label="Loading"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+        />
+      </svg>
+    </div>
+  )
 
   if (loading) {
+    return authSpinner
+  }
+
+  // Authenticated, but no staff profile is linked to this account. Without an
+  // explicit escape hatch the user would be stranded (valid session, no role).
+  if (session && profileResolved && !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--an-bg)'}}>
-        <svg
-          className="animate-spin w-8 h-8 text-teal-600"
-          viewBox="0 0 24 24"
-          fill="none"
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "var(--an-bg)" }}
+      >
+        <div
+          role="alert"
+          className="w-full max-w-md text-center rounded-2xl border p-8 shadow-sm"
+          style={{ background: "var(--an-surface-solid)", borderColor: "var(--an-border)" }}
         >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-          />
-        </svg>
+          <h1
+            className="font-display text-xl mb-2"
+            style={{ color: "var(--an-text-primary)" }}
+          >
+            Account not linked
+          </h1>
+          <p className="text-sm mb-6" style={{ color: "var(--an-text-secondary)" }}>
+            Your sign-in succeeded, but no staff profile is linked to this
+            account. Please contact your administrator to finish setup.
+          </p>
+          <button
+            onClick={() => {
+              void signOut()
+              setPage("landing")
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     )
   }
+
+  // Prevent a flash of protected content before the redirect effect resolves.
+  const isProtectedPage = [
+    "dashboard",
+    "admin-dashboard",
+    "patient-lookup",
+    "record-saved",
+    "sync-progress",
+  ].includes(page)
+  if (isProtectedPage && !session) return authSpinner
+  if (page === "admin-dashboard" && profile && profile.role !== "admin")
+    return authSpinner
 
   if (page === "navbar-demo")
     return <NavbarPreviewPage onBack={() => setPage("landing")} />

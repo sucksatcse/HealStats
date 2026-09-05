@@ -10,6 +10,7 @@ import NewPatientPage from "./NewPatientPage"
 import VitalsPage from "./VitalsPage"
 import TriagePage from "./TriagePage"
 import PatientDetailPage from "./PatientDetailPage"
+import StaffProfilePage from "./StaffProfilePage"
 import DigitizePage from "./DigitizePage"
 import SyncPage from "./SyncPage"
 import EmergencyReportPage from "./EmergencyReportPage"
@@ -291,12 +292,12 @@ const COPY = {
     online: "Online",
     offline: "Offline",
     clinic: "Community Health Clinic",
-    workerId: "Worker ID: HW-20451",
+    workerId: "Worker ID",
     name: "Health Worker",
     greetingMorning: "Good morning",
     greetingAfternoon: "Good afternoon",
     greetingEvening: "Good evening",
-    lastSyncInit: "2 hrs ago",
+    lastSyncInit: "—",
     justNow: "Just now",
     connected: "Connected — sync available",
     connectedSub: (last: string, count: string) =>
@@ -329,12 +330,12 @@ const COPY = {
     online: "অনলাইন",
     offline: "অফলাইন",
     clinic: "কমিউনিটি স্বাস্থ্য ক্লিনিক",
-    workerId: "কর্মী আইডি: HW-২০৪৫১",
+    workerId: "কর্মী আইডি",
     name: "স্বাস্থ্যকর্মী",
     greetingMorning: "শুভ সকাল",
     greetingAfternoon: "শুভ অপরাহ্ন",
     greetingEvening: "শুভ সন্ধ্যা",
-    lastSyncInit: "২ ঘণ্টা আগে",
+    lastSyncInit: "—",
     justNow: "এইমাত্র",
     connected: "সংযুক্ত — সিঙ্ক উপলব্ধ",
     connectedSub: (last: string, count: string) =>
@@ -459,6 +460,8 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   const pendingCount = liveStats?.pendingSync ?? 0
   const pendingStr = lang === "bn" ? toBn(pendingCount) : String(pendingCount)
   const workerName = profile?.name ?? t.name
+  // Real (shortened) staff identifier — no fabricated worker ID.
+  const workerIdShort = profile?.id ? profile.id.slice(0, 8).toUpperCase() : "—"
   const workerInitials = toInitials(workerName)
   const hour = new Date().getHours()
   const greeting =
@@ -664,8 +667,9 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           offlineText={t.offline}
           onNotifications={() => {}}
           notificationCount={1}
-          userInitials="AD"
+          userInitials={workerInitials}
           userColor="teal"
+          onProfile={() => setActiveNav("profile")}
         />
 
         {/* ── Scrollable content ── */}
@@ -716,6 +720,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           {activeNav === "digitize" && <DigitizePage />}
           {activeNav === "sync" && <SyncPage />}
           {activeNav === "emergency" && <EmergencyReportPage />}
+          {activeNav === "profile" && <StaffProfilePage />}
           {activeNav === "triage-queue" && (
             <EmergencyTriagePage
               onViewPatient={(id) => {
@@ -739,6 +744,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
             "sync",
             "emergency",
             "triage-queue",
+            "profile",
           ].includes(activeNav) && (
             <>
               {/* Greeting */}
@@ -753,7 +759,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                   <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide font-semibold">
                     {t.clinic}
                   </p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t.workerId}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t.workerId}: {workerIdShort}</p>
                 </div>
               </div>
 

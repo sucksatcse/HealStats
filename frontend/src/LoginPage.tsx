@@ -39,21 +39,26 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
 
     if (email.trim() === "worker@clinic.org" && password === "password123") {
       // Demo bypass for local testing without Supabase Admin setup
-      loginDemoUser()
+      await loginDemoUser()
       onLogin()
       return
     }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (authError) {
-      setError(authError.message)
+      if (authError) {
+        setError(authError.message)
+        setLoading(false)
+      } else {
+        onLogin() // will trigger redirect in App.tsx
+      }
+    } catch {
+      setError("Unable to reach the server. Check your connection and try again.")
       setLoading(false)
-    } else {
-      onLogin() // will trigger redirect in App.tsx
     }
   }
 
@@ -139,7 +144,7 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
 
             {/* Error */}
             {error && (
-              <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5">
+              <div role="alert" className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5">
                 <svg
                   viewBox="0 0 20 20"
                   fill="currentColor"
