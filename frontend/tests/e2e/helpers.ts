@@ -14,8 +14,8 @@ export async function loginAsWorker(page: Page): Promise<void> {
   await page.getByPlaceholder('e.g. name@clinic.org').fill(WORKER.email)
   await page.getByPlaceholder('Enter your password').fill(WORKER.password)
   await page.getByRole('button', { name: 'Sign In', exact: true }).click()
-  // Worker dashboard shows the demo worker's name in the greeting.
-  await expect(page.getByText('Sr. Amara Diallo')).toBeVisible({ timeout: 15_000 })
+  // The worker dashboard sidebar exposes a "Record Visit" nav action once authenticated.
+  await expect(page.getByRole('button', { name: 'Record Visit' })).toBeVisible({ timeout: 15_000 })
 }
 
 /** Log in as the demo admin and land on the admin dashboard. */

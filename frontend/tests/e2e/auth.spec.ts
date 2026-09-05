@@ -21,6 +21,6 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: 'Log Out', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible({ timeout: 15_000 })
     // The authenticated dashboard is gone.
-    await expect(page.getByText('Sr. Amara Diallo')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Record Visit' })).toHaveCount(0)
   })
 })

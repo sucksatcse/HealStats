@@ -346,7 +346,7 @@ Currently, the strongest demoable features are:
 ## 22. Known Limitations
 
 - **Emergency Mode:** External weather/flood sensor feeds remain planned (internal database metrics, zones, triage, and broadcast are fully implemented).
-- **Worker Home Dashboard:** Recent patients list and quick stats on the worker home screen are still placeholder figures.
+- **Worker Home Dashboard:** Quick stats (Patients Today, Total Patients, Pending Sync, High-Risk) and the recently-visited list are wired to live Supabase data (Task 24); the header "Worker ID" and "last synced" label remain display placeholders.
 - **Translation:** Some deep UI elements lack complete Bangla translation strings.
 
 ---

@@ -6,7 +6,7 @@
 >
 > **Status legend:** ⬜ open · 🟡 partial · ✅ done
 >
-> Last updated: 2026-09-05 (after Task 22)
+> Last updated: 2026-09-05 (after Task 24)
 
 ---
 
@@ -94,8 +94,9 @@
 
 ## 8. Feature Completeness (from FEATURES.md)
 
-- ⬜ **Worker home dashboard** recent-patients list and quick stats are still
-  placeholder figures (not wired to live data).
+- ✅ **Worker home dashboard** quick stats and recently-visited list are wired to
+  live Supabase data (Task 24). Remaining: the header "Worker ID" and the
+  "last synced" label are still display placeholders.
 - ⬜ **Alerts Center** external real-time feeds (weather/flood/shelter capacity)
   are not connected — static shell.
 - ⬜ **Emergency Mode** external meteorological/flood sensor feeds are pending

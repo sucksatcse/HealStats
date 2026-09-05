@@ -17,8 +17,8 @@ test.describe('Landing page', () => {
 
   test('unauthenticated visitor is not shown the dashboard', async ({ page }) => {
     await page.goto('/')
-    // Worker dashboard greeting must NOT be visible before login.
-    await expect(page.getByText('Sr. Amara Diallo')).toHaveCount(0)
+    // Worker dashboard must NOT be visible before login.
+    await expect(page.getByRole('button', { name: 'Record Visit' })).toHaveCount(0)
     // A login entry point is available instead.
     await expect(page.getByRole('button', { name: 'Log in' }).first()).toBeVisible()
   })

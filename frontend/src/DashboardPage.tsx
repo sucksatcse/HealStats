@@ -2,6 +2,9 @@ import { useState, useEffect } from "react"
 import AppNavbar from "./AppNavbar"
 import { useLang } from "./LanguageContext"
 import { useTheme } from "./ThemeContext"
+import { useAuth } from "./AuthContext"
+import { fetchAdminStats, fetchPatients, type AdminStats } from "./lib/adminService"
+import { urgencyFromScore, shortId, initials as toInitials, type PatientWithLatestVisit } from "./lib/types"
 import PatientsPage from "./PatientRecordsPage"
 import NewPatientPage from "./NewPatientPage"
 import VitalsPage from "./VitalsPage"
@@ -173,80 +176,8 @@ const Icon = {
 }
 
 // ── Data ───────────────────────────────────────────────────────────────────────
-const RECENT_PATIENTS = [
-  {
-    id: "PT-00412",
-    name: "Mariama Kouyaté",
-    age: 34,
-    gender: "F",
-    diagnosis: "Malaria (uncomplicated)",
-    lastVisit: "Today, 09:14",
-    visits: 6,
-    status: "follow-up",
-    initials: "MK",
-    color: "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400",
-  },
-  {
-    id: "PT-00389",
-    name: "Ibrahim Traoré",
-    age: 52,
-    gender: "M",
-    diagnosis: "Type 2 Diabetes",
-    lastVisit: "Today, 08:40",
-    visits: 14,
-    status: "chronic",
-    initials: "IT",
-    color: "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400",
-  },
-  {
-    id: "PT-00401",
-    name: "Fanta Diallo",
-    age: 27,
-    gender: "F",
-    diagnosis: "Antenatal Care (28 wks)",
-    lastVisit: "Yesterday, 15:20",
-    visits: 3,
-    status: "antenatal",
-    initials: "FD",
-    color: "bg-pink-100 dark:bg-pink-950/40 text-pink-700 dark:text-pink-400",
-  },
-  {
-    id: "PT-00376",
-    name: "Oumar Coulibaly",
-    age: 8,
-    gender: "M",
-    diagnosis: "Acute Respiratory Infection",
-    lastVisit: "Yesterday, 11:05",
-    visits: 2,
-    status: "acute",
-    initials: "OC",
-    color: "bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400",
-  },
-  {
-    id: "PT-00365",
-    name: "Kadiatou Baldé",
-    age: 61,
-    gender: "F",
-    diagnosis: "Hypertension",
-    lastVisit: "Aug 26, 10:30",
-    visits: 22,
-    status: "chronic",
-    initials: "KB",
-    color: "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400",
-  },
-  {
-    id: "PT-00358",
-    name: "Sekou Bah",
-    age: 19,
-    gender: "M",
-    diagnosis: "Wound dressing / laceration",
-    lastVisit: "Aug 25, 14:15",
-    visits: 1,
-    status: "acute",
-    initials: "SB",
-    color: "bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300",
-  },
-]
+// Recently-visited patients and quick stats are loaded live from Supabase in the
+// component (see fetchPatients / fetchAdminStats). No mock data is kept here.
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   "follow-up": {
@@ -313,41 +244,6 @@ const NAV_ITEMS = [
   },
 ]
 
-const STATS = [
-  {
-    label: "Patients Today",
-    labelBn: "আজকের রোগী",
-    value: "23",
-    sub: "+4 since morning",
-    subBn: "সকাল থেকে +৪",
-    accent: "text-teal-700 dark:text-teal-300",
-  },
-  {
-    label: "Total Records",
-    labelBn: "মোট রেকর্ড",
-    value: "1,048",
-    sub: "across all visits",
-    subBn: "সব ভিজিট জুড়ে",
-    accent: "text-slate-700 dark:text-slate-200",
-  },
-  {
-    label: "Pending Sync",
-    labelBn: "সিঙ্ক বাকি",
-    value: "14",
-    sub: "queued locally",
-    subBn: "স্থানীয়ভাবে সারিবদ্ধ",
-    accent: "text-amber-700 dark:text-amber-400",
-  },
-  {
-    label: "This Month",
-    labelBn: "এই মাসে",
-    value: "187",
-    sub: "visits recorded",
-    subBn: "ভিজিট রেকর্ড হয়েছে",
-    accent: "text-violet-700 dark:text-violet-400",
-  },
-]
-
 // ── Localization ─────────────────────────────────────────────────────────────
 type Lang = "en" | "bn"
 
@@ -394,20 +290,20 @@ const COPY = {
     searchPlaceholder: "Search patients, IDs, diagnoses…",
     online: "Online",
     offline: "Offline",
-    clinic: "Kayes District Clinic",
+    clinic: "Community Health Clinic",
     workerId: "Worker ID: HW-20451",
-    name: "Sr. Amara",
+    name: "Health Worker",
     greetingMorning: "Good morning",
     greetingAfternoon: "Good afternoon",
     greetingEvening: "Good evening",
     lastSyncInit: "2 hrs ago",
     justNow: "Just now",
     connected: "Connected — sync available",
-    connectedSub: (last: string) =>
-      `14 records queued locally · Last synced: ${last}`,
+    connectedSub: (last: string, count: string) =>
+      `${count} record(s) queued locally · Last synced: ${last}`,
     offlineTitle: "Offline mode active",
-    offlineSub:
-      "14 records queued · Will sync automatically when connection is restored",
+    offlineSub: (count: string) =>
+      `${count} record(s) queued · Will sync automatically when connection is restored`,
     syncNow: "Sync Now",
     syncing: "Syncing…",
     quickActions: "Quick Actions",
@@ -432,19 +328,20 @@ const COPY = {
     searchPlaceholder: "রোগী, আইডি, রোগ নির্ণয় খুঁজুন…",
     online: "অনলাইন",
     offline: "অফলাইন",
-    clinic: "কায়েস জেলা ক্লিনিক",
+    clinic: "কমিউনিটি স্বাস্থ্য ক্লিনিক",
     workerId: "কর্মী আইডি: HW-২০৪৫১",
-    name: "সিস্টার আমারা",
+    name: "স্বাস্থ্যকর্মী",
     greetingMorning: "শুভ সকাল",
     greetingAfternoon: "শুভ অপরাহ্ন",
     greetingEvening: "শুভ সন্ধ্যা",
     lastSyncInit: "২ ঘণ্টা আগে",
     justNow: "এইমাত্র",
     connected: "সংযুক্ত — সিঙ্ক উপলব্ধ",
-    connectedSub: (last: string) =>
-      `স্থানীয়ভাবে ১৪টি রেকর্ড সারিবদ্ধ · সর্বশেষ সিঙ্ক: ${last}`,
+    connectedSub: (last: string, count: string) =>
+      `স্থানীয়ভাবে ${count}টি রেকর্ড সারিবদ্ধ · সর্বশেষ সিঙ্ক: ${last}`,
     offlineTitle: "অফলাইন মোড সক্রিয়",
-    offlineSub: "১৪টি রেকর্ড সারিবদ্ধ · সংযোগ ফিরে এলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে",
+    offlineSub: (count: string) =>
+      `${count}টি রেকর্ড সারিবদ্ধ · সংযোগ ফিরে এলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে`,
     syncNow: "এখন সিঙ্ক",
     syncing: "সিঙ্ক হচ্ছে…",
     quickActions: "দ্রুত কাজ",
@@ -505,8 +402,38 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   /* Global lang + dark from context — no local state needed */
   const { lang } = useLang()
   const { dark } = useTheme()
+  const { profile } = useAuth()
 
   const t = COPY[lang]
+
+  // Live worker-clinic data (replaces the previous static placeholders).
+  const [liveStats, setLiveStats] = useState<AdminStats | null>(null)
+  const [recent, setRecent] = useState<PatientWithLatestVisit[]>([])
+  const [recentLoading, setRecentLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    const clinicId = profile?.clinic_id ?? null
+    setRecentLoading(true)
+    Promise.all([
+      fetchAdminStats(clinicId),
+      fetchPatients({ clinicId, query: "", urgencyFilter: "All", page: 1, pageSize: 6 }),
+    ])
+      .then(([stats, patients]) => {
+        if (!active) return
+        setLiveStats(stats)
+        setRecent(patients.data)
+      })
+      .catch(() => {
+        if (active) setRecent([])
+      })
+      .finally(() => {
+        if (active) setRecentLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [profile?.clinic_id])
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true)
@@ -529,6 +456,10 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   }
 
   const lastSync = synced ? t.justNow : t.lastSyncInit
+  const pendingCount = liveStats?.pendingSync ?? 0
+  const pendingStr = lang === "bn" ? toBn(pendingCount) : String(pendingCount)
+  const workerName = profile?.name ?? t.name
+  const workerInitials = toInitials(workerName)
   const hour = new Date().getHours()
   const greeting =
     hour < 12
@@ -546,12 +477,57 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
     },
   )
 
-  const filteredPatients = RECENT_PATIENTS.filter(
+  // Urgency badge styling (derived from real latest-visit urgency_score).
+  const URGENCY_CARD: Record<string, string> = {
+    Critical: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50",
+    High: "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900/50",
+    Moderate: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50",
+    Low: "bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-900/50",
+    Stable: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50",
+  }
+  const URGENCY_BN: Record<string, string> = {
+    Critical: "জরুরি", High: "উচ্চ", Moderate: "মাঝারি", Low: "কম", Stable: "স্থিতিশীল",
+  }
+  const AVATAR_TINTS = [
+    "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400",
+    "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400",
+    "bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400",
+    "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400",
+    "bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300",
+    "bg-pink-100 dark:bg-pink-950/40 text-pink-700 dark:text-pink-400",
+  ]
+  const formatVisit = (iso: string | null): string => {
+    if (!iso) return lang === "bn" ? "কোনো ভিজিট নেই" : "No visits yet"
+    return new Date(iso).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+    })
+  }
+
+  // Shape live patients into the card view-model used below.
+  const recentCards = recent.map((p, i) => {
+    const score = p.latest_visit?.urgency_score ?? null
+    return {
+      id: p.id,
+      displayId: shortId(p.id),
+      name: p.name,
+      age: p.age,
+      gender: p.sex,
+      village: p.village,
+      diagnosis: p.latest_visit?.diagnosis || p.latest_visit?.symptoms || null,
+      lastVisitAt: p.latest_visit?.created_at ?? null,
+      urgencyLevel: urgencyFromScore(score),
+      initials: toInitials(p.name),
+      color: AVATAR_TINTS[i % AVATAR_TINTS.length],
+    }
+  })
+
+  const filteredPatients = recentCards.filter(
     (p) =>
       searchValue === "" ||
       p.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchValue.toLowerCase()) ||
-      p.diagnosis.toLowerCase().includes(searchValue.toLowerCase()),
+      p.displayId.toLowerCase().includes(searchValue.toLowerCase()) ||
+      (p.diagnosis ?? "").toLowerCase().includes(searchValue.toLowerCase()) ||
+      (p.village ?? "").toLowerCase().includes(searchValue.toLowerCase()),
   )
 
   return (
@@ -624,9 +600,9 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                   {icon}
                 </span>
                 {lang === "bn" ? (NAV_BN[id] ?? label) : label}
-                {id === "sync" && (
+                {id === "sync" && pendingCount > 0 && (
                   <span className="ml-auto text-[10px] font-bold bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded-full">
-                    {lang === "bn" ? toBn(14) : 14}
+                    {pendingStr}
                   </span>
                 )}
                 {id === "emergency" && (
@@ -643,7 +619,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                 {id === "triage-queue" && (
                   <span className="ml-auto flex items-center gap-1 text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    {lang === "bn" ? toBn(8) : 8}
+                    SOS
                   </span>
                 )}
               </button>
@@ -655,11 +631,11 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
         <div className="px-3 py-4 border-t border-teal-800">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-teal-800/60 transition-colors group">
             <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              AD
+              {workerInitials}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">
-                {lang === "bn" ? "সিস্টার আমারা দিয়ালো" : "Sr. Amara Diallo"}
+                {workerName}
               </p>
               <p className="text-[10px] text-teal-400">{t.clinic}</p>
             </div>
@@ -769,7 +745,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
                   <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-                    {greeting}, {t.name} 👋
+                    {greeting}, {workerName} 👋
                   </h1>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{today}</p>
                 </div>
@@ -805,7 +781,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                         {t.connected}
                       </p>
                       <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
-                        {t.connectedSub(lastSync)}
+                        {t.connectedSub(lastSync, pendingStr)}
                       </p>
                     </>
                   ) : (
@@ -814,7 +790,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                         {t.offlineTitle}
                       </p>
                       <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                        {t.offlineSub}
+                        {t.offlineSub(pendingStr)}
                       </p>
                     </>
                   )}
@@ -880,24 +856,34 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                 </div>
               </div>
 
-              {/* Stats row */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {STATS.map(({ label, labelBn, value, sub, subBn, accent }) => (
-                  <div
-                    key={label}
-                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:shadow-md transition-shadow"
-                  >
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-2">
-                      {lang === "bn" ? labelBn : label}
-                    </p>
-                    <p className={`font-display text-3xl ${accent} mb-1`}>
-                      {lang === "bn" ? toBn(value) : value}
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                      {lang === "bn" ? subBn : sub}
-                    </p>
-                  </div>
-                ))}
+              {/* Stats row — live from the worker's clinic */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+                {[
+                  { label: "Patients Today", labelBn: "আজকের রোগী", value: liveStats?.recordsToday ?? null, sub: "visits since midnight UTC", subBn: "মধ্যরাত থেকে ভিজিট", accent: "text-teal-700 dark:text-teal-300", err: !!liveStats?.errors.recordsToday },
+                  { label: "Total Patients", labelBn: "মোট রোগী", value: liveStats?.totalPatients ?? null, sub: "registered in your clinic", subBn: "আপনার ক্লিনিকে নিবন্ধিত", accent: "text-slate-700 dark:text-slate-200", err: !!liveStats?.errors.totalPatients },
+                  { label: "Pending Sync", labelBn: "সিঙ্ক বাকি", value: liveStats?.pendingSync ?? null, sub: "queued locally", subBn: "স্থানীয়ভাবে সারিবদ্ধ", accent: "text-amber-700 dark:text-amber-400", err: !!liveStats?.errors.pendingSync },
+                  { label: "High-Risk", labelBn: "উচ্চ-ঝুঁকি", value: liveStats?.highRiskFlagged ?? null, sub: "flagged (urgency 4–5)", subBn: "চিহ্নিত (জরুরি ৪–৫)", accent: "text-violet-700 dark:text-violet-400", err: !!liveStats?.errors.highRiskFlagged },
+                ].map(({ label, labelBn, value, sub, subBn, accent, err }) => {
+                  const shown = err
+                    ? "—"
+                    : value === null
+                      ? (recentLoading ? "…" : (lang === "bn" ? toBn(0) : "0"))
+                      : (lang === "bn" ? toBn(value) : value.toLocaleString())
+                  return (
+                    <div
+                      key={label}
+                      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:shadow-md transition-shadow"
+                    >
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-2">
+                        {lang === "bn" ? labelBn : label}
+                      </p>
+                      <p className={`font-display text-3xl ${accent} mb-1`}>{shown}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        {lang === "bn" ? subBn : sub}
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
 
               {/* Recent patients */}
@@ -951,16 +937,14 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                               {p.name}
                             </p>
                             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                              {lang === "bn" ? toBn(p.age) : p.age} {t.yrs} ·{" "}
-                              {p.gender === "F" ? t.female : t.male} · {p.id}
+                              {p.age !== null ? `${lang === "bn" ? toBn(p.age) : p.age} ${t.yrs} · ` : ""}
+                              {p.gender === "F" ? t.female : p.gender === "M" ? t.male : "—"} · {p.displayId}
                             </p>
                           </div>
                           <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${STATUS_LABELS[p.status].cls}`}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${URGENCY_CARD[p.urgencyLevel]}`}
                           >
-                            {lang === "bn"
-                              ? STATUS_LABELS_BN[p.status]
-                              : STATUS_LABELS[p.status].label}
+                            {lang === "bn" ? URGENCY_BN[p.urgencyLevel] : p.urgencyLevel}
                           </span>
                         </div>
 
@@ -970,9 +954,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                             {t.diagnosis}
                           </p>
                           <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-snug">
-                            {lang === "bn"
-                              ? (DIAGNOSIS_BN[p.id] ?? p.diagnosis)
-                              : p.diagnosis}
+                            {p.diagnosis ?? (lang === "bn" ? "কোনো রোগ নির্ণয় নেই" : "No diagnosis recorded")}
                           </p>
                         </div>
 
@@ -980,18 +962,23 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
                             {Icon.clock}
-                            {localizeVisit(p.lastVisit, lang)}
+                            {formatVisit(p.lastVisitAt)}
                           </span>
-                          <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
-                            <span className="text-teal-400">{Icon.heart}</span>
-                            {t.visit(p.visits)}
-                          </span>
+                          {p.village && (
+                            <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-[45%]">
+                              <span className="text-teal-400">{Icon.heart}</span>
+                              {p.village}
+                            </span>
+                          )}
                         </div>
 
                         {/* Hover action */}
                         <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => setActiveNav("patient-detail")}
+                            onClick={() => {
+                              setSelectedPatientId(p.id)
+                              setActiveNav("patient-detail")
+                            }}
                             className="w-full text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 flex items-center justify-center gap-1 transition-colors"
                           >
                             {t.openRecord}
