@@ -16,6 +16,7 @@ import SuccessConfirmationPage from "./SuccessConfirmationPage"
 import SyncProgressPage from "./SyncProgressPage"
 import ClinicsMapSection from "./ClinicsMapSection"
 import ChatWidget from "./ChatWidget"
+import SignUpPage from "./SignUpPage"
 import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -265,7 +266,7 @@ const FEATURE_ICONS = [
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [page, setPage] =
-    useState<"landing" | "login" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
+    useState<"landing" | "login" | "signup" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
       "landing",
     )
 
@@ -299,6 +300,7 @@ export default function App() {
       session &&
       profile &&
       (page === "login" ||
+        page === "signup" ||
         page === "admin-login" ||
         page === "role-selection" ||
         page === "landing")
@@ -351,7 +353,9 @@ export default function App() {
   if (page === "patient-lookup")
     return <PatientLookupPage onBack={() => setPage("landing")} />
   if (page === "login")
-    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} />
+    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} onSignUp={() => setPage("signup")} />
+  if (page === "signup")
+    return <SignUpPage onBack={() => setPage("landing")} onGoToLogin={() => setPage("login")} />
   if (page === "admin-login")
     return (
       <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />

@@ -66,6 +66,12 @@ HealthStats is designed around:
 - **Session Handling**: Managed globally via `AuthContext.tsx`. Unauthenticated users are redirected to `/login`.
 - **Demo Mode**: For development and exhibition testing, entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session.
 
+### Self-Registration (Sign Up)
+- **Status**: Implemented (`SignUpPage.tsx`).
+- **Flow**: Creates a Supabase Auth user (`supabase.auth.signUp`) and a linked `staff` row (name, email, `auth_user_id`, optional `clinic_id` chosen from the live clinics list). Handles email-confirmation vs. immediate-session cases and reports duplicate-email/validation errors inline.
+- **Security**: The role is **always `worker`** — admin accounts are never created via public signup. Reachable from the landing page → Log in → "Create an account".
+- **Limitation**: Because MVP RLS is disabled, the client can insert the `staff` row directly. Under production RLS this step should move to an Edge Function or a DB trigger (`on auth.users` insert). See `LIMITATIONS.md`.
+
 ### Role-Based Access
 - **Worker**: Authorized to log visits and register patients only for their assigned clinic.
 - **Admin**: Authorized to view aggregated analytics across all clinics.

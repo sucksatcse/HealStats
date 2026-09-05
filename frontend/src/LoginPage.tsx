@@ -5,9 +5,10 @@ import { useAuth } from "./AuthContext"
 interface LoginPageProps {
   onBack: () => void
   onLogin: () => void
+  onSignUp?: () => void
 }
 
-export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
+export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps) {
   const { loginDemoUser } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -393,12 +394,22 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
               New to HealthStats?{" "}
-              <a
-                href="#"
-                className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
-              >
-                Contact your clinic admin
-              </a>
+              {onSignUp ? (
+                <button
+                  type="button"
+                  onClick={onSignUp}
+                  className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
+                >
+                  Create an account
+                </button>
+              ) : (
+                <a
+                  href="#"
+                  className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
+                >
+                  Contact your clinic admin
+                </a>
+              )}
             </p>
           </div>
         </div>

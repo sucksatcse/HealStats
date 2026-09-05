@@ -213,6 +213,7 @@ HealthStats/
 - **2026-09-05**: Task 23 (Final Documentation) — rewrote `README.md` (judge-ready, placeholders instead of real keys), corrected stale statuses across `FEATURES.md`/`projectdetails.md`, added `LIMITATIONS.md`.
 - **2026-09-05**: Task 24 (Final Showcase) — wired the worker home dashboard to live Supabase data (`fetchAdminStats`/`fetchPatients`), removed hardcoded fake stats + non-Bangladeshi mock patient names, used the real auth profile for identity, wired the sync banner/nav badge to the real pending-sync count, deleted the unused `RECENT_PATIENTS`/`STATS` mock arrays. All 9 Playwright tests pass.
 - **2026-09-05**: Added optional Groq LLM mode via a server-side Supabase Edge Function `supabase/functions/groq-chat` (holds `GROQ_API_KEY` as a Supabase secret; grounds the model on clinic-scoped Supabase context). `chatbotService.ts` calls it when signed in + online and falls back to the local grounded engine otherwise. No key committed; the function must be deployed and the secret set to activate.
+- **2026-09-05**: Added self-registration (`SignUpPage.tsx`): Supabase Auth signUp + linked `staff` insert (role hardcoded `worker`, optional clinic). Wired routing in `App.tsx` and a "Create an account" link on `LoginPage.tsx`. Client-side staff insert relies on MVP RLS being disabled; under production RLS move it to an Edge Function/DB trigger.
 
 ## 24. Instructions for AI Coding Agents
 1. **Read `projectdetails.md` first.**

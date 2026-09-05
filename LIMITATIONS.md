@@ -22,6 +22,10 @@
   production architecture uses RLS + `SECURITY DEFINER` helpers to enforce
   clinic-level isolation. Data access is currently gated only at the application
   layer. RLS must be re-enabled and tested before production.
+- ⬜ **Self-signup inserts the `staff` row from the client** (`SignUpPage.tsx`),
+  which only works because RLS is disabled. Under production RLS this must move to
+  an Edge Function or a DB trigger on `auth.users` insert. The role is hardcoded
+  `worker` (never admin) as a safeguard.
 
 ---
 
