@@ -25,18 +25,22 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Patient Registration | Patient Records | Implemented | Critical |
 | Patient Search | Patient Records | Implemented | High |
 | Visit Records & Forms | Patient Records | Implemented | High |
-| Offline Storage | Offline-First | Not Started | Critical |
-| Automatic Sync | Offline-First | Not Started | Critical |
-| OCR | Intelligence | Not Started | Optional |
-| AI-Assisted Triage | Intelligence | Not Started | Optional |
+| Offline Storage | Offline-First | Implemented | Critical |
+| Automatic Sync | Offline-First | Implemented | Critical |
+| OCR | Intelligence | Implemented | Optional |
+| AI-Assisted Triage | Intelligence | Deferred (Optional) | Optional |
 | AI Assistant (Chatbot) | Intelligence | Implemented | Medium |
 | Admin Dashboard | Administration | Implemented | Medium |
 | Staff Management | Administration | Implemented | Medium |
-| Emergency Mode | Disaster Response | In Progress | High |
-| Outbreak Detection | Disaster Response | Planned | Medium |
+| Emergency Mode | Disaster Response | Implemented | High |
+| Outbreak Detection | Disaster Response | Implemented | Medium |
+| Emergency Triage Queue | Disaster Response | Implemented | High |
 | Clinic Coverage Map | Administration | Implemented | Medium |
-| Bangla/English | Accessibility | Implemented | Critical |
+| Bangla/English | Accessibility | Implemented (partial page coverage) | Critical |
 | Dark Mode | UI/UX | Implemented | High |
+| Motion & Animation | UI/UX | Implemented | Medium |
+| Error/Empty/Loading States | UI/UX | Implemented | High |
+| End-to-End Testing | Quality | Implemented (safe flows) | Medium |
 | PWA | Platform | Not Started | High |
 
 ---
@@ -112,22 +116,22 @@ The intended production security architecture uses Supabase RLS to protect all t
 
 ## 5. Offline-First Capability
 
-*This is the core architectural pillar of HealthStats, currently pending implementation.*
+*This is the core architectural pillar of HealthStats. Local queueing and background sync are **implemented** (Tasks 7–8); multi-device conflict resolution and a Service Worker for offline asset caching remain planned.*
 
 ### Online Mode
-When internet is available, data mutations will bypass the local queue and save directly to Supabase.
+When internet is available, data mutations save directly to Supabase (visits set `synced_at` immediately).
 
 ### Offline Mode
-When the network drops, mutations will be gracefully intercepted without blocking the user.
+When the network drops, patient registrations and visits are gracefully queued locally without blocking the user.
 
 ### Local Storage
-Planned to utilize browser-based storage (IndexedDB via Dexie.js) to store pending records locally on the device.
+Implemented using browser-based storage (IndexedDB via Dexie.js, `lib/offlineDb.ts`) to store pending records on the device.
 
 ### Sync Queue & Status
-Records created offline will sit in a local queue. The application will monitor `navigator.onLine` and display sync badges in the navigation sidebar (e.g., "14 records queued").
+Records created offline sit in a local queue. `lib/syncService.ts` monitors `navigator.onLine` and pushes the queue on reconnect; the Sync Monitor page shows queued records and network state.
 
 ### Conflict Resolution
-Conflict resolution logic (handling edits to the same record by two offline devices) is planned and is not currently implemented.
+Conflict resolution logic (handling edits to the same record by two offline devices) is planned and is **not** currently implemented.
 
 ---
 
@@ -141,8 +145,8 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ## 7. OCR / Paper Record Digitization
 
-- **Status**: Planned (UI static shell exists: `DigitizePage.tsx`)
-- **Purpose**: To quickly digitize legacy paper-based healthcare records using optical character recognition (OCR), easing the transition to the EHR system.
+- **Status**: Implemented (Task 9A; `DigitizePage.tsx` using on-device Tesseract.js)
+- **Purpose**: To quickly digitize legacy paper-based healthcare records using optical character recognition (OCR), easing the transition to the EHR system. Extracted fields are presented for worker review/edit before saving; OCR output is assistive and not guaranteed accurate.
 
 ---
 
@@ -275,22 +279,23 @@ flowchart LR
 - React, Vite, Tailwind setup
 - Supabase schema & authentication scaffolding
 
-### Phase 1 — Patient & Visit Records (In Progress)
-- Patient registration (Completed)
-- Patient lists and retrieval
-- Visit forms
+### Phase 1 — Patient & Visit Records (Completed)
+- Patient registration
+- Patient lists and retrieval, patient detail
+- Visit / vitals forms
 
-### Phase 2 — Offline Engine (Pending)
-- IndexedDB storage integration
-- Background sync queue
+### Phase 2 — Offline Engine (Completed)
+- IndexedDB storage integration (Dexie)
+- Background sync queue (conflict resolution + Service Worker pending)
 
-### Phase 3 — Intelligence (Pending)
-- OCR for digitizing paper healthcare records (Proof of Concept)
+### Phase 3 — Intelligence (Completed / Partial)
+- OCR for digitizing paper healthcare records (implemented, Tesseract.js)
+- Grounded AI Assistant (implemented); AI-assisted triage scoring deferred
 
-### Phase 4 — Emergency & Admin (Pending)
+### Phase 4 — Emergency & Admin (Completed)
 - Admin dashboards connected to live data
-- Emergency mode alert feeds
-- Symptom clustering (Outbreak Detection)
+- Emergency Mode, Emergency Triage Queue, Clinic Operations Map
+- Symptom clustering (Outbreak Detection); external weather/flood alert feeds pending
 
 ### Phase 5 — Testing & Demo (In Progress)
 - End-to-end tests with Playwright (auth, landing desktop/mobile, i18n, dark mode, chatbot) — implemented (Task 22); run against a production preview server using the demo-login bypass (no real DB writes). DB-mutating flow coverage and unit tests pending an isolated test DB.

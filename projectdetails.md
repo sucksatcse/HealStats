@@ -7,7 +7,7 @@
 > 3. Never violate the Architecture Rules below.
 
 Last updated: 2026-09-05
-Current phase: Data Wiring
+Current phase: Product polish & QA (MVP feature-complete; production hardening pending)
 
 ---
 
@@ -34,12 +34,13 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 
 ## 5. Current Project Status
 - **Frontend Scaffold**: ✅ Complete (React 19, Vite 8, Tailwind 4).
-- **Security & Auth**: ✅ Implemented (Supabase Auth, Route Protection, Demo Bypass).
+- **Security & Auth**: ✅ Implemented (Supabase Auth, Route Protection, Demo Bypass). RLS disabled in MVP schema (production hardening pending).
 - **Database Schema**: ✅ Initialized (`clinics`, `staff`, `patients`, `visits`, `sync_log`).
-- **UI & Design**: ✅ Scaffolding complete. Bilingual and Dark Mode contexts active.
-- **Data Fetching (CRUD)**: 🟡 In Progress. Patient Registration, Patient List, Patient Detail and Visit Recording are wired to Supabase. Admin/Emergency/Sync views remain static.
-- **Offline Engine**: 🟡 In Progress (Local storage configured).
-- **Intelligence (OCR)**: ❌ Not Started.
+- **UI & Design**: ✅ Complete. Bilingual (i18next) + light/dark theme, motion system, and error/empty/loading states.
+- **Data Fetching (CRUD)**: ✅ Implemented. Patient Registration, List, Detail, Visits, Admin (dashboard, records, staff, flagged, sync), Emergency, Outbreak, Triage and Map are wired to Supabase. (Worker home recent-patients + Alerts Center external feeds remain static.)
+- **Offline Engine**: ✅ Implemented (Dexie IndexedDB queue + background sync). Conflict resolution + Service Worker pending.
+- **Intelligence (OCR)**: ✅ Implemented (Tesseract.js). AI Assistant is a grounded intent engine; AI-assisted triage scoring deferred.
+- **Testing**: 🟡 Playwright E2E for safe/read-only flows; DB-mutating E2E + unit tests pending an isolated test DB.
 
 ## 6. Feature Status Board
 | Feature | Status | Notes |
@@ -47,14 +48,18 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 | Foundation & Scaffold | DONE | Vite + React + Tailwind setup. |
 | Database & Authentication | DONE | Supabase schema, AuthContext, protected routes active. |
 | UI Shell & Contexts | DONE | AppNavbar, Language, Theme fully built. |
-| Role-Based Dashboards | IN PROGRESS | Views for Admin, Emergency, and Worker created. Worker registration works, others static. |
+| Role-Based Dashboards | DONE | Worker, Admin and Emergency views wired to live Supabase data. |
 | Patient Records | DONE | `NewPatientPage`, `PatientRecordsPage` and `PatientDetailPage` wired to Supabase. |
 | Clinical Forms | DONE | `VitalsPage` inserts into `visits` (vitals JSONB, symptoms, symptom_category, diagnosis, urgency_score). |
-| Offline-First Engine | IN PROGRESS | Dexie.js integrated for pending records. |
-| OCR Digitization | NOT STARTED | Primary intelligence path for digitizing paper records. |
-| AI Triage | OPTIONAL / FUTURE | Deferred feature. |
-| Emergency Mode | IN PROGRESS | UI shell exists. Pending live data. |
-| PWA | NOT STARTED | Missing `manifest.json`. |
+| Offline-First Engine | DONE | Dexie.js queue + background sync service; conflict resolution + Service Worker pending. |
+| OCR Digitization | DONE | Tesseract.js on-device OCR with worker review (`DigitizePage`). |
+| AI Assistant (Chatbot) | DONE | Grounded intent engine over real queries (`chatbotService`). |
+| AI Triage (auto-scoring) | OPTIONAL / FUTURE | Deferred feature. |
+| Emergency Mode / Outbreak / Triage | DONE | Live crisis console, symptom-cluster surveillance, 1–5 triage queue. |
+| Clinic Operations Map | DONE | Live clinic activity on Bangladesh map (`ClinicOpsPanel`). |
+| i18n / Dark Mode / Motion / States | DONE | i18next EN/BN, class-based dark mode, motion system, error/empty/loading states. |
+| E2E Testing | PARTIAL | Playwright for safe flows; DB-mutating + unit tests pending. |
+| PWA | NOT STARTED | Missing `manifest.json` / Service Worker. |
 
 ## 7. Technology Stack
 - **Frontend**: React 19, TypeScript 5.7, Vite 8
@@ -154,15 +159,17 @@ HealthStats/
 - Run locally via `npm run dev` in the `frontend` directory.
 
 ## 19. Testing Strategy
-- Automated tests are not yet configured.
-- Perform manual smoke-tests (Login, Patient Registration, Theme/Language toggles) before merging PRs.
+- **E2E**: Playwright suite (`frontend/tests/e2e/`) for auth, landing (desktop+mobile), i18n, dark mode and the chatbot, run against a production preview server via the demo-login bypass (no real DB writes). Run with `npm run test:e2e`.
+- **Static checks**: `tsc --noEmit` and `vite build` before merging.
+- **Pending**: DB-mutating E2E (needs isolated test DB) and Vitest unit tests.
+- Also perform manual smoke-tests (Login, Patient Registration, Theme/Language toggles) for changes not covered by E2E.
 
 ## 20. Implementation Roadmap
 1. **Foundation**: Complete (UI Scaffolding, DB Schema, Auth).
-2. **Data Wiring**: In Progress (Patient Registration, List, Detail and Visit Recording done. Admin/Emergency live data pending).
-3. **Offline Engine**: Completed (IndexedDB and Background Sync Queue implemented).
-4. **Intelligence**: In Progress (OCR Digitization implemented, Triage pending).
-5. **Admin / Emergency**: Pending (Live data connection).
+2. **Data Wiring**: Complete (Patient Registration/List/Detail/Visits + Admin, Emergency, Outbreak, Triage, Map on live data).
+3. **Offline Engine**: Complete (IndexedDB queue + Background Sync). Conflict resolution + Service Worker pending.
+4. **Intelligence**: OCR Digitization complete; grounded AI Assistant complete; AI-assisted triage scoring deferred.
+5. **Product Polish & QA**: Complete (i18n, dark mode, motion, states, E2E). PWA + deployment pending.
 
 ## 21. Known Limitations
 - Offline Sync is functional (Dexie background queue syncs to Supabase on reconnection).
@@ -220,11 +227,10 @@ HealthStats/
 14. **Stop only when genuinely blocked by missing information, credentials, or a destructive decision requiring human approval.**
 
 ## 25. Next Immediate Tasks
-Based on the current repository state, the next implementation priorities are:
+Tasks 1–22 are complete (see `PROGRESS.md`). The MVP is feature-complete; remaining work is production hardening and QA, tracked in detail in `LIMITATIONS.md`:
 
-1. ~~**Task 5 — Patient List/Search**~~: Done.
-2. ~~**Task 5b — Patient Details**~~: Done (Task 6).
-3. ~~**Task 6 — Visit Records**~~: Done.
-4. ~~**Task 7 — Offline Storage**: Integrate Dexie.js~~: Done.
-5. ~~**Task 8 — Background Sync**: Implement the Service Worker sync queue~~: Done.
-6. ~~**Task 9A — OCR Digitization**: Integrate local Tesseract OCR~~: Done.
+1. **Security hardening** — move the Supabase secret key out of the frontend (`VITE_`-prefixed secrets are bundled) and rotate it; re-enable and test RLS policies before any real deployment.
+2. **i18n coverage** — migrate the remaining English-only deep admin/clinical pages to `t()`.
+3. **Offline robustness** — multi-device conflict resolution and a Service Worker (enabling an installable PWA + offline asset caching).
+4. **Testing** — add an isolated test DB to cover DB-mutating E2E journeys; add Vitest unit tests; wire CI.
+5. **Deployment** — hosting + CI/CD.
