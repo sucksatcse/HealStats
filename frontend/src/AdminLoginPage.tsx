@@ -300,7 +300,9 @@ export default function AdminLoginPage({
   }))
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+    <>
+      <div className="an-atmosphere" aria-hidden="true" />
+      <div className="min-h-screen flex flex-col lg:flex-row" style={{background: 'var(--an-bg)', position: 'relative', zIndex: 0}}>
       {/* ══════════ LEFT PANEL ══════════ */}
       <div className="relative lg:w-[52%] bg-teal-800 flex flex-col justify-between px-10 py-12 overflow-hidden min-h-[320px] lg:min-h-screen">
         {/* Dot-grid texture */}
@@ -390,7 +392,7 @@ export default function AdminLoginPage({
       </div>
 
       {/* ══════════ RIGHT PANEL ══════════ */}
-      <div className="flex-1 flex flex-col justify-between px-8 sm:px-12 lg:px-16 py-10 bg-white">
+      <div className="flex-1 flex flex-col justify-between px-8 sm:px-12 lg:px-16 py-10" style={{background: 'var(--an-bg)'}}>
         {/* Top nav */}
         <div className="flex items-center justify-between">
           <button
@@ -722,5 +724,6 @@ export default function AdminLoginPage({
         </div>
       </div>
     </div>
+    </>
   )
 }

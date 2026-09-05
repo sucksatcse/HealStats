@@ -22,8 +22,8 @@ import { useAuth } from "./AuthContext"
 const LANDING_LINKS = [
   { en: "Features", bn: "বৈশিষ্ট্য", href: "#features" },
   { en: "How It Works", bn: "কীভাবে কাজ করে", href: "#how-it-works-detail" },
+  { en: "Coverage", bn: "কভারেজ", href: "#coverage" },
   { en: "Testimonials", bn: "প্রশংসাপত্র", href: "#testimonials" },
-  { en: "Pricing", bn: "মূল্য", href: "#pricing" },
 ]
 
 /* ── Props ── */
@@ -292,7 +292,7 @@ export default function AppNavbar({
 
         {/* Popover Menu */}
         {userMenuOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-700 py-1.5 z-50 animate-slide-up">
+          <div className="absolute right-0 mt-2 w-48 rounded-xl py-1.5 z-50 animate-slide-up" style={{background: 'var(--an-surface-raised)', backdropFilter: 'blur(20px)', border: '1px solid var(--an-border-strong)', boxShadow: 'var(--an-glass-shadow-lg)'}}>
             {profile && (
               <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 mb-1">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
@@ -358,7 +358,7 @@ export default function AppNavbar({
   /* ─────────────── APP variant ─────────────── */
   if (isApp) {
     return (
-      <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 lg:px-6 flex items-center gap-3 flex-shrink-0 z-20 transition-colors duration-200">
+      <header className="h-14 glass-nav px-4 lg:px-6 flex items-center gap-3 flex-shrink-0 z-20 transition-all duration-200">
         {/* Mobile sidebar trigger */}
         <button
           onClick={onSidebarOpen}
@@ -413,7 +413,7 @@ export default function AppNavbar({
   const hasCtas = onPatientLookup || onAdminLogin || onLogin
 
   return (
-    <header className="sticky top-0 z-50 bg-white/96 dark:bg-slate-900/96 backdrop-blur-md border-b border-teal-100 dark:border-slate-800 transition-colors duration-200">
+    <header className="sticky top-0 z-50 glass-nav transition-all duration-200">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center gap-4">
         {logo}
 
@@ -507,7 +507,7 @@ export default function AppNavbar({
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div className="md:hidden border-t border-teal-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 flex flex-col gap-0.5 animate-slide-up">
+        <div className="md:hidden border-t px-4 py-3 flex flex-col gap-0.5 animate-slide-up" style={{borderColor: 'var(--an-nav-border)', background: 'var(--an-nav-bg)', backdropFilter: 'blur(20px)'}}>
           {LANDING_LINKS.map(({ en, bn, href }) => (
             <a
               key={href}

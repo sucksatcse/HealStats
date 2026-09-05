@@ -178,11 +178,13 @@ HealthStats/
 | D-004 | 2026-09-03 | Patient Registration uses the AuthContext `clinic_id` for mutations, ensuring security over user input. |
 | D-005 | 2026-09-04 | OCR established as the primary intelligence path; AI Triage deferred to optional/future. |
 | D-006 | 2026-09-04 | `visits.urgency_score` uses a 1–5 integer scale (1 Stable, 2 Low, 3 Moderate, 4 High, 5 Critical), shared by `VitalsPage`, `PatientRecordsPage` and `PatientDetailPage`. `symptom_category` stores one of `diarrhea/gastrointestinal`, `fever`, `respiratory`, `skin/rash`, `other`. |
+| D-007 | 2026-09-05 | UI/UX Foundation: "Ashen Nebula" visual theme adopted. CSS custom-property design token system (`--an-*` prefix) defined in `index.css`. Atmospheric radial-gradient background layer (`.an-atmosphere`) applied to public pages. Glassmorphism utilities (`.glass-nav`, `.glass-card`, `.an-card-glass`) standardized. All page backgrounds switched from hardcoded Tailwind colors to `var(--an-bg)`. |
 
 ## 23. Change Log
 - **2026-09-03**: Implemented Task 4 (Patient Registration). Wired `NewPatientPage.tsx` to `patients` table. Added mock bypass to `AuthContext.tsx`.
 - **2026-09-04**: Rewrote `README.md` and `FEATURES.md` to establish accurate sources of truth. Restructured `projectdetails.md` according to the new standard.
 - **2026-09-04**: Implemented Task 6 (Visits). `VitalsPage.tsx` inserts into `visits`; `PatientDetailPage.tsx` reads patient + visits from Supabase; `DashboardPage.tsx` passes the selected patient between list → detail → visit form; `PatientRecordsPage.tsx` gained an `onViewPatient` callback; `AuthContext.tsx` demo login hydrates from the real `staff` row. Also fixed 21 pre-existing TS syntax errors (missing `;` in inline object types) and removed the deprecated `baseUrl` from `tsconfig.json`.
+- **2026-09-05**: UI/UX Foundation Polish — Ashen Nebula Theme (Pre-Task 16). Implemented comprehensive CSS design token system in `index.css` with `--an-*` custom properties, atmospheric background layer (`.an-atmosphere`), glassmorphism utilities (`.glass-nav`, `.glass-card`, `.an-card-glass`), updated skeleton loaders, button system, form inputs, and focus rings. Applied nebula theme to `App.tsx` (landing page), `AppNavbar.tsx`, `LoginPage.tsx`, `AdminLoginPage.tsx`, `DashboardPage.tsx`, `AdminDashboardPage.tsx`. `tsc --noEmit` and `vite build` both exit 0.
 
 ## 24. Instructions for AI Coding Agents
 1. **Read `projectdetails.md` first.**

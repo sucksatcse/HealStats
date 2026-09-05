@@ -558,7 +558,8 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
     <div
       className={`${
         lang === "bn" ? "lang-bn" : ""
-      } flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-[Work_Sans,system-ui,sans-serif] transition-colors`}
+      } flex h-screen overflow-hidden font-[Work_Sans,system-ui,sans-serif] transition-colors`}
+      style={{background: 'var(--an-bg)'}}
     >
       {/* ── Sidebar overlay (mobile) ── */}
       {sidebarOpen && (

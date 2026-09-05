@@ -1,83 +1,277 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Work+Sans:wght@300;400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
-/* Class-based dark mode so a UI toggle (not just OS preference) can switch themes */
+/* ══════════════════════════════════════════════════════════════════════════════
+   CLASS-BASED DARK MODE
+   A UI toggle (not just OS preference) drives dark/light switching.
+   ══════════════════════════════════════════════════════════════════════════════ */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   ROOT SIZING
+   ══════════════════════════════════════════════════════════════════════════════ */
 html,
 body,
 #root {
   height: 100%;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   TAILWIND THEME TOKENS — TEAL SCALE (healthcare primary)
+   ══════════════════════════════════════════════════════════════════════════════ */
 @theme inline {
   --color-teal-50: #f0fdfa;
   --color-teal-100: #ccfbf1;
   --color-teal-200: #99f6e4;
+  --color-teal-300: #5eead4;
+  --color-teal-400: #2dd4bf;
   --color-teal-500: #14b8a6;
   --color-teal-600: #0d9488;
   --color-teal-700: #0f766e;
   --color-teal-800: #115e59;
   --color-teal-900: #134e4a;
+  --color-teal-950: #0a2e2b;
+
+  /* Ashen Nebula semantic tokens */
+  --color-nebula-base-light: #faf8f2;
+  --color-nebula-base-dark: #100e0b;
+  --color-nebula-slate: #94a3b8;
+  --color-nebula-stone: #a8a29e;
+  --color-nebula-mist: #cbd5e1;
 }
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-up { animation: slide-up 0.25s ease-out both; }
+/* ══════════════════════════════════════════════════════════════════════════════
+   ASHEN NEBULA — CSS CUSTOM PROPERTIES
+   Light mode atmospheric values. Dark-mode overrides via .dark on <html>.
+   ══════════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Base page backgrounds */
+  --an-bg: #faf8f2;
+  --an-bg-dark: #100e0b;
 
-/* Skeleton loaders: a teal-tinted sheen sweeps left→right across placeholders.
-   `.skeleton` paints the base fill; the ::after pseudo carries the moving highlight. */
-@keyframes skeleton-shimmer {
-  100% { transform: translateX(100%); }
-}
-.skeleton {
-  position: relative;
-  overflow: hidden;
-  background: #e6f2f0; /* teal-tinted slate */
-  border-radius: 0.5rem;
-}
-.skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent 0,
-    rgba(240, 253, 250, 0.15) 20%,
-    rgba(45, 212, 191, 0.35) 50%,
-    rgba(240, 253, 250, 0.15) 80%,
-    transparent 100%
-  );
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .skeleton::after { animation: none; }
-  .skeleton { animation: skeleton-pulse 1.8s ease-in-out infinite; }
-  @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
+  /* Surface colours (cards, panels, modals) */
+  --an-surface: rgba(255, 255, 255, 0.72);
+  --an-surface-solid: #ffffff;
+  --an-surface-raised: rgba(255, 255, 255, 0.85);
+
+  /* Border colours */
+  --an-border: rgba(148, 163, 184, 0.25);
+  --an-border-subtle: rgba(148, 163, 184, 0.12);
+  --an-border-strong: rgba(100, 116, 139, 0.35);
+
+  /* Text hierarchy */
+  --an-text-primary: #1c1917;
+  --an-text-secondary: #44403c;
+  --an-text-muted: #78716c;
+  --an-text-faint: #a8a29e;
+
+  /* Accent — healthcare teal */
+  --an-accent: #0d9488;
+  --an-accent-hover: #0f766e;
+  --an-accent-light: rgba(13, 148, 136, 0.08);
+  --an-accent-glow: rgba(13, 148, 136, 0.18);
+
+  /* Atmospheric layer colours (Ashen Nebula) */
+  --an-layer1-color: rgba(148, 163, 184, 0.50); /* cool slate */
+  --an-layer2-color: rgba(167, 176, 189, 0.35); /* silver-blue mist */
+  --an-layer3-color: rgba(203, 213, 225, 0.30); /* pale frost */
+
+  /* Glass treatment */
+  --an-glass-bg: rgba(255, 255, 255, 0.60);
+  --an-glass-border: rgba(255, 255, 255, 0.50);
+  --an-glass-shadow: 0 4px 24px rgba(100, 116, 139, 0.10), 0 1px 3px rgba(0,0,0,0.06);
+  --an-glass-shadow-lg: 0 8px 40px rgba(100, 116, 139, 0.14), 0 2px 8px rgba(0,0,0,0.08);
+
+  /* Navigation glass */
+  --an-nav-bg: rgba(250, 248, 242, 0.82);
+  --an-nav-border: rgba(148, 163, 184, 0.18);
+
+  /* Skeleton sheen */
+  --an-skeleton-base: #e8e4dc;
+  --an-skeleton-highlight: rgba(255, 255, 255, 0.70);
 }
 
-* {
-  scrollbar-width: none;
-}
-*::-webkit-scrollbar {
-  display: none;
+/* ── Dark mode overrides ── */
+.dark {
+  --an-bg: #100e0b;
+  --an-bg-dark: #100e0b;
+
+  --an-surface: rgba(28, 25, 23, 0.80);
+  --an-surface-solid: #1c1917;
+  --an-surface-raised: rgba(40, 36, 33, 0.90);
+
+  --an-border: rgba(120, 113, 108, 0.25);
+  --an-border-subtle: rgba(120, 113, 108, 0.12);
+  --an-border-strong: rgba(161, 155, 150, 0.30);
+
+  --an-text-primary: #faf8f2;
+  --an-text-secondary: #e7e5e4;
+  --an-text-muted: #a8a29e;
+  --an-text-faint: #78716c;
+
+  --an-accent: #14b8a6;
+  --an-accent-hover: #0d9488;
+  --an-accent-light: rgba(20, 184, 166, 0.10);
+  --an-accent-glow: rgba(20, 184, 166, 0.20);
+
+  /* Dark atmospheric layers — warm charcoal nebulae on screen blend */
+  --an-layer1-color: rgba(148, 163, 184, 0.12);
+  --an-layer2-color: rgba(120, 113, 108, 0.10);
+  --an-layer3-color: rgba(87, 83, 78, 0.08);
+
+  --an-glass-bg: rgba(28, 25, 23, 0.65);
+  --an-glass-border: rgba(120, 113, 108, 0.30);
+  --an-glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.30), 0 1px 3px rgba(0,0,0,0.20);
+  --an-glass-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0,0,0,0.25);
+
+  --an-nav-bg: rgba(16, 14, 11, 0.85);
+  --an-nav-border: rgba(120, 113, 108, 0.20);
+
+  --an-skeleton-base: #292524;
+  --an-skeleton-highlight: rgba(255, 255, 255, 0.05);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   BODY — BASE TYPOGRAPHY & BACKGROUND
+   ══════════════════════════════════════════════════════════════════════════════ */
 body {
   font-family: 'Work Sans', system-ui, sans-serif;
-  background: #ffffff;
-  color: #0f2724;
+  background-color: var(--an-bg);
+  color: var(--an-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* Display / serif font class */
 .font-display {
   font-family: 'DM Serif Display', Georgia, serif;
 }
 
-/* Success confirmation: circle pops in, a ring ripples outward, the checkmark
-   draws itself, and a few muted particles drift up — celebratory but restrained. */
+/* ══════════════════════════════════════════════════════════════════════════════
+   ASHEN NEBULA — ATMOSPHERIC BACKGROUND LAYER
+   Applied to .an-atmosphere wrapper. Three blurred radial-gradient ellipses
+   that sit behind all content as a fixed atmospheric haze.
+
+   Light mode: cool slate / silver-blue mist on warm #faf8f2 parchment.
+   Dark mode: warm shadow nebulae on deep #100e0b charcoal.
+
+   The wrapper is pointer-events-none and -z-10 so it never blocks interaction.
+   ══════════════════════════════════════════════════════════════════════════════ */
+.an-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: var(--an-bg);
+  isolation: isolate;
+  transition: background-color 0.25s ease;
+}
+
+/* Layer 1 — large cool-slate ellipse, left-centre */
+.an-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 42% 48% at 30% 40%,
+      var(--an-layer1-color) 0%,
+      transparent 65%
+    );
+  mix-blend-mode: multiply;
+  filter: blur(48px);
+  opacity: 1;
+}
+
+/* Layer 2 — mid silver-blue ellipse, upper-right */
+.an-atmosphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 55% 38% at 75% 25%,
+      var(--an-layer2-color) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 30% 35% at 55% 80%,
+      var(--an-layer3-color) 0%,
+      transparent 55%
+    );
+  mix-blend-mode: multiply;
+  filter: blur(60px);
+  opacity: 1;
+}
+
+/* Dark-mode: switch blend to screen so layers lighten the dark base */
+.dark .an-atmosphere::before,
+.dark .an-atmosphere::after {
+  mix-blend-mode: screen;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GLASS MORPHISM UTILITIES
+   .glass-card  — standard elevated card with backdrop blur
+   .glass-panel — subtle inset panel
+   .glass-nav   — navigation bar glass treatment
+   ══════════════════════════════════════════════════════════════════════════════ */
+.glass-card {
+  background: var(--an-glass-bg);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--an-glass-border);
+  box-shadow: var(--an-glass-shadow);
+}
+
+.glass-card-lg {
+  background: var(--an-glass-bg);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--an-glass-border);
+  box-shadow: var(--an-glass-shadow-lg);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.dark .glass-panel {
+  background: rgba(28, 25, 23, 0.50);
+  border-color: rgba(120, 113, 108, 0.25);
+}
+
+.glass-nav {
+  background: var(--an-nav-bg);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-bottom: 1px solid var(--an-nav-border);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Page entrance */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Staggered fade-in for card grids */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Success states */
 @keyframes success-pop {
   0%   { transform: scale(0.4); opacity: 0; }
   60%  { transform: scale(1.08); opacity: 1; }
@@ -100,6 +294,7 @@ body {
   animation: check-draw 0.4s ease-out 0.45s both;
 }
 
+/* Confetti */
 @keyframes confetti-fall {
   0%   { transform: translateY(-8px) rotate(0deg); opacity: 0; }
   15%  { opacity: 1; }
@@ -107,16 +302,250 @@ body {
 }
 .animate-confetti { animation: confetti-fall 1.4s ease-in forwards; }
 
-/* Trailing dots after "Syncing records" — a gentle staggered rise, not a jitter. */
+/* Sync dots */
 @keyframes dot-bounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
   40%           { transform: translateY(-4px); opacity: 1; }
 }
 .animate-dot { animation: dot-bounce 1.2s ease-in-out infinite; }
 
-/* Bangla script: applied to the dashboard root when the language is switched to বাংলা.
-   Hind Siliguri covers Bengali glyphs that Work Sans / DM Serif Display do not. */
+/* Atmospheric shimmer on hero — very subtle floating */
+@keyframes an-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(1.5%, 0.8%) scale(1.01); }
+  66%       { transform: translate(-0.8%, 1.2%) scale(0.99); }
+}
+.an-drift { animation: an-drift 18s ease-in-out infinite; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SKELETON LOADERS
+   Ashen Nebula tinted sheen — stone/warm grey tones rather than teal.
+   ══════════════════════════════════════════════════════════════════════════════ */
+@keyframes skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--an-skeleton-base);
+  border-radius: 0.5rem;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    var(--an-skeleton-highlight) 45%,
+    rgba(255, 255, 255, 0.12) 55%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 1.7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+  .skeleton { animation: skeleton-pulse 1.8s ease-in-out infinite; }
+  @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR — hidden globally for clean appearance
+   ══════════════════════════════════════════════════════════════════════════════ */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BANGLA TYPOGRAPHY
+   Hind Siliguri covers Bengali glyphs that Work Sans / DM Serif Display miss.
+   Applied to the document root when lang === 'bn'.
+   ══════════════════════════════════════════════════════════════════════════════ */
 .lang-bn,
 .lang-bn .font-display {
   font-family: 'Hind Siliguri', 'Work Sans', system-ui, sans-serif;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BUTTON SYSTEM — Ashen Nebula compatible
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Primary CTA — solid teal */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--an-accent);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  box-shadow: 0 2px 12px var(--an-accent-glow);
+}
+.btn-primary:hover {
+  background: var(--an-accent-hover);
+  box-shadow: 0 4px 20px var(--an-accent-glow);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+/* Secondary CTA — glass outline */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--an-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--an-border-strong);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+.btn-secondary:hover {
+  background: var(--an-accent-light);
+  border-color: var(--an-accent);
+  transform: translateY(-1px);
+}
+.btn-secondary:active { transform: translateY(0); }
+
+/* Ghost / tertiary */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--an-text-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.625rem;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.btn-ghost:hover {
+  color: var(--an-text-primary);
+  background: var(--an-accent-light);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SURFACE / CARD UTILITIES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Standard white card — Ashen Nebula tinted */
+.an-card {
+  background: var(--an-surface-solid);
+  border: 1px solid var(--an-border);
+  border-radius: 1rem;
+  box-shadow: 0 1px 8px rgba(100, 116, 139, 0.07), 0 0 0 0.5px rgba(148, 163, 184, 0.08);
+}
+
+.dark .an-card {
+  background: var(--an-surface-solid);
+  border-color: var(--an-border);
+}
+
+/* Elevated glass card */
+.an-card-glass {
+  background: var(--an-glass-bg);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--an-glass-border);
+  border-radius: 1rem;
+  box-shadow: var(--an-glass-shadow);
+}
+
+/* Section separator — nebula-toned divider */
+.an-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--an-border-strong) 20%,
+    var(--an-border-strong) 80%,
+    transparent
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TEAL BADGE / STATUS PILLS
+   ══════════════════════════════════════════════════════════════════════════════ */
+.badge-teal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: rgba(20, 184, 166, 0.10);
+  color: var(--an-accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 184, 166, 0.20);
+}
+
+.badge-teal.dark,
+.dark .badge-teal {
+  background: rgba(20, 184, 166, 0.12);
+  color: #2dd4bf;
+  border-color: rgba(45, 212, 191, 0.25);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FORM INPUTS — Ashen Nebula compatible
+   ══════════════════════════════════════════════════════════════════════════════ */
+.an-input {
+  background: var(--an-surface-solid);
+  border: 1.5px solid var(--an-border-strong);
+  border-radius: 0.625rem;
+  color: var(--an-text-primary);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+  width: 100%;
+}
+
+.an-input::placeholder {
+  color: var(--an-text-faint);
+}
+
+.an-input:focus {
+  border-color: var(--an-accent);
+  box-shadow: 0 0 0 3px var(--an-accent-light);
+}
+
+.dark .an-input {
+  background: rgba(28, 25, 23, 0.90);
+  border-color: rgba(120, 113, 108, 0.40);
+  color: var(--an-text-primary);
+}
+
+.dark .an-input:focus {
+  border-color: var(--an-accent);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOCUS-VISIBLE — accessible ring in teal
+   ══════════════════════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--an-accent);
+  outline-offset: 2px;
 }
