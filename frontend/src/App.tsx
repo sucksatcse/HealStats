@@ -16,6 +16,7 @@ import SuccessConfirmationPage from "./SuccessConfirmationPage"
 import SyncProgressPage from "./SyncProgressPage"
 import ClinicsMapSection from "./ClinicsMapSection"
 import ChatWidget from "./ChatWidget"
+import SignUpPage from "./SignUpPage"
 import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -265,14 +266,14 @@ const FEATURE_ICONS = [
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [page, setPage] =
-    useState<"landing" | "login" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
+    useState<"landing" | "login" | "signup" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
       "landing",
     )
 
   /* Global language from context — drives all landing page text */
   const { lang } = useLang()
   const t = LANDING[lang]
-  const { session, profile, loading } = useAuth()
+  const { session, profile, loading, profileResolved, signOut } = useAuth()
 
   useEffect(() => {
     if (loading) return
@@ -299,6 +300,7 @@ export default function App() {
       session &&
       profile &&
       (page === "login" ||
+        page === "signup" ||
         page === "admin-login" ||
         page === "role-selection" ||
         page === "landing")
@@ -307,32 +309,87 @@ export default function App() {
     }
   }, [page, session, profile, loading])
 
+  const authSpinner = (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "var(--an-bg)" }}
+    >
+      <svg
+        className="animate-spin w-8 h-8 text-teal-600"
+        viewBox="0 0 24 24"
+        fill="none"
+        role="status"
+        aria-label="Loading"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+        />
+      </svg>
+    </div>
+  )
 
   if (loading) {
+    return authSpinner
+  }
+
+  // Authenticated, but no staff profile is linked to this account. Without an
+  // explicit escape hatch the user would be stranded (valid session, no role).
+  if (session && profileResolved && !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--an-bg)'}}>
-        <svg
-          className="animate-spin w-8 h-8 text-teal-600"
-          viewBox="0 0 24 24"
-          fill="none"
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "var(--an-bg)" }}
+      >
+        <div
+          role="alert"
+          className="w-full max-w-md text-center rounded-2xl border p-8 shadow-sm"
+          style={{ background: "var(--an-surface-solid)", borderColor: "var(--an-border)" }}
         >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-          />
-        </svg>
+          <h1
+            className="font-display text-xl mb-2"
+            style={{ color: "var(--an-text-primary)" }}
+          >
+            Account not linked
+          </h1>
+          <p className="text-sm mb-6" style={{ color: "var(--an-text-secondary)" }}>
+            Your sign-in succeeded, but no staff profile is linked to this
+            account. Please contact your administrator to finish setup.
+          </p>
+          <button
+            onClick={() => {
+              void signOut()
+              setPage("landing")
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     )
   }
+
+  // Prevent a flash of protected content before the redirect effect resolves.
+  const isProtectedPage = [
+    "dashboard",
+    "admin-dashboard",
+    "patient-lookup",
+    "record-saved",
+    "sync-progress",
+  ].includes(page)
+  if (isProtectedPage && !session) return authSpinner
+  if (page === "admin-dashboard" && profile && profile.role !== "admin")
+    return authSpinner
 
   if (page === "navbar-demo")
     return <NavbarPreviewPage onBack={() => setPage("landing")} />
@@ -351,7 +408,9 @@ export default function App() {
   if (page === "patient-lookup")
     return <PatientLookupPage onBack={() => setPage("landing")} />
   if (page === "login")
-    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} />
+    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} onSignUp={() => setPage("signup")} />
+  if (page === "signup")
+    return <SignUpPage onBack={() => setPage("landing")} onGoToLogin={() => setPage("login")} />
   if (page === "admin-login")
     return (
       <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />
@@ -393,14 +452,14 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-[1fr_1fr] gap-0 min-h-[calc(100vh-64px)]">
             {/* Left: copy */}
             <div className="flex flex-col justify-center py-16 lg:py-24 lg:pr-16 z-10">
-              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit">
+              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit animate-fade-up">
                 <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
                 <span className="text-xs font-semibold text-teal-700 dark:text-teal-300 tracking-wide uppercase">
                   {t.hero.badge}
                 </span>
               </div>
 
-              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6">
+              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6 animate-fade-up stagger-1">
                 {t.hero.h1a}
                 <br />
                 <em className="not-italic text-teal-600 dark:text-teal-400">
@@ -414,11 +473,11 @@ export default function App() {
                 )}
               </h1>
 
-              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10">
+              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10 animate-fade-up stagger-2">
                 {t.hero.body}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4 animate-fade-up stagger-3">
                 <a
                   href="#get-started"
                   className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
@@ -445,7 +504,7 @@ export default function App() {
               </div>
 
               {/* Trust signals */}
-              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60">
+              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60 animate-fade-up stagger-4">
                 {[
                   {
                     icon: (
@@ -485,7 +544,7 @@ export default function App() {
             </div>
 
             {/* Right: image panel */}
-            <div className="relative hidden lg:block">
+            <div className="relative hidden lg:block animate-fade-up stagger-2">
               <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #115e59 100%)'}} />
               <img
                 src="https://images.unsplash.com/photo-1621353880071-4752fa42cbc7?w=900&h=1000&fit=crop&auto=format"

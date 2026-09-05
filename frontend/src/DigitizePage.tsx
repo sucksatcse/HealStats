@@ -22,24 +22,24 @@ const CONFIDENCE_STYLE: Record<ConfidenceTier, {
 }> = {
   high: {
     bar: "bg-emerald-500",
-    badge: "bg-emerald-50 border-emerald-200",
-    badgeText: "text-emerald-700",
-    border: "border-slate-200",
-    bg: "bg-slate-50 focus:bg-white",
+    badge: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/50",
+    badgeText: "text-emerald-700 dark:text-emerald-400",
+    border: "border-slate-200 dark:border-slate-800",
+    bg: "bg-slate-50 focus:bg-white dark:bg-slate-800/40 dark:focus:bg-slate-900",
   },
   medium: {
     bar: "bg-amber-400",
-    badge: "bg-amber-50 border-amber-200",
-    badgeText: "text-amber-700",
-    border: "border-amber-200",
-    bg: "bg-amber-50/40 focus:bg-white",
+    badge: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50",
+    badgeText: "text-amber-700 dark:text-amber-400",
+    border: "border-amber-200 dark:border-amber-900/50",
+    bg: "bg-amber-50/40 focus:bg-white dark:bg-amber-950/40 dark:focus:bg-slate-900",
   },
   low: {
     bar: "bg-red-400",
-    badge: "bg-red-50 border-red-200",
-    badgeText: "text-red-600",
-    border: "border-red-200",
-    bg: "bg-red-50/40 focus:bg-white",
+    badge: "bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900/50",
+    badgeText: "text-red-600 dark:text-red-400",
+    border: "border-red-200 dark:border-red-900/50",
+    bg: "bg-red-50/40 focus:bg-white dark:bg-red-950/40 dark:focus:bg-slate-900",
   },
 }
 
@@ -84,19 +84,19 @@ function ExtractedField({
   const tier = getConfidenceTier(field.confidence)
   const s = CONFIDENCE_STYLE[tier]
 
-  const inputCls = `w-full px-3 py-2.5 rounded-xl border text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${s.border} ${s.bg}`
+  const inputCls = `w-full px-3 py-2.5 rounded-xl border text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${s.border} ${s.bg}`
 
   return (
     <div
       className={`rounded-2xl border p-4 transition-all ${
         confirmed
-          ? "bg-emerald-50/50 border-emerald-200"
-          : "bg-white border-slate-200"
+          ? "bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/50"
+          : "bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800"
       }`}
     >
       {/* Label row */}
       <div className="flex items-center justify-between mb-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
           {field.label}
         </label>
         <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ function ExtractedField({
             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
               confirmed
                 ? "bg-emerald-500 border-emerald-500 text-white"
-                : "border-slate-300 hover:border-teal-400 bg-white"
+                : "border-slate-300 hover:border-teal-400 bg-white dark:border-slate-700 dark:bg-slate-900"
             }`}
           >
             {confirmed && (
@@ -137,7 +137,7 @@ function ExtractedField({
       </div>
 
       {/* Confidence bar */}
-      <div className="h-0.5 bg-slate-100 rounded-full mb-3 overflow-hidden">
+      <div className="h-0.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-3 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${s.bar}`}
           style={{ width: `${field.confidence}%` }}
@@ -164,7 +164,7 @@ function ExtractedField({
       )}
 
       {tier === "low" && !confirmed && (
-        <p className="text-[10px] text-red-500 font-medium mt-1.5 flex items-center gap-1">
+        <p className="text-[10px] text-red-500 dark:text-red-400 font-medium mt-1.5 flex items-center gap-1">
           <svg
             viewBox="0 0 12 12"
             fill="currentColor"
@@ -387,18 +387,18 @@ export default function DigitizePage() {
           </svg>
         </div>
         <div>
-          <h2 className="font-display text-3xl text-teal-950 mb-2">
+          <h2 className="font-display text-3xl text-teal-950 dark:text-white mb-2">
             Record Digitized!
           </h2>
-          <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
-            <strong className="text-teal-700">
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+            <strong className="text-teal-700 dark:text-teal-300">
               {fieldValues["patientName"] || "The patient"}
             </strong>
             's paper record has been digitized and saved. {savedOffline ? "It will sync to the central server automatically." : "It has been synced successfully."}
           </p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl px-5 py-4 text-left w-full max-w-sm">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-left w-full max-w-sm">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
             Extracted Summary
           </p>
           {[
@@ -409,10 +409,10 @@ export default function DigitizePage() {
             return (
             <div
               key={k}
-              className="flex justify-between text-sm py-1.5 border-b border-slate-50 last:border-0"
+              className="flex justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0"
             >
-              <span className="text-slate-400">{k}</span>
-              <span className="font-medium text-slate-700">{v}</span>
+              <span className="text-slate-400 dark:text-slate-500">{k}</span>
+              <span className="font-medium text-slate-700 dark:text-slate-200">{v}</span>
             </div>
           )})}
         </div>
@@ -453,10 +453,10 @@ export default function DigitizePage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+          <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
             Digitize Paper Record
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
             Upload a photo or scan — AI will extract the fields for you to
             review.
           </p>
@@ -464,7 +464,7 @@ export default function DigitizePage() {
         {stage !== "upload" && (
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50 px-3.5 py-2 rounded-xl transition-all"
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 border border-slate-200 dark:border-slate-800 hover:border-red-200 dark:hover:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40 px-3.5 py-2 rounded-xl transition-all"
           >
             <svg
               viewBox="0 0 16 16"
@@ -496,9 +496,9 @@ export default function DigitizePage() {
         <div className="flex flex-col gap-4">
           
           {ocrFailed && stage === "upload" && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center">
-              <p className="text-sm font-semibold text-red-800 mb-2">OCR could not identify useful information.</p>
-              <p className="text-sm text-red-600 mb-3">Please enter the patient details manually.</p>
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl p-5 text-center">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">OCR could not identify useful information.</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-3">Please enter the patient details manually.</p>
             </div>
           )}
 
@@ -511,8 +511,8 @@ export default function DigitizePage() {
               onClick={() => inputRef.current?.click()}
               className={`relative rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-5 py-16 px-8 text-center ${
                 dragging
-                  ? "border-teal-400 bg-teal-50 scale-[1.01]"
-                  : "border-slate-300 bg-white hover:border-teal-400 hover:bg-teal-50/40"
+                  ? "border-teal-400 bg-teal-50 dark:bg-teal-950/40 scale-[1.01]"
+                  : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-teal-400 hover:bg-teal-50/40 dark:hover:bg-teal-950/40"
               }`}
             >
               <input
@@ -528,7 +528,7 @@ export default function DigitizePage() {
               {/* Icon */}
               <div
                 className={`w-20 h-20 rounded-3xl flex items-center justify-center transition-all ${
-                  dragging ? "bg-teal-100" : "bg-slate-100"
+                  dragging ? "bg-teal-100 dark:bg-teal-950/40" : "bg-slate-100 dark:bg-slate-800"
                 }`}
               >
                 <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
@@ -561,18 +561,18 @@ export default function DigitizePage() {
               <div>
                 <p
                   className={`font-semibold text-base mb-1 transition-colors ${
-                    dragging ? "text-teal-700" : "text-slate-700"
+                    dragging ? "text-teal-700 dark:text-teal-300" : "text-slate-700 dark:text-slate-200"
                   }`}
                 >
                   {dragging ? "Drop to scan" : "Drop your photo or scan here"}
                 </p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-400 dark:text-slate-500">
                   or{" "}
-                  <span className="text-teal-600 font-semibold underline underline-offset-2">
+                  <span className="text-teal-600 dark:text-teal-400 font-semibold underline underline-offset-2">
                     browse files
                   </span>
                 </p>
-                <p className="text-xs text-slate-400 mt-2">
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
                   Supports JPG, PNG, HEIC, PDF · Max 20 MB
                 </p>
               </div>
@@ -586,7 +586,7 @@ export default function DigitizePage() {
                 ].map((t) => (
                   <span
                     key={t}
-                    className="text-[11px] text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg"
+                    className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg"
                   >
                     {t}
                   </span>
@@ -597,12 +597,12 @@ export default function DigitizePage() {
 
           {/* Scanning state */}
           {stage === "scanning" && imageURL && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="relative">
                 <img
                   src={imageURL}
                   alt="Uploaded record"
-                  className="w-full object-contain max-h-72 bg-slate-100"
+                  className="w-full object-contain max-h-72 bg-slate-100 dark:bg-slate-800"
                   style={{ filter: "grayscale(0.3) contrast(1.05)" }}
                 />
                 <ScanOverlay />
@@ -610,14 +610,14 @@ export default function DigitizePage() {
               </div>
               <div className="px-5 py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-semibold text-slate-700">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                     Scanning document…
                   </p>
-                  <span className="text-sm font-bold text-teal-600">
+                  <span className="text-sm font-bold text-teal-600 dark:text-teal-400">
                     {scanProgress}%
                   </span>
                 </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-teal-500 rounded-full transition-all duration-150"
                     style={{ width: `${scanProgress}%` }}
@@ -637,10 +637,10 @@ export default function DigitizePage() {
                         key={step}
                         className={`text-[10px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1 ${
                           done
-                            ? "bg-teal-100 text-teal-700"
+                            ? "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
                             : active
-                              ? "bg-violet-100 text-violet-700 animate-pulse"
-                              : "bg-slate-100 text-slate-400"
+                              ? "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400 animate-pulse"
+                              : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
                         }`}
                       >
                         {done ? "✓" : active ? "⟳" : "○"} {step}
@@ -654,14 +654,14 @@ export default function DigitizePage() {
 
           {/* Image preview (review stage) */}
           {stage === "review" && imageURL && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-600">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   Source document
                 </p>
                 <button
                   onClick={() => inputRef.current?.click()}
-                  className="text-xs font-medium text-teal-600 hover:text-teal-800 transition-colors"
+                  className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors"
                 >
                   Replace
                 </button>
@@ -678,13 +678,13 @@ export default function DigitizePage() {
               <img
                 src={imageURL}
                 alt="Uploaded record"
-                className="w-full object-contain max-h-80 bg-slate-100"
+                className="w-full object-contain max-h-80 bg-slate-100 dark:bg-slate-800"
                 style={{ filter: "grayscale(0.15) contrast(1.1)" }}
               />
 
               {/* OCR summary strip */}
-              <div className="px-4 py-3 bg-teal-50 border-t border-teal-100 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-700">
+              <div className="px-4 py-3 bg-teal-50 dark:bg-teal-950/40 border-t border-teal-100 dark:border-teal-800 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300">
                   <svg
                     viewBox="0 0 14 14"
                     fill="none"
@@ -700,7 +700,7 @@ export default function DigitizePage() {
                   </svg>
                   {totalFields} fields extracted
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   {
                     ocrFields.filter(
@@ -709,7 +709,7 @@ export default function DigitizePage() {
                   }{" "}
                   high confidence
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <span className="w-2 h-2 rounded-full bg-amber-400" />
                   {
                     ocrFields.filter(
@@ -719,12 +719,12 @@ export default function DigitizePage() {
                   medium
                 </div>
                 {lowConfidenceCount > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-red-600">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
                     <span className="w-2 h-2 rounded-full bg-red-400" />
                     {lowConfidenceCount} low — review carefully
                   </div>
                 )}
-                <span className="ml-auto text-[10px] text-teal-600 font-medium">
+                <span className="ml-auto text-[10px] text-teal-600 dark:text-teal-400 font-medium">
                   Avg{" "}
                   {Math.round(
                     ocrFields.reduce((s, f) => s + f.confidence, 0) /
@@ -738,8 +738,8 @@ export default function DigitizePage() {
 
           {/* Tips card (upload stage only) */}
           {stage === "upload" && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
                 Tips for best results
               </p>
               <ul className="space-y-2">
@@ -751,9 +751,9 @@ export default function DigitizePage() {
                 ].map((tip, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2.5 text-xs text-slate-500"
+                    className="flex items-start gap-2.5 text-xs text-slate-500 dark:text-slate-400"
                   >
-                    <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold flex-shrink-0 mt-0.5 text-[10px]">
+                    <span className="w-4 h-4 rounded-full bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold flex-shrink-0 mt-0.5 text-[10px]">
                       {i + 1}
                     </span>
                     {tip}
@@ -768,20 +768,20 @@ export default function DigitizePage() {
         {stage === "review" && (
           <div className="flex flex-col gap-4 min-h-0">
             {/* Header */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 flex items-start justify-between gap-3">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4 flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-slate-700 mb-0.5">
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-0.5">
                   Review Extracted Fields
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 dark:text-slate-500">
                   Correct any errors, then confirm each field before saving.
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <p className="text-xs font-semibold text-slate-600">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   {confirmedCount}/{totalFields} confirmed
                 </p>
-                <div className="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-28 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-teal-500 rounded-full transition-all"
                     style={{
@@ -817,11 +817,11 @@ export default function DigitizePage() {
             </div>
 
             {/* Action bar */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
               <button
                 onClick={handleConfirmAll}
                 disabled={allConfirmed}
-                className="text-sm font-semibold text-slate-600 hover:text-teal-700 border border-slate-200 hover:border-teal-300 disabled:opacity-40 disabled:pointer-events-none px-4 py-2.5 rounded-xl transition-all"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 disabled:opacity-40 disabled:pointer-events-none px-4 py-2.5 rounded-xl transition-all"
               >
                 Confirm all fields
               </button>
@@ -831,7 +831,7 @@ export default function DigitizePage() {
                 className={`flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl transition-all ml-auto ${
                   allConfirmed
                     ? "bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-600/20 hover:-translate-y-0.5"
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
                 }`}
               >
                 {isSaving ? "Saving..." : (

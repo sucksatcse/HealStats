@@ -7,9 +7,21 @@ import { useState } from "react"
    ══════════════════════════════════════════════════════════════════════════════ */
 
 // ── Shared shell ───────────────────────────────────────────────────────────────
-function StateShell({ children }: { children: React.ReactNode }) {
+function StateShell({
+  children,
+  role,
+  ariaLive,
+}: {
+  children: React.ReactNode
+  role?: string
+  ariaLive?: "polite" | "assertive"
+}) {
   return (
-    <div className="w-full flex flex-col items-center text-center px-6 py-12 font-[Work_Sans,system-ui,sans-serif]">
+    <div
+      role={role}
+      {...(ariaLive ? { "aria-live": ariaLive } : {})}
+      className="w-full flex flex-col items-center text-center px-6 py-12 font-[Work_Sans,system-ui,sans-serif]"
+    >
       <div className="max-w-sm flex flex-col items-center">{children}</div>
     </div>
   )
@@ -18,12 +30,18 @@ function StateShell({ children }: { children: React.ReactNode }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    1. No internet connection — offline mode reassurance
    ───────────────────────────────────────────────────────────────────────────── */
-export function OfflineState({ onDismiss }: { onDismiss?: () => void }) {
+export function OfflineState({
+  onDismiss,
+  queuedCount,
+}: {
+  onDismiss?: () => void
+  queuedCount?: number
+}) {
   return (
-    <StateShell>
+    <StateShell role="status" ariaLive="polite">
       {/* Illustration: a cloud with a soft "off" slash, and a safe local device */}
       <div className="relative mb-7">
-        <svg viewBox="0 0 200 160" className="w-56 h-44">
+        <svg viewBox="0 0 200 160" className="w-56 h-44" aria-hidden="true">
           {/* soft backdrop */}
           <ellipse cx="100" cy="140" rx="70" ry="10" fill="#ccfbf1" />
           {/* dashed cloud (disconnected) */}
@@ -56,40 +74,42 @@ export function OfflineState({ onDismiss }: { onDismiss?: () => void }) {
         </svg>
       </div>
 
-      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-teal-600 bg-teal-50 border border-teal-200 rounded-full px-3 py-1 mb-4">
+      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-full px-3 py-1 mb-4">
         <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
         Offline mode
       </span>
-      <h2 className="font-display text-2xl text-teal-950 mb-2.5">
+      <h2 className="font-display text-2xl text-teal-950 dark:text-white mb-2.5">
         You're working offline
       </h2>
-      <p className="text-slate-500 leading-relaxed mb-6">
+      <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
         No internet right now — and that's okay. Keep registering patients and
         recording visits. Everything is saved safely on this device and will
         sync automatically when you're back online.
       </p>
 
-      <div className="w-full bg-teal-50 border border-teal-100 rounded-2xl px-4 py-3 flex items-center gap-3 text-left mb-6">
-        <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-teal-600 flex-shrink-0">
-          <svg
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            className="w-5 h-5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 10l4 4 8-8"
-            />
-          </svg>
+      {typeof queuedCount === "number" && (
+        <div className="w-full bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-800 rounded-2xl px-4 py-3 flex items-center gap-3 text-left mb-6">
+          <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-teal-600 dark:text-teal-400 flex-shrink-0">
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 10l4 4 8-8"
+              />
+            </svg>
+          </div>
+          <p className="text-sm text-teal-800 dark:text-teal-300">
+            <span className="font-semibold">{queuedCount} records</span> saved
+            locally and queued for sync
+          </p>
         </div>
-        <p className="text-sm text-teal-800">
-          <span className="font-semibold">14 records</span> saved locally and
-          queued for sync
-        </p>
-      </div>
+      )}
 
       {onDismiss && (
         <button
@@ -114,10 +134,10 @@ export function NoPatientsState({
   onClear?: () => void
 }) {
   return (
-    <StateShell>
+    <StateShell role="status" ariaLive="polite">
       {/* Illustration: magnifying glass over an empty patient card */}
       <div className="relative mb-7">
-        <svg viewBox="0 0 200 160" className="w-56 h-44">
+        <svg viewBox="0 0 200 160" className="w-56 h-44" aria-hidden="true">
           <ellipse cx="100" cy="140" rx="66" ry="10" fill="#ccfbf1" />
           {/* patient card */}
           <rect
@@ -165,14 +185,14 @@ export function NoPatientsState({
         </svg>
       </div>
 
-      <h2 className="font-display text-2xl text-teal-950 mb-2.5">
+      <h2 className="font-display text-2xl text-teal-950 dark:text-white mb-2.5">
         No patients found
       </h2>
-      <p className="text-slate-500 leading-relaxed mb-6">
+      <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
         {query ? (
           <>
             We couldn't find anyone matching{" "}
-            <span className="font-semibold text-slate-700">"{query}"</span>. Try
+            <span className="font-semibold text-slate-700 dark:text-slate-200">"{query}"</span>. Try
             a different name, patient ID, or diagnosis.
           </>
         ) : (
@@ -183,11 +203,11 @@ export function NoPatientsState({
         )}
       </p>
 
-      <div className="w-full text-left bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 mb-6">
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">
+      <div className="w-full text-left bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 mb-6">
+        <p className="text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1.5">
           Try searching by
         </p>
-        <ul className="text-sm text-slate-600 space-y-1">
+        <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
           <li>· Full or partial name (e.g. "Mariama")</li>
           <li>· Patient ID (e.g. "PT-00412")</li>
           <li>· Diagnosis (e.g. "Malaria")</li>
@@ -198,7 +218,7 @@ export function NoPatientsState({
         {onClear && (
           <button
             onClick={onClear}
-            className="border border-teal-300 text-teal-800 hover:bg-teal-50 font-semibold text-sm px-5 py-3 rounded-xl transition-colors"
+            className="border border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold text-sm px-5 py-3 rounded-xl transition-colors"
           >
             Clear search
           </button>
@@ -227,7 +247,13 @@ export function NoPatientsState({
 /* ─────────────────────────────────────────────────────────────────────────────
    3. Sync failed, retrying — recoverable error state
    ───────────────────────────────────────────────────────────────────────────── */
-export function SyncFailedState({ onRetry }: { onRetry?: () => void }) {
+export function SyncFailedState({
+  onRetry,
+  queuedCount,
+}: {
+  onRetry?: () => void
+  queuedCount?: number
+}) {
   const [retrying, setRetrying] = useState(false)
   const handleRetry = () => {
     setRetrying(true)
@@ -236,10 +262,10 @@ export function SyncFailedState({ onRetry }: { onRetry?: () => void }) {
   }
 
   return (
-    <StateShell>
+    <StateShell role="alert">
       {/* Illustration: cloud with circular retry arrows */}
       <div className="relative mb-7">
-        <svg viewBox="0 0 200 160" className="w-56 h-44">
+        <svg viewBox="0 0 200 160" className="w-56 h-44" aria-hidden="true">
           <ellipse cx="100" cy="140" rx="68" ry="10" fill="#fef3c7" />
           {/* cloud */}
           <path
@@ -295,7 +321,7 @@ export function SyncFailedState({ onRetry }: { onRetry?: () => void }) {
         </svg>
       </div>
 
-      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 mb-4">
+      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-full px-3 py-1 mb-4">
         <span
           className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${
             retrying ? "animate-pulse" : ""
@@ -303,17 +329,17 @@ export function SyncFailedState({ onRetry }: { onRetry?: () => void }) {
         />
         {retrying ? "Retrying now" : "Sync paused"}
       </span>
-      <h2 className="font-display text-2xl text-teal-950 mb-2.5">
+      <h2 className="font-display text-2xl text-teal-950 dark:text-white mb-2.5">
         {retrying ? "Trying again…" : "Sync didn't finish"}
       </h2>
-      <p className="text-slate-500 leading-relaxed mb-6">
+      <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
         We couldn't reach the server on the last attempt. Don't worry — your
         records are safe on this device and nothing was lost. We'll keep
         retrying automatically in the background.
       </p>
 
-      <div className="w-full bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-3 text-left mb-6">
-        <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-amber-500 flex-shrink-0">
+      <div className="w-full bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 rounded-2xl px-4 py-3 flex items-center gap-3 text-left mb-6">
+        <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-amber-500 dark:text-amber-400 flex-shrink-0">
           <svg
             viewBox="0 0 16 16"
             fill="none"
@@ -325,14 +351,16 @@ export function SyncFailedState({ onRetry }: { onRetry?: () => void }) {
             <path strokeLinecap="round" d="M8 4.5v3.75l2.5 1.5" />
           </svg>
         </div>
-        <p className="text-sm text-amber-800">
+        <p className="text-sm text-amber-800 dark:text-amber-400">
           {retrying ? (
             "Reconnecting to the sync server…"
           ) : (
             <>
               Next automatic retry in{" "}
-              <span className="font-semibold">30 seconds</span> · 14 records
-              queued
+              <span className="font-semibold">30 seconds</span>
+              {typeof queuedCount === "number" && (
+                <> · {queuedCount} records queued</>
+              )}
             </>
           )}
         </p>
@@ -381,8 +409,8 @@ export default function EmptyStatesShowcase({
   const [tab, setTab] = useState<Tab>("offline")
 
   return (
-    <div className="min-h-screen bg-slate-50 font-[Work_Sans,system-ui,sans-serif]">
-      <header className="bg-white border-b border-teal-100">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-[Work_Sans,system-ui,sans-serif]">
+      <header className="bg-white dark:bg-slate-900 border-b border-teal-100 dark:border-slate-800">
         <div className="max-w-3xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center">
@@ -401,16 +429,16 @@ export default function EmptyStatesShowcase({
               </svg>
             </div>
             <div>
-              <p className="font-display text-lg text-teal-900 leading-none">
+              <p className="font-display text-lg text-teal-900 dark:text-white leading-none">
                 HealthStats
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">System States</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">System States</p>
             </div>
           </div>
           {onBack && (
             <button
               onClick={onBack}
-              className="flex items-center gap-1 text-sm font-semibold text-teal-700 hover:text-teal-900 transition-colors"
+              className="flex items-center gap-1 text-sm font-semibold text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-300 transition-colors"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -433,10 +461,10 @@ export default function EmptyStatesShowcase({
 
       <main className="max-w-3xl mx-auto px-5 py-8">
         <div className="text-center mb-6">
-          <h1 className="font-display text-3xl text-teal-950 mb-2">
+          <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-2">
             Empty & Error States
           </h1>
-          <p className="text-slate-500">
+          <p className="text-slate-500 dark:text-slate-400">
             Friendly, reassuring states that keep health workers calm and
             moving.
           </p>
@@ -444,7 +472,7 @@ export default function EmptyStatesShowcase({
 
         {/* Segmented control */}
         <div className="flex justify-center mb-6">
-          <div className="inline-flex bg-white border border-slate-200 rounded-2xl p-1 gap-1">
+          <div className="inline-flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1 gap-1">
             {TABS.map((t) => (
               <button
                 key={t.key}
@@ -452,7 +480,7 @@ export default function EmptyStatesShowcase({
                 className={`text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${
                   tab === t.key
                     ? "bg-teal-600 text-white shadow-sm"
-                    : "text-slate-500 hover:text-teal-700"
+                    : "text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-400"
                 }`}
               >
                 {t.label}
@@ -462,8 +490,10 @@ export default function EmptyStatesShowcase({
         </div>
 
         {/* Preview card */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden min-h-[520px] flex items-center">
-          {tab === "offline" && <OfflineState onDismiss={() => {}} />}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden min-h-[520px] flex items-center">
+          {tab === "offline" && (
+            <OfflineState onDismiss={() => {}} queuedCount={14} />
+          )}
           {tab === "empty" && (
             <NoPatientsState query="Kadidia" onClear={() => {}} />
           )}

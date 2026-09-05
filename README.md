@@ -1,134 +1,194 @@
 <div align="center">
-  
+
 # HealthStats
 
 ### Healthcare records that never stop working.
 
-> An offline-first healthcare record system designed for clinics operating in low-connectivity environments.
+An **offline-first** electronic health record (EHR) and disaster-response platform for rural clinics in Bangladesh.
 
 </div>
 
 ---
 
 ## Quick Summary
-HealthStats is an electronic health record (EHR) platform built specifically for rural clinics in Bangladesh. It is designed around an offline-first architectural goal. In environments where internet connectivity is intermittent and rolling power outages are frequent, the project aims to ensure community health workers can continue registering patients and logging visits regardless of network status. While the online patient registration flow is currently implemented, the core offline caching and automatic background synchronization systems are actively in development. 
+
+HealthStats is an EHR built for clinics that face **intermittent connectivity and frequent power outages**. Health workers register patients and record visits whether they are online or off — records are saved locally and **synchronized automatically when connectivity returns**. On top of the record system, HealthStats adds admin analytics, disaster/Emergency operations, a symptom-cluster early-warning surveillance view, a triage queue, a clinic operations map, and a data-grounded AI assistant. The interface is fully bilingual (English/Bangla) with light and dark themes.
+
+> **Honesty note:** This is a hackathon/MVP build. It is functional end-to-end for the flows described below, but it is **not production-hardened** — most importantly, database Row Level Security is intentionally disabled in the MVP schema (see [Security](#security)). Known gaps are tracked openly in [LIMITATIONS.md](LIMITATIONS.md).
+
+---
 
 ## Table of Contents
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
-- [Feature Highlights](#feature-highlights)
+- [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
+- [Offline-First & Sync](#offline-first--sync)
+- [OCR / Paper Digitization](#ocr--paper-digitization)
+- [Emergency Intelligence](#emergency-intelligence)
+- [AI Assistant](#ai-assistant)
+- [Internationalization & Theme](#internationalization--theme)
 - [Database](#database)
 - [Security](#security)
-- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [Authentication](#authentication)
-- [Patient Registration](#patient-registration)
-- [Development Workflow](#development-workflow)
+- [Demo Accounts](#demo-accounts)
 - [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
+- [Project Structure](#project-structure)
 - [Documentation](#documentation)
-- [Current Status](#current-status)
-- [Roadmap](#roadmap)
-- [Exhibition Demo](#exhibition-demo)
+- [Roadmap & Status](#roadmap--status)
 - [Team](#team)
+- [License](#license)
 
 ---
 
 ## The Problem
-Healthcare delivery in rural Bangladesh is hindered by severe infrastructure challenges:
-- **Paper-Based Limitations:** Physical records are difficult to query, easily damaged by floods, and slow to transfer.
-- **Unreliable Connectivity:** Frequent internet drops render standard cloud-based EHR systems unusable for hours or days.
-- **Data Fragmentation:** When patients migrate during a cyclone or flood, their medical history often does not follow them.
-- **Delayed Responses:** Lack of centralized, real-time data makes it difficult for district coordinators to monitor clinic loads or allocate resources rapidly during an emergency.
+
+Healthcare delivery in rural Bangladesh faces severe infrastructure challenges:
+
+- **Paper-based records** are hard to query, easily damaged by floods, and slow to transfer.
+- **Unreliable connectivity** makes standard cloud EHRs unusable for hours or days at a time.
+- **Data fragmentation** means a patient's history rarely follows them when they migrate during a cyclone or flood.
+- **Delayed coordination** — district coordinators lack real-time visibility into clinic load, high-risk patients, or emerging outbreaks during a crisis.
 
 ---
 
 ## The Solution
-HealthStats solves these problems through a resilient, offline-first workflow:
+
+A resilient, offline-first workflow with a central coordination layer:
 
 ```mermaid
 flowchart TD
-    Worker([Health Worker]) --> Pat[Patient Record]
-    Pat --> Vis[Record Visit]
-    
+    Worker([Health Worker]) --> Pat[Register / Find Patient]
+    Pat --> Vis[Record Visit + Vitals]
     Vis --> Check{Internet?}
-    
-    Check -->|Yes| Supabase[(Supabase)]
-    Check -.->|No| Local[(Local Storage)]
-    
-    Local -.->|Queue| Sync[Background Sync]
-    Sync -.->|Reconnection| Supabase
-    
-    Supabase --> Admin[Central Admin Dashboard]
+    Check -->|Yes| Supabase[(Supabase / PostgreSQL)]
+    Check -->|No| Local[(IndexedDB queue - Dexie)]
+    Local -->|on reconnect| Sync[Background Sync Service]
+    Sync --> Supabase
+    Supabase --> Admin[Admin & Emergency Console]
 ```
-*(Note: The offline local storage and background sync are planned architectures, pending implementation).*
+
+Records never block on the network: when offline, mutations are queued locally in IndexedDB and pushed to Supabase automatically once the device reconnects.
 
 ---
 
-## Feature Highlights
+## Key Features
 
 | Feature | Description | Status |
 |---|---|---|
-| **Patient Records** | Search, register, and view demographic details. | 🟢 Implemented |
-| **Authentication** | Secure login tied to specific clinic assignments. | 🟢 Implemented |
-| **Bilingual UI** | Instantly toggle between English and Bangla. | 🟢 Implemented |
-| **Dark Mode** | Low-light interface for battery saving and night shifts. | 🟢 Implemented |
-| **Visit Forms** | Clinical intake forms for vitals and symptoms. | 🟡 In Progress |
-| **Emergency Mode** | Disaster-response interfaces for floods/cyclones. | 🟡 In Progress |
-| **Admin Dashboard** | High-level analytics across multiple clinics. | 🟡 In Progress |
-| **Offline Storage** | IndexedDB caching for zero-connectivity operation. | 🔵 Planned |
-| **Background Sync** | Automatic cloud reconciliation upon reconnection. | 🔵 Planned |
-| **AI / OCR** | Assistive triage scoring or physical record scanning. | 🔵 Planned |
+| **Authentication & RBAC** | Supabase Auth email/password; `worker` and `admin` roles with protected routes. | 🟢 Implemented |
+| **Clinic scoping** | Mutations use the authenticated worker's `clinic_id` from context (app-layer). | 🟢 Implemented |
+| **Patient registration** | Validated intake; auto-injects clinic; writes to Supabase. | 🟢 Implemented |
+| **Patient records** | Server-side search, urgency filter, pagination, CSV export, detail view. | 🟢 Implemented |
+| **Patient detail & history** | Demographics + visit/vitals history with trend sparklines. | 🟢 Implemented |
+| **Visits / vitals** | Vitals JSONB, symptoms, symptom category, diagnosis, 1–5 urgency. | 🟢 Implemented |
+| **Offline storage** | IndexedDB queue (Dexie) for patients & visits created offline. | 🟢 Implemented |
+| **Background sync** | Auto-syncs the queue to Supabase on reconnect; sync monitor UI. | 🟢 Implemented |
+| **OCR digitization** | On-device OCR (Tesseract.js) extracts fields from paper records for review. | 🟢 Implemented |
+| **Admin dashboard** | Live stats, weekly visits chart, top-clinics panel. | 🟢 Implemented |
+| **Staff management** | Supabase CRUD with clinic assignment, filters, soft deactivation. | 🟢 Implemented |
+| **Flagged / high-risk** | Triage feed of urgent visits with doctor assignment + CSV export. | 🟢 Implemented |
+| **Emergency Mode** | Crisis console: zones, triage queue, responders, SOS broadcast. | 🟢 Implemented |
+| **Outbreak detection** | Threshold-based symptom-cluster early-warning surveillance. | 🟢 Implemented |
+| **Emergency triage queue** | Red/Yellow/Green bands, clinical status workflow, drill-down. | 🟢 Implemented |
+| **Clinic operations map** | Bangladesh map of clinics with live activity from real data. | 🟢 Implemented |
+| **AI assistant** | Data-grounded chatbot (no fabrication); role/clinic scoped. | 🟢 Implemented |
+| **Bilingual UI** | English/Bangla via i18next; persisted; core flows translated. | 🟢 Implemented (partial deep-page coverage) |
+| **Dark mode** | App-wide light/dark theme with no-flash load. | 🟢 Implemented |
+| **Motion & states** | Restrained motion system; loading/empty/error/recovery states. | 🟢 Implemented |
+| **E2E tests** | Playwright suite for auth, landing, i18n, theme, chatbot. | 🟢 Implemented (safe flows) |
+| **Conflict resolution / PWA** | Offline edit-conflict engine and installable PWA. | 🔵 Planned |
 
-**Status Legend:**
-- 🟢 **Implemented**: Currently working in the application.
-- 🟡 **In Progress**: UI scaffolded, but pending database wiring or backend integration.
-- 🔵 **Planned**: Defined in the project roadmap but not yet built.
-- ⚪ **Optional**: Nice-to-have features under consideration.
+**Legend:** 🟢 Implemented · 🟡 In progress · 🔵 Planned. Full, itemized honesty in [LIMITATIONS.md](LIMITATIONS.md).
 
 ---
 
 ## Tech Stack
 
-### Frontend
-- **React** 19.0.0
-- **TypeScript** 5.7.0
-- **Vite** 8.0.5
-
-### Styling
-- **Tailwind CSS** 4.0.0
-
-### Backend / Data
-- **Supabase** (BaaS)
-- **PostgreSQL**
-
-### Authentication
-- **Supabase Auth** (Email/Password)
+- **Frontend:** React 19, TypeScript 5.7, Vite 8
+- **Styling:** Tailwind CSS 4 (Ashen Nebula design tokens; class-based dark mode)
+- **Offline:** Dexie.js (IndexedDB) + a background sync service
+- **OCR:** Tesseract.js (on-device)
+- **i18n:** i18next + react-i18next + browser language detector
+- **Backend / Data:** Supabase (PostgreSQL, Auth)
+- **Testing:** Playwright (E2E)
 
 ---
 
 ## Architecture
+
 ```mermaid
 flowchart LR
-    subgraph Client [Browser Environment]
-        React[React UI] --> AuthCtx[Auth Context]
-        React --> LangCtx[Language Context]
+    subgraph Client [Browser]
+        UI[React UI] --> Auth[Auth Context]
+        UI --> Lang[Language i18next]
+        UI --> Theme[Theme Context]
+        UI --> Dexie[(IndexedDB / Dexie)]
     end
-
     subgraph Cloud [Supabase]
-        AuthCtx <--> SAuth[Supabase Auth]
-        React <--> RLS{Row Level Security}
-        RLS <--> DB[(PostgreSQL)]
+        Auth <--> SAuth[Supabase Auth]
+        UI <--> DB[(PostgreSQL)]
     end
+    Dexie -->|Sync Service on reconnect| DB
 ```
+
+- **Current:** Client ↔ Supabase Auth/DB directly; offline mutations queue in IndexedDB and sync on reconnect.
+- **Routing:** state-based in `App.tsx`, gated by the authenticated `profile` (role/clinic).
+
+---
+
+## Offline-First & Sync
+
+- **Local storage:** patient registrations and visits created without connectivity are stored in an IndexedDB queue (`lib/offlineDb.ts`, Dexie).
+- **Pending state:** the UI marks records as saved-locally/pending; the Sync Monitor shows the queue and network status.
+- **Synchronization:** `lib/syncService.ts` listens for reconnection (`navigator.onLine`) and pushes queued records to Supabase automatically; visits saved online set `synced_at` immediately.
+- **Not yet built:** multi-device edit **conflict resolution** and a Service Worker for offline **asset** caching / installable PWA.
+
+---
+
+## OCR / Paper Digitization
+
+The Digitize page runs **on-device OCR (Tesseract.js)** on a photo of a paper record and extracts fields (e.g. name, age, diagnosis). Nothing is auto-saved — the worker reviews and confirms every value before it is written. OCR output is assistive and **not guaranteed accurate**.
+
+---
+
+## Emergency Intelligence
+
+- **Emergency Mode:** a crisis console driven by live data (`clinics`, recent `visits`, `patients`, `staff`) — active zones by severity, a 1–5 triage queue, deployed responders, an SOS broadcast modal, and situation-report CSV export.
+- **Outbreak detection:** a **threshold-based symptom-cluster** engine that groups recent visits by syndrome and clinic zone and raises early-warning banners. It surfaces **potential outbreak clusters** for human review — it does **not** medically confirm outbreaks.
+- **Triage queue:** authoritative 1–5 urgency scale with Red/Yellow/Green bands, interactive clinical status workflow, and patient drill-down; sorted by urgency then recency.
+
+Urgency scale (unchanged everywhere): **5 Critical · 4 High · 3 Moderate · 2 Low · 1/null Stable.**
+
+---
+
+## AI Assistant
+
+A **grounded intent engine** (`lib/chatbotService.ts`), not a generative model and not an external LLM. It answers a bounded set of questions from **real Supabase queries** (patient counts, records today, pending sync, high-risk list, outbreak status, clinic activity, patient look-up) or from fixed platform-fact strings (how offline sync/OCR/triage/emergency work).
+
+- **It never fabricates** patient, clinic, outbreak, or medical data — empty/zero/error results are reported honestly.
+- **Access is scoped:** data answers require an authenticated session and are scoped by role/clinic; the public landing page only answers "how it works" questions.
+- **It does not perform clinical decision-making** and is not a substitute for medical advice.
+
+**Optional LLM mode (Groq):** a secure Supabase Edge Function (`supabase/functions/groq-chat`) can answer in natural language via Groq. The API key is stored **server-side** as a Supabase secret — never in the frontend bundle — and the function grounds the model on clinic-scoped Supabase data. If it is not deployed (or the device is offline) the assistant automatically falls back to the built-in grounded engine. To enable:
+```bash
+supabase functions deploy groq-chat
+supabase secrets set GROQ_API_KEY=<your-rotated-groq-key>   # never commit this
+```
+
+---
+
+## Internationalization & Theme
+
+- **Languages:** English (fallback) and Bangla via i18next; the active language is persisted (`localStorage` `hs-lang`) and applies instantly across the app. The Ops Map, AI assistant, landing, navbar, dashboards and shared labels are localized; several deep admin/clinical pages still contain English strings pending migration (tracked in [LIMITATIONS.md](LIMITATIONS.md)).
+- **Theme:** class-based light/dark mode (`ThemeContext`, persisted `hs-theme`) with a pre-paint guard against theme flash, covering the full product UI.
 
 ---
 
 ## Database
 
-The relational schema is built on PostgreSQL and hosted on Supabase.
+PostgreSQL on Supabase (`supabase/migrations/20260831000000_initial_schema.sql`).
 
 ```mermaid
 erDiagram
@@ -139,19 +199,81 @@ erDiagram
     staff ||--o{ sync_log : generates
 ```
 
-- **`clinics`**: Physical clinic locations (id, name, zone).
-- **`staff`**: Application users mapped to Auth UIDs (role, clinic_id).
-- **`patients`**: Beneficiaries registered at a clinic (name, age, sex).
-- **`visits`**: Clinical encounters (vitals, symptoms, urgency_score).
-- **`sync_log`**: Audit trail for offline sync events.
+- **`clinics`** — id, name, zone, address
+- **`staff`** — id, name, role (`worker`/`admin`), clinic_id, auth_user_id, email, is_active
+- **`patients`** — id, name, age, sex, village, clinic_id, created_at
+- **`visits`** — id, patient_id, staff_id, vitals (JSONB), symptoms, symptom_category, diagnosis, urgency_score (1–5), created_at, synced_at
+- **`sync_log`** — id, staff_id, device_id, status, timestamp
+
+Additional migrations add `staff.is_active` and admin-auth setup.
 
 ---
 
 ## Security
 
-- **Authentication**: Users must log in via Supabase Auth to access any dashboard route. Unauthenticated users are redirected.
-- **Role-Based Access**: The app supports distinct routing for `worker` and `admin` roles.
-- **Row Level Security (RLS)**: The architectural goal is for PostgreSQL to enforce data boundaries using RLS (e.g., ensuring a worker in "Zone A" cannot query a patient in "Zone B"). **Important:** In the current repository state, the `initial_schema.sql` migration intentionally disables RLS to facilitate rapid prototyping and MVP testing. This development-only state differs significantly from the intended production architecture. Strict RLS policies must be applied before deploying with real data.
+- **Authentication:** all dashboard routes require a Supabase Auth session; unauthenticated users are redirected.
+- **Role-based access:** distinct `worker` and `admin` routing; admin-only pages are gated by role.
+- **Clinic scoping:** enforced at the **application layer** — mutations use the worker's `clinic_id` from the auth context rather than user input.
+- **Row Level Security (RLS):** ⚠️ **RLS is intentionally DISABLED** in the MVP migration for rapid prototyping. This means clinic-level isolation is currently enforced only in the app, **not** by the database. Before any real deployment, RLS policies (with `SECURITY DEFINER` helpers) must be enabled. Do not treat this build as protecting real patient data.
+- **Secrets:** only the Supabase **anon/publishable** key belongs in the frontend (`VITE_SUPABASE_ANON_KEY`). Never place a service/secret key in a `VITE_`-prefixed variable — Vite inlines it into the client bundle. Never commit `.env`. Use fictional patient data only.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v22+ recommended)
+- `npm` or `pnpm`
+- A Supabase project
+
+### 1. Clone & install
+```bash
+git clone https://github.com/sucksatcse/HealStats.git
+cd HealStats/frontend
+npm install     # or: pnpm install
+```
+
+### 2. Environment variables
+Create `frontend/.env` (or project-root `.env`, per your setup) with **your** Supabase values — use placeholders here, never commit real keys:
+```env
+VITE_SUPABASE_URL="https://<your-project-ref>.supabase.co"
+VITE_SUPABASE_ANON_KEY="<your-anon-or-publishable-key>"
+```
+Only the anon/publishable key belongs in the frontend.
+
+### 3. Database
+In the Supabase SQL Editor, run the migrations in `supabase/migrations/` (start with `20260831000000_initial_schema.sql`) and confirm the five tables exist. Note the RLS caveat in [Security](#security).
+
+### 4. Run
+```bash
+npm run dev
+```
+The app starts at `http://localhost:8443/`.
+
+---
+
+## Demo Accounts
+
+For UI review without provisioning real staff, the login screens accept demo bypass credentials that inject a mock session (no real credentials, no DB writes):
+
+- **Worker:** `worker@clinic.org` / `password123`
+- **Admin:** `admin@healstats.org` / `Admin@123456`
+
+For real accounts, create a Supabase Auth user and a matching `staff` row (`auth_user_id`, `role`, `clinic_id`).
+
+---
+
+## Testing
+
+```bash
+cd frontend
+npx tsc --noEmit     # type check
+npm run build        # production build
+npm run test:e2e     # Playwright E2E suite
+```
+
+- **E2E (Playwright):** covers authentication (sign-in/logout), the landing page (desktop + mobile), English↔Bangla switching with persistence, dark-mode persistence, and the AI chatbot. Tests run against a production `vite preview` server and use the demo-login bypass, so **no real database data is written** and no secrets are needed.
+- **Not yet covered:** database-mutating journeys (registration, visits, offline sync, OCR save, admin CRUD) require an isolated test database; unit tests (Vitest) are pending. See [LIMITATIONS.md](LIMITATIONS.md).
 
 ---
 
@@ -161,227 +283,41 @@ erDiagram
 HealthStats/
 ├── frontend/
 │   ├── src/
-│   │   ├── lib/                  # Supabase client config
-│   │   ├── App.tsx               # Main router
-│   │   ├── AuthContext.tsx       # Session management
-│   │   ├── NewPatientPage.tsx    # Registration workflow
-│   │   └── ...                   # Additional components
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.ts
-├── supabase/
-│   └── migrations/
-│       └── 20260831000000_initial_schema.sql  # Database schema
-├── docs/
-│   └── frontend-uiux.md          # UI and accessibility rules
-├── FEATURES.md                   # Detailed feature specifications
-├── PROGRESS.md                   # Development progress tracker
-├── .env.example                  # Environment variable template
-└── README.md                     # Project documentation
+│   │   ├── lib/                 # supabase client, adminService, chatbotService, offlineDb, syncService, ocrParser, types
+│   │   ├── i18n/               # i18next config + en/bn locales
+│   │   ├── App.tsx             # state-based router
+│   │   ├── AuthContext.tsx / ThemeContext.tsx / LanguageContext.tsx
+│   │   ├── *Page.tsx           # feature pages (dashboard, patients, vitals, map, emergency, …)
+│   │   └── ChatWidget.tsx, ClinicOpsPanel.tsx, EmptyStates.tsx, …
+│   ├── tests/e2e/             # Playwright specs
+│   ├── playwright.config.ts
+│   └── package.json
+├── supabase/migrations/       # SQL schema & migrations
+├── docs/frontend-uiux.md
+├── FEATURES.md · PROGRESS.md · projectdetails.md · LIMITATIONS.md
+└── README.md
 ```
-
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v22 recommended)
-- `npm` or `pnpm`
-- Git
-- A Supabase account and project
-
-### 1. Clone
-```bash
-git clone https://github.com/sucksatcse/HealStats.git
-cd HealStats
-```
-
-### 2. Install
-```bash
-cd frontend
-npm install
-```
-
-### 3. Environment Variables
-1. Copy the example file at the root of the project: `cp .env.example .env`
-2. Open `.env` and fill it with your exact credentials:
-   ```env
-   VITE_SUPABASE_URL="https://ckcovsgmiykenokkvxrk.supabase.co"
-   VITE_SUPABASE_ANON_KEY="sb_publishable_GoqHBw-ekCFPlMHCkDKUdg_U2-IKgIh"
-   ```
-
-*Note: Never commit `.env` to version control. Never expose your Supabase `service_role` key.*
-
-### 4. Supabase Setup
-1. Open the [Supabase Dashboard](https://supabase.com/dashboard) and navigate to the **SQL Editor**.
-2. Open `supabase/migrations/20260831000000_initial_schema.sql` from this repository.
-3. Paste its contents into the SQL Editor and click **Run**.
-4. Verify that the 5 tables (`clinics`, `staff`, `patients`, `visits`, `sync_log`) were created.
-5. **Important Security Note:** The `initial_schema.sql` file currently contains commands that disable Row Level Security (RLS) for local development purposes. For any production deployment, you **must** remove the `DISABLE ROW LEVEL SECURITY` statements and implement strict RLS policies to protect patient data.
-
----
-
-## Authentication
-
-### How it Works
-Upon login, `AuthContext.tsx` retrieves the Supabase `auth.uid()`, queries the `staff` table, and loads the user's `role` and `clinic_id` into global state. This state dictates which routes they can access and automatically injects their `clinic_id` into database mutations.
-
-### Development / Test Account
-Since an in-app Admin UI does not yet exist to create staff, you must create them manually for testing:
-1. Create a user in Supabase **Authentication > Users** and copy their UID.
-2. In the Supabase **SQL Editor**, run:
-   ```sql
-   INSERT INTO public.clinics (id, name, zone) VALUES ('11111111-1111-1111-1111-111111111111', 'Test Clinic', 'Zone A');
-   INSERT INTO public.staff (name, role, clinic_id, auth_user_id, email) VALUES ('Test Worker', 'worker', '11111111-1111-1111-1111-111111111111', 'YOUR_COPIED_UID', 'worker@test.com');
-   ```
-
-*Demo Bypass:* For rapid UI development, entering `worker@clinic.org` / `password123` on the login screen intercepts the auth flow and injects a mock session.
-
----
-
-## Running the Project
-
-From the `frontend/` directory, start the Vite server:
-```bash
-npm run dev
-```
-The application will launch at `http://localhost:8443` (or the port specified in your terminal).
-
----
-
-## Patient Registration
-
-**Patient Registration (Task 4) is fully implemented.** 
-- **Required Fields:** Full Name, Age, Sex, Village.
-- **Validation:** Enforced prior to submission.
-- **Clinic Assignment:** Automatically injects the worker's secure `clinic_id` from the Auth context. The user cannot manipulate this.
-- **Behavior:** Upon clicking submit, a direct `INSERT` is made to the Supabase `patients` table. On success, the user is immediately routed to the new patient's detail view.
-
----
-
-## Offline-First Workflow
-
-### Currently Available
-The UI is scaffolded with clear loading states and desktop/mobile responsiveness.
-
-### In Development / Planned
-The core offline mechanisms—intercepting network drops, storing data in IndexedDB/Dexie.js, queuing records, and running a background synchronization loop via a Service Worker—are actively pending development in Phase 2.
-
----
-
-## Development Workflow
-
-1. Ensure your local branch is up to date: `git pull origin main`
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Run the development server: `npm run dev`
-4. Make your changes in `frontend/src/`.
-5. Test manually in the browser.
-6. Commit using conventional commits.
-7. Push your branch and open a Pull Request.
-
----
-
-## Git Workflow
-
-```bash
-git checkout -b feature/patient-search
-git add .
-git commit -m "feat: add patient search functionality"
-git push origin feature/patient-search
-```
-
-**Never commit:**
-- `.env` files or hardcoded secrets.
-- `node_modules`
-- Build artifacts (`dist/`)
-
----
-
-## Testing
-
-Automated tests are not yet configured. Before submitting a PR, perform the following manual smoke-tests:
-
-- [ ] Login completes successfully.
-- [ ] Correct role-based dashboard loads.
-- [ ] Patient registration inserts a new row into the Supabase database.
-- [ ] Unauthorized administrative access is blocked.
-- [ ] Logout correctly clears the session.
-- [ ] Language and Dark Mode toggles operate cleanly.
-
----
-
-## Troubleshooting
-
-### Supabase connection fails
-- Double-check that your `.env` file is in the root directory and contains the exact `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Restart `npm run dev`.
-
-### Login works but staff profile is missing
-- Ensure that the `auth_user_id` in your PostgreSQL `staff` table exactly matches the UID of the user in Supabase Authentication. 
-
-### RLS permission denied
-- Verify that your user is assigned to a valid `clinic_id`.
-- Ensure you aren't attempting to read records from a different clinic (unless you hold an `admin` role).
-
----
-
-## Security Notes
-- **Use Fictional Data:** Never use real patient names or medical information during development, testing, or exhibitions.
-- **Service Roles:** Keep `.env` out of version control and never expose your Supabase `service_role` key to the frontend.
-- **RLS:** Keep Row Level Security enabled in production to prevent data leakage.
 
 ---
 
 ## Documentation
 
-- **[FEATURES.md](FEATURES.md)**: Detailed product specifications and exact implementation statuses.
-- **[PROGRESS.md](PROGRESS.md)**: Development task tracking and phase completion.
-- **[docs/frontend-uiux.md](docs/frontend-uiux.md)**: Frontend design, UX, accessibility, and implementation guidelines.
+- **[FEATURES.md](FEATURES.md)** — product feature specs and implementation status.
+- **[PROGRESS.md](PROGRESS.md)** — task-by-task progress and notes.
+- **[projectdetails.md](projectdetails.md)** — technical architecture and engineering rules.
+- **[docs/frontend-uiux.md](docs/frontend-uiux.md)** — UI/UX, accessibility, and design conventions.
+- **[LIMITATIONS.md](LIMITATIONS.md)** — honest list of known gaps and follow-ups.
 
 ---
 
-## Current Status
+## Roadmap & Status
 
-### Implemented
-- Database Schema (`clinics`, `staff`, `patients`, `visits`, `sync_log`)
-- Authentication & Protected Routes
-- Language Context (Bangla/English) & Theme Context (Dark Mode)
-- Patient Registration (Live Supabase Mutation)
-
-### In Progress
-- Patient Details / Patient Lists
-- Clinical Visit Forms
-- Admin & Emergency UI Shells
-
-### Planned
-- IndexedDB Offline Storage
-- Background Synchronization
-- Outbreak Detection
-- PWA Configuration
-
----
-
-## Roadmap
-
-- **Phase 0 — Foundation:** React, Vite, Tailwind setup; Supabase Auth & Schema. *(Completed)*
-- **Phase 1 — Patient & Visit Records:** Registration, records, vitals forms. *(In Progress)*
-- **Phase 2 — Intelligence:** Proof-of-concept OCR or AI-Assisted Triage. *(Pending)*
-- **Phase 3 — Administration:** Live admin dashboards and staff management. *(Pending)*
-- **Phase 4 — Emergency Mode:** Disaster alerts and outbreak detection. *(Pending)*
-- **Phase 5 — Testing & Exhibition:** PWA wrapping and demo preparation. *(Pending)*
-
----
-
-## Exhibition Demo
-
-To demonstrate the core value of HealthStats:
-
-1. **Worker Login:** Enter `worker@clinic.org` / `password123` to bypass authentication and inject a test session.
-2. **Accessibility:** Highlight the instant English-to-Bangla translation and Dark Mode toggle.
-3. **Register Patient:** Navigate to "New Patient" and complete the form.
-4. **Verification:** Submit the form and open the live Supabase Table Editor to prove the data transmitted securely to the cloud.
-5. **Emergency Mode:** Open the Emergency Dashboard to showcase the conceptual disaster-response workflow.
-
-*(Note: True offline capability is currently in development. Do not fake offline functionality for the demo.)*
+- **Phase 0 — Foundation:** React/Vite/Tailwind, Supabase schema & auth. ✅
+- **Phase 1 — Patient & Visit Records:** registration, records, detail, vitals. ✅
+- **Phase 2 — Offline Engine:** Dexie storage + background sync. ✅
+- **Phase 3 — Intelligence:** OCR digitization (implemented); AI-assisted triage scoring (deferred/optional).
+- **Phase 4 — Admin & Emergency:** live admin console, Emergency Mode, outbreak detection, triage queue, map. ✅
+- **Phase 5 — Product polish & QA:** i18n, dark mode, motion, states, E2E tests. ✅ (PWA + deployment pending)
 
 ---
 
@@ -393,4 +329,6 @@ To demonstrate the core value of HealthStats:
 
 ---
 
-License: Not yet specified.
+## License
+
+Intended license: **Mozilla Public License 2.0 (MPL-2.0)**, as stated in the app footer. A dedicated `LICENSE` file has not yet been added to the repository.

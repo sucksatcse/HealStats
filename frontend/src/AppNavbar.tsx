@@ -37,6 +37,7 @@ interface AppNavbarProps {
 
   /* app-header props */
   onSidebarOpen?: () => void
+  onProfile?: () => void
   searchValue?: string
   onSearchChange?: (value: string) => void
   searchPlaceholder?: string
@@ -149,6 +150,7 @@ export default function AppNavbar({
   onAdminLogin,
   onLogin,
   onSidebarOpen,
+  onProfile,
   searchValue = "",
   onSearchChange,
   searchPlaceholder = "Search…",
@@ -302,6 +304,30 @@ export default function AppNavbar({
                   {profile.role}
                 </p>
               </div>
+            )}
+            {onProfile && (
+              <button
+                onClick={() => {
+                  setUserMenuOpen(false)
+                  onProfile()
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors flex items-center gap-2"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 10a3 3 0 100-6 3 3 0 000 6zm-6 8a6 6 0 1112 0H4z"
+                  />
+                </svg>
+                My Profile
+              </button>
             )}
             <button
               onClick={() => {

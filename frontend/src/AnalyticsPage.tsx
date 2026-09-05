@@ -144,7 +144,7 @@ function WeeklyLineChart() {
                 y1={y}
                 x2={W - padX}
                 y2={y}
-                stroke="#e2e8f0"
+                className="stroke-slate-200 dark:stroke-slate-700"
                 strokeWidth="1"
                 strokeDasharray="3 4"
               />
@@ -152,7 +152,7 @@ function WeeklyLineChart() {
                 x={padX - 10}
                 y={y + 3.5}
                 textAnchor="end"
-                className="fill-slate-400"
+                className="fill-slate-400 dark:fill-slate-500"
                 fontSize="10.5"
               >
                 {g >= 1000 ? `${g / 1000}k` : g}
@@ -175,7 +175,7 @@ function WeeklyLineChart() {
               x={p.x}
               y={H - padBottom + 18}
               textAnchor="middle"
-              className="fill-slate-500"
+              className="fill-slate-500 dark:fill-slate-400"
               fontSize="10.5"
               fontWeight={hover === i ? 700 : 500}
             >
@@ -197,10 +197,9 @@ function WeeklyLineChart() {
               cx={p.x}
               cy={p.y}
               r={hover === i ? 6 : 4}
-              fill="white"
               stroke={TEAL}
               strokeWidth="2.5"
-              className="transition-all"
+              className="transition-all fill-white dark:fill-slate-900"
             />
             <rect
               x={p.x - innerW / (WEEKLY.length - 1) / 2}
@@ -250,14 +249,14 @@ function DiagnosesBarChart() {
           onMouseLeave={() => setHover(null)}
         >
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-slate-600 truncate">
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
               {d.name}
             </span>
-            <span className="text-xs font-semibold text-slate-500 tabular-nums ml-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tabular-nums ml-2">
               {d.count}
             </span>
           </div>
-          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
@@ -313,9 +312,8 @@ function UrgencyDonut() {
               key={a.level}
               d={a.d}
               fill={URGENCY_COLORS[a.level]}
-              stroke="white"
               strokeWidth="1"
-              className="transition-all cursor-pointer"
+              className="transition-all cursor-pointer stroke-white dark:stroke-slate-900"
               style={{
                 opacity: hover === null || hover === i ? 1 : 0.35,
                 transformOrigin: "90px 90px",
@@ -329,7 +327,7 @@ function UrgencyDonut() {
             x="90"
             y="84"
             textAnchor="middle"
-            className="fill-teal-950 font-display"
+            className="fill-teal-950 dark:fill-white font-display"
             fontSize="26"
           >
             {hover !== null ? arcs[hover].count : total}
@@ -338,7 +336,7 @@ function UrgencyDonut() {
             x="90"
             y="102"
             textAnchor="middle"
-            className="fill-slate-400"
+            className="fill-slate-400 dark:fill-slate-500"
             fontSize="10"
             fontWeight={600}
           >
@@ -354,15 +352,15 @@ function UrgencyDonut() {
             onMouseEnter={() => setHover(i)}
             onMouseLeave={() => setHover(null)}
             className={`w-full flex items-center gap-2.5 text-left rounded-lg px-2 py-1 transition-colors ${
-              hover === i ? "bg-slate-50" : ""
+              hover === i ? "bg-slate-50 dark:bg-slate-800" : ""
             }`}
           >
             <span
               className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
               style={{ background: URGENCY_COLORS[a.level] }}
             />
-            <span className="text-sm text-slate-600 flex-1">{a.level}</span>
-            <span className="text-sm font-semibold text-slate-700 tabular-nums">
+            <span className="text-sm text-slate-600 dark:text-slate-300 flex-1">{a.level}</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
               {Math.round(a.frac * 100)}%
             </span>
           </button>
@@ -396,7 +394,7 @@ function VillageHeatmap() {
             {DAYS.map((d) => (
               <div
                 key={d}
-                className="text-[10px] font-semibold text-slate-400 text-center uppercase tracking-wide"
+                className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 text-center uppercase tracking-wide"
               >
                 {d}
               </div>
@@ -408,7 +406,7 @@ function VillageHeatmap() {
               key={village}
               className="grid grid-cols-[92px_repeat(7,1fr)] gap-1.5 mb-1.5"
             >
-              <div className="text-xs font-medium text-slate-600 flex items-center truncate pr-1">
+              <div className="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center truncate pr-1">
                 {village}
               </div>
               {DAYS.map((_, di) => {
@@ -420,7 +418,7 @@ function VillageHeatmap() {
                     onMouseEnter={() => setHover({ v: vi, d: di })}
                     onMouseLeave={() => setHover(null)}
                     className={`relative aspect-square rounded-md flex items-center justify-center text-[10px] font-semibold cursor-pointer transition-all ${textColor(val)} ${
-                      active ? "ring-2 ring-teal-600 ring-offset-1 z-10" : ""
+                      active ? "ring-2 ring-teal-600 ring-offset-1 dark:ring-offset-slate-900 z-10" : ""
                     }`}
                     style={{ background: shade(val) }}
                   >
@@ -442,7 +440,7 @@ function VillageHeatmap() {
       </div>
       {/* Scale legend */}
       <div className="flex items-center gap-2 mt-4 justify-end">
-        <span className="text-[10px] text-slate-400 font-medium">Low</span>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Low</span>
         <div className="flex gap-0.5">
           {[
             "#f0fdfa",
@@ -459,7 +457,7 @@ function VillageHeatmap() {
             />
           ))}
         </div>
-        <span className="text-[10px] text-slate-400 font-medium">High</span>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">High</span>
       </div>
     </div>
   )
@@ -481,15 +479,15 @@ function ChartCard({
 }) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-slate-100 p-5 lg:p-6 ${
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 lg:p-6 ${
         span ? "lg:col-span-2" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-3 mb-5">
         <div>
-          <h2 className="font-semibold text-slate-800 text-base">{title}</h2>
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">{title}</h2>
           {subtitle && (
-            <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{subtitle}</p>
           )}
         </div>
         {badge}
@@ -509,23 +507,23 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+          <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
             Analytics &amp; Reports
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Kayes Health District · trends across all clinics
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
             {(["8w", "6m", "1y"] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
                   range === r
-                    ? "bg-white text-teal-700 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                 }`}
               >
                 {r === "8w" ? "8 weeks" : r === "6m" ? "6 months" : "1 year"}
@@ -547,22 +545,22 @@ export default function AnalyticsPage() {
           subtitle={`${totalVisits.toLocaleString()} total over 8 weeks · aggregated across 12 clinics`}
           span
           badge={
-            <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full">
               {Icon.trendUp}
               +18.2% vs prior
             </span>
           }
         >
           <WeeklyLineChart />
-          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             <span
               className="w-3 h-0.5 rounded-full"
               style={{ background: TEAL }}
             />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               Weekly patient visits
             </span>
-            <span className="text-xs text-slate-400 ml-auto">
+            <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
               Peak: Wk 34, 1,856 visits
             </span>
           </div>
@@ -580,7 +578,7 @@ export default function AnalyticsPage() {
         <ChartCard
           title="Urgency-Level Distribution"
           subtitle="AI triage outcomes across all patients"
-          badge={<span className="text-slate-300">{Icon.info}</span>}
+          badge={<span className="text-slate-300 dark:text-slate-600">{Icon.info}</span>}
         >
           <UrgencyDonut />
         </ChartCard>
@@ -591,7 +589,7 @@ export default function AnalyticsPage() {
           subtitle="Relative clinic load — village × day of week"
           span
           badge={
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               This week
             </span>
           }

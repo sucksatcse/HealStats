@@ -94,7 +94,7 @@ function Label({
   required?: boolean
 }) {
   return (
-    <label className="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-1.5">
+    <label className="block text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
       {children}
       {required && <span className="text-red-400 ml-0.5">*</span>}
     </label>
@@ -124,13 +124,13 @@ function FieldInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
+        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
           error
-            ? "border-red-300 bg-red-50 focus:ring-red-200"
-            : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white"
+            ? "border-red-300 bg-red-50 focus:ring-red-200 dark:border-red-900/50 dark:bg-red-950/40"
+            : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900"
         }`}
       />
-      {error && <p className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
+      {error && <p role="alert" className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
     </div>
   )
 }
@@ -155,11 +155,11 @@ function FieldSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all appearance-none bg-no-repeat cursor-pointer ${
-          value ? "text-slate-800" : "text-slate-400"
+          value ? "text-slate-800 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"
         } ${
           error
-            ? "border-red-300 bg-red-50 focus:ring-red-200"
-            : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white"
+            ? "border-red-300 bg-red-50 focus:ring-red-200 dark:border-red-900/50 dark:bg-red-950/40"
+            : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900"
         }`}
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")`,
@@ -169,7 +169,7 @@ function FieldSelect({
       >
         {children}
       </select>
-      {error && <p className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
+      {error && <p role="alert" className="text-[11px] text-red-500 mt-1 ml-1">{error}</p>}
     </div>
   )
 }
@@ -188,13 +188,13 @@ function Step1({
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3 h-3 text-teal-600"
+              className="w-3 h-3 text-teal-600 dark:text-teal-400"
             >
               <path
                 strokeLinecap="round"
@@ -203,7 +203,7 @@ function Step1({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">Identity</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Identity</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div className="sm:col-span-2">
@@ -273,16 +273,16 @@ function Step1({
           </div>
         </div>
       </div>
-      <hr className="border-slate-100" />
+      <hr className="border-slate-100 dark:border-slate-800" />
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3 h-3 text-teal-600"
+              className="w-3 h-3 text-teal-600 dark:text-teal-400"
             >
               <path
                 strokeLinecap="round"
@@ -291,8 +291,8 @@ function Step1({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">Contact</h3>
-          <span className="text-[10px] text-slate-400 font-medium">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Contact</h3>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
             (Phone optional)
           </span>
         </div>
@@ -300,7 +300,7 @@ function Step1({
           <div>
             <Label>Phone Number</Label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">
                 +223
               </span>
               <input
@@ -308,17 +308,17 @@ function Step1({
                 placeholder="XX XX XX XX"
                 value={data.phone}
                 onChange={(e) => update("phone", e.target.value)}
-                className="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+                className="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
               />
             </div>
           </div>
           <div />
         </div>
       </div>
-      <hr className="border-slate-100" />
+      <hr className="border-slate-100 dark:border-slate-800" />
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-red-50 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
@@ -333,10 +333,10 @@ function Step1({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Emergency Contact
           </h3>
-          <span className="text-[10px] text-red-400 font-semibold uppercase tracking-wide bg-red-50 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] text-red-400 font-semibold uppercase tracking-wide bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
             Required
           </span>
         </div>
@@ -372,7 +372,7 @@ function Step1({
           <div>
             <Label required>Emergency Phone</Label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">
                 +223
               </span>
               <input
@@ -380,10 +380,10 @@ function Step1({
                 placeholder="XX XX XX XX"
                 value={data.emergencyPhone}
                 onChange={(e) => update("emergencyPhone", e.target.value)}
-                className={`w-full pl-12 pr-3.5 py-2.5 rounded-xl border text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                className={`w-full pl-12 pr-3.5 py-2.5 rounded-xl border text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
                   errors.emergencyPhone
-                    ? "border-red-300 bg-red-50 focus:ring-red-200"
-                    : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white"
+                    ? "border-red-300 bg-red-50 focus:ring-red-200 dark:border-red-900/50 dark:bg-red-950/40"
+                    : "border-slate-200 bg-slate-50 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900"
                 }`}
               />
             </div>
@@ -420,13 +420,13 @@ function Step2({
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3 h-3 text-teal-600"
+              className="w-3 h-3 text-teal-600 dark:text-teal-400"
             >
               <path
                 strokeLinecap="round"
@@ -435,7 +435,7 @@ function Step2({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Clinical Basics
           </h3>
         </div>
@@ -475,10 +475,10 @@ function Step2({
           </div>
         </div>
       </div>
-      <hr className="border-slate-100" />
+      <hr className="border-slate-100 dark:border-slate-800" />
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
@@ -493,7 +493,7 @@ function Step2({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Known Allergies
           </h3>
         </div>
@@ -504,20 +504,20 @@ function Step2({
             value={data.allergies}
             onChange={(e) => update("allergies", e.target.value)}
             rows={2}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all resize-none"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all resize-none"
           />
         </div>
       </div>
-      <hr className="border-slate-100" />
+      <hr className="border-slate-100 dark:border-slate-800" />
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-teal-100 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3 h-3 text-teal-600"
+              className="w-3 h-3 text-teal-600 dark:text-teal-400"
             >
               <path
                 strokeLinecap="round"
@@ -526,7 +526,7 @@ function Step2({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Current Medications
           </h3>
         </div>
@@ -537,14 +537,14 @@ function Step2({
             value={data.medications}
             onChange={(e) => update("medications", e.target.value)}
             rows={2}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all resize-none"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all resize-none"
           />
         </div>
       </div>
-      <hr className="border-slate-100" />
+      <hr className="border-slate-100 dark:border-slate-800" />
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-violet-50 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
@@ -559,10 +559,10 @@ function Step2({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Chronic Conditions
           </h3>
-          <span className="text-[10px] text-slate-400 font-medium">
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
             (select all that apply)
           </span>
         </div>
@@ -577,7 +577,7 @@ function Step2({
                 className={`text-xs font-medium px-3 py-1.5 rounded-xl border transition-all ${
                   selected
                     ? "bg-teal-600 text-white border-teal-600 shadow-sm"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-teal-300 hover:text-teal-700"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-teal-700 dark:hover:text-teal-300"
                 }`}
               >
                 {selected && <span className="mr-1">✓</span>}
@@ -587,16 +587,16 @@ function Step2({
           })}
         </div>
       </div>
-      <hr className="border-slate-100" />
+      <hr className="border-slate-100 dark:border-slate-800" />
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-md bg-emerald-50 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3 h-3 text-emerald-600"
+              className="w-3 h-3 text-emerald-600 dark:text-emerald-400"
             >
               <path
                 strokeLinecap="round"
@@ -606,7 +606,7 @@ function Step2({
               <circle cx="8" cy="8" r="6.5" />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Vaccination Notes
           </h3>
         </div>
@@ -617,7 +617,7 @@ function Step2({
             value={data.vaccinations}
             onChange={(e) => update("vaccinations", e.target.value)}
             rows={2}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all resize-none"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all resize-none"
           />
         </div>
       </div>
@@ -636,12 +636,12 @@ function Step3({ data }: { data: FormData }) {
     span?: boolean
   }) => (
     <div className={span ? "sm:col-span-2" : ""}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">
         {label}
       </p>
-      <p className="text-sm font-medium text-slate-800">
+      <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
         {value || (
-          <span className="text-slate-400 italic font-normal">
+          <span className="text-slate-400 dark:text-slate-500 italic font-normal">
             Not provided
           </span>
         )}
@@ -652,7 +652,7 @@ function Step3({ data }: { data: FormData }) {
   return (
     <div className="space-y-6">
       {/* ID preview */}
-      <div className="flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4">
+      <div className="flex items-center gap-4 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-2xl px-5 py-4">
         <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center text-white font-display text-lg flex-shrink-0">
           {data.fullName
             ? data.fullName
@@ -663,21 +663,21 @@ function Step3({ data }: { data: FormData }) {
             : "??"}
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-0.5">
+          <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-0.5">
             Patient Assignment
           </p>
-          <p className="font-display text-xl text-teal-950">
+          <p className="font-display text-xl text-teal-950 dark:text-white">
             To be auto-generated
           </p>
-          <p className="text-xs text-teal-600 mt-0.5">
+          <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
             Will be registered to your assigned clinic
           </p>
         </div>
       </div>
 
       {/* Section: Personal */}
-      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
-        <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-4">
+      <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-4">
           Personal Information
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
@@ -702,8 +702,8 @@ function Step3({ data }: { data: FormData }) {
       </div>
 
       {/* Section: Emergency */}
-      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
-        <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-4">
+      <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-4">
           Emergency Contact
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
@@ -717,8 +717,8 @@ function Step3({ data }: { data: FormData }) {
       </div>
 
       {/* Section: Medical */}
-      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
-        <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-4">
+      <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
+        <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-4">
           Medical History
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
@@ -741,14 +741,14 @@ function Step3({ data }: { data: FormData }) {
         </div>
         {data.conditions.length > 0 && (
           <div className="mt-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
               Chronic Conditions
             </p>
             <div className="flex flex-wrap gap-1.5">
               {data.conditions.map((c) => (
                 <span
                   key={c}
-                  className="text-xs bg-teal-100 text-teal-800 font-medium px-2.5 py-1 rounded-xl"
+                  className="text-xs bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 font-medium px-2.5 py-1 rounded-xl"
                 >
                   {c}
                 </span>
@@ -759,7 +759,7 @@ function Step3({ data }: { data: FormData }) {
       </div>
 
       {/* Consent note */}
-      <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+      <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-3">
         <svg
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -771,7 +771,7 @@ function Step3({ data }: { data: FormData }) {
             clipRule="evenodd"
           />
         </svg>
-        <p className="text-xs text-amber-800 leading-relaxed">
+        <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
           By submitting, you confirm that verbal consent has been obtained from
           the patient or their guardian and that all information is accurate to
           the best of your knowledge.
@@ -937,13 +937,13 @@ export default function NewPatientPage({
           </svg>
         </div>
         <div>
-          <h2 className="font-display text-3xl text-teal-950 mb-2">
+          <h2 className="font-display text-3xl text-teal-950 dark:text-white mb-2">
             Patient Registered!
           </h2>
-          <p className="text-slate-500 text-sm max-w-xs mx-auto leading-relaxed">
-            <strong className="text-teal-700">{data.fullName}</strong> has been
+          <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mx-auto leading-relaxed">
+            <strong className="text-teal-700 dark:text-teal-300">{data.fullName}</strong> has been
             added to your clinic records with ID{" "}
-            <span className="font-mono bg-teal-50 px-1 rounded">
+            <span className="font-mono bg-teal-50 dark:bg-teal-950/40 px-1 rounded">
               {createdPatientId}
             </span>
             . {savedOffline ? "Saved offline. Will sync automatically when connected." : "Record synced successfully."}
@@ -964,7 +964,7 @@ export default function NewPatientPage({
           </button>
           <button
             onClick={() => onSuccess?.(createdPatientId)}
-            className="text-sm font-semibold text-teal-700 border border-teal-200 hover:border-teal-400 px-5 py-2.5 rounded-xl transition-colors"
+            className="text-sm font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:border-teal-400 dark:hover:border-teal-700 px-5 py-2.5 rounded-xl transition-colors"
           >
             View Patient Record
           </button>
@@ -977,16 +977,16 @@ export default function NewPatientPage({
     <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-10">
       {/* ── Page header ── */}
       <div>
-        <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+        <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
           New Patient Registration
         </h1>
-        <p className="text-sm text-slate-400 mt-0.5">
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
           Complete all required fields. Record is saved locally until synced.
         </p>
       </div>
 
       {/* ── Step indicator ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-5">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-5">
         <div className="flex items-start gap-3">
           {STEPS.map(({ n, title, sub }) => {
             const done = n < step
@@ -1000,7 +1000,7 @@ export default function NewPatientPage({
                         ? "bg-teal-600 text-white"
                         : active
                           ? "bg-teal-600 text-white ring-4 ring-teal-100"
-                          : "bg-slate-100 text-slate-400"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
                     }`}
                   >
                     {done ? (
@@ -1025,7 +1025,7 @@ export default function NewPatientPage({
                     <div className="flex-1 h-px mx-1">
                       <div
                         className={`h-full transition-all duration-500 ${
-                          done ? "bg-teal-500" : "bg-slate-200"
+                          done ? "bg-teal-500" : "bg-slate-200 dark:bg-slate-700"
                         }`}
                       />
                     </div>
@@ -1035,15 +1035,15 @@ export default function NewPatientPage({
                   <p
                     className={`text-xs font-semibold ${
                       active
-                        ? "text-teal-700"
+                        ? "text-teal-700 dark:text-teal-300"
                         : done
-                          ? "text-teal-600"
-                          : "text-slate-400"
+                          ? "text-teal-600 dark:text-teal-400"
+                          : "text-slate-400 dark:text-slate-500"
                     }`}
                   >
                     {title}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5 hidden sm:block">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 hidden sm:block">
                     {sub}
                   </p>
                 </div>
@@ -1051,24 +1051,24 @@ export default function NewPatientPage({
             )
           })}
         </div>
-        <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
+        <div className="mt-4 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
           <div
             className="h-full bg-teal-500 rounded-full transition-all duration-500"
             style={{ width: `${((step - 1) / 2) * 100}%` }}
           />
         </div>
-        <p className="text-[11px] text-slate-400 mt-1.5 text-right">
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 text-right">
           Step {step} of 3
         </p>
       </div>
 
       {/* ── Form card ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-7">
-        <div className="mb-6 pb-5 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800 text-base">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-7">
+        <div className="mb-6 pb-5 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">
             {STEPS[step - 1].title}
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">{STEPS[step - 1].sub}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{STEPS[step - 1].sub}</p>
         </div>
 
         {step === 1 && (
@@ -1083,7 +1083,7 @@ export default function NewPatientPage({
 
         {/* ── Submit Error Banner ── */}
         {submitError && (
-          <div className="mt-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <div className="mt-6 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl px-4 py-3">
             <svg
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -1095,16 +1095,16 @@ export default function NewPatientPage({
                 clipRule="evenodd"
               />
             </svg>
-            <p className="text-sm font-medium text-red-800">{submitError}</p>
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">{submitError}</p>
           </div>
         )}
 
         {/* ── Navigation ── */}
-        <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <button
             onClick={handleBack}
             disabled={step === 1 || isSubmitting}
-            className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-teal-700 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <svg
               viewBox="0 0 16 16"
@@ -1123,7 +1123,7 @@ export default function NewPatientPage({
           </button>
 
           {step < 3 && (
-            <p className="text-[11px] text-slate-400 hidden sm:block">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">
               <span className="text-red-400">*</span> Required fields
             </p>
           )}

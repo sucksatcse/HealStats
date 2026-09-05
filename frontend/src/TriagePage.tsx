@@ -190,56 +190,56 @@ const PALETTE: Record<UrgencyLevel, {
   dotPulse: string
 }> = {
   Low: {
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    text: "text-emerald-900",
-    muted: "text-emerald-700",
+    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-200 dark:border-emerald-900/50",
+    text: "text-emerald-900 dark:text-emerald-300",
+    muted: "text-emerald-700 dark:text-emerald-400",
     badgeBg: "bg-emerald-600",
     badgeText: "text-white",
     ring: "#10b981",
     glow: "shadow-emerald-200",
     factorWarn: "",
     factorCrit: "",
-    factorOk: "bg-emerald-50 border-emerald-100",
-    btnEscalate: "border-emerald-300 text-emerald-700 hover:bg-emerald-100",
+    factorOk: "bg-emerald-50 border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-900/50",
+    btnEscalate: "border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/40",
     dotPulse: "bg-emerald-400",
   },
   Medium: {
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    text: "text-amber-900",
-    muted: "text-amber-700",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    border: "border-amber-200 dark:border-amber-900/50",
+    text: "text-amber-900 dark:text-amber-300",
+    muted: "text-amber-700 dark:text-amber-400",
     badgeBg: "bg-amber-500",
     badgeText: "text-white",
     ring: "#f59e0b",
     glow: "shadow-amber-200",
-    factorWarn: "bg-amber-50 border-amber-200",
+    factorWarn: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50",
     factorCrit: "",
-    factorOk: "bg-white border-slate-100",
-    btnEscalate: "border-amber-300 text-amber-700 hover:bg-amber-100",
+    factorOk: "bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-800",
+    btnEscalate: "border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/40",
     dotPulse: "bg-amber-400",
   },
   High: {
-    bg: "bg-red-50",
-    border: "border-red-200",
-    text: "text-red-900",
-    muted: "text-red-700",
+    bg: "bg-red-50 dark:bg-red-950/40",
+    border: "border-red-200 dark:border-red-900/50",
+    text: "text-red-900 dark:text-red-300",
+    muted: "text-red-700 dark:text-red-400",
     badgeBg: "bg-red-600",
     badgeText: "text-white",
     ring: "#ef4444",
     glow: "shadow-red-200",
-    factorWarn: "bg-amber-50 border-amber-200",
-    factorCrit: "bg-red-50 border-red-200",
-    factorOk: "bg-white border-slate-100",
+    factorWarn: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50",
+    factorCrit: "bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900/50",
+    factorOk: "bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-800",
     btnEscalate: "border-red-400 bg-red-600 text-white hover:bg-red-700",
     dotPulse: "bg-red-500",
   },
 }
 
 const FACTOR_STATUS_ICON = {
-  ok: { icon: "✓", cls: "text-emerald-600 bg-emerald-50" },
-  warn: { icon: "!", cls: "text-amber-600 bg-amber-50" },
-  critical: { icon: "✕", cls: "text-red-600 bg-red-50" },
+  ok: { icon: "✓", cls: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40" },
+  warn: { icon: "!", cls: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/40" },
+  critical: { icon: "✕", cls: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/40" },
 }
 
 // ── Confidence ring (SVG) ──────────────────────────────────────────────────────
@@ -386,16 +386,16 @@ export default function TriagePage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+          <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
             AI Triage Result
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
             Generated for{" "}
-            <span className="font-semibold text-teal-700">Mariama Kouyaté</span>
-            <span className="text-slate-300 mx-1.5">·</span>
-            <span className="font-mono text-xs text-slate-400">PT-00412</span>
-            <span className="text-slate-300 mx-1.5">·</span>
-            <span className="text-xs text-slate-400">
+            <span className="font-semibold text-teal-700 dark:text-teal-300">Mariama Kouyaté</span>
+            <span className="text-slate-300 dark:text-slate-600 mx-1.5">·</span>
+            <span className="font-mono text-xs text-slate-400 dark:text-slate-500">PT-00412</span>
+            <span className="text-slate-300 dark:text-slate-600 mx-1.5">·</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               {new Date().toLocaleTimeString("en-GB", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -410,15 +410,15 @@ export default function TriagePage() {
           </p>
         </div>
         {/* Demo switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
           {(["Low", "Medium", "High"] as UrgencyLevel[]).map((l) => (
             <button
               key={l}
               onClick={() => switchLevel(l)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
                 level === l
-                  ? "bg-white shadow-sm text-slate-800"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white shadow-sm text-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
               {l}
@@ -483,7 +483,7 @@ export default function TriagePage() {
 
             {/* Next review */}
             <div
-              className={`inline-flex items-center gap-2 mt-4 px-3 py-1.5 rounded-xl border text-xs font-semibold ${p.border} ${p.muted} bg-white/60`}
+              className={`inline-flex items-center gap-2 mt-4 px-3 py-1.5 rounded-xl border text-xs font-semibold ${p.border} ${p.muted} bg-white/60 dark:bg-slate-900/60`}
             >
               <svg
                 viewBox="0 0 14 14"
@@ -502,15 +502,15 @@ export default function TriagePage() {
       </div>
 
       {/* ── Factor breakdown ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-6">
-        <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
-          <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-6">
+        <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3.5 h-3.5 text-slate-500"
+              className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400"
             >
               <path
                 strokeLinecap="round"
@@ -519,10 +519,10 @@ export default function TriagePage() {
               />
             </svg>
           </div>
-          <h2 className="text-sm font-semibold text-slate-700">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Why this score was given
           </h2>
-          <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
             {s.factors.filter((f) => f.status !== "ok").length > 0
               ? `${s.factors.filter((f) => f.status !== "ok").length} flag${
                   s.factors.filter((f) => f.status !== "ok").length > 1
@@ -538,10 +538,10 @@ export default function TriagePage() {
             const ic = FACTOR_STATUS_ICON[status]
             const rowCls =
               status === "critical"
-                ? p.factorCrit || "bg-red-50 border-red-200"
+                ? p.factorCrit || "bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900/50"
                 : status === "warn"
-                  ? p.factorWarn || "bg-amber-50 border-amber-200"
-                  : p.factorOk || "bg-slate-50 border-slate-100"
+                  ? p.factorWarn || "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50"
+                  : p.factorOk || "bg-slate-50 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800"
             return (
               <div
                 key={label}
@@ -554,22 +554,22 @@ export default function TriagePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       {label}
                     </p>
                     <p
                       className={`text-sm font-semibold ${
                         status === "critical"
-                          ? "text-red-700"
+                          ? "text-red-700 dark:text-red-400"
                           : status === "warn"
-                            ? "text-amber-700"
-                            : "text-slate-800"
+                            ? "text-amber-700 dark:text-amber-400"
+                            : "text-slate-800 dark:text-slate-100"
                       }`}
                     >
                       {value}
                     </p>
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">
                     {detail}
                   </p>
                 </div>
@@ -580,15 +580,15 @@ export default function TriagePage() {
       </div>
 
       {/* ── Clinical recommendation ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 rounded-lg bg-teal-100 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
             <svg
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.8}
-              className="w-3.5 h-3.5 text-teal-600"
+              className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400"
             >
               <path
                 strokeLinecap="round"
@@ -598,11 +598,11 @@ export default function TriagePage() {
               <rect x="1.5" y="1.5" width="13" height="13" rx="2" />
             </svg>
           </div>
-          <h2 className="text-sm font-semibold text-slate-700">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Clinical Recommendation
           </h2>
         </div>
-        <p className="text-sm text-slate-600 leading-relaxed mb-5">
+        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
           {s.recommendation}
         </p>
 
@@ -610,10 +610,10 @@ export default function TriagePage() {
         <div
           className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
             level === "High"
-              ? "bg-red-50 border-red-200"
+              ? "bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900/50"
               : level === "Medium"
-                ? "bg-amber-50 border-amber-200"
-                : "bg-slate-50 border-slate-200"
+                ? "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50"
+                : "bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-800"
           }`}
         >
           <svg
@@ -621,10 +621,10 @@ export default function TriagePage() {
             fill="currentColor"
             className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
               level === "High"
-                ? "text-red-500"
+                ? "text-red-500 dark:text-red-400"
                 : level === "Medium"
-                  ? "text-amber-500"
-                  : "text-slate-400"
+                  ? "text-amber-500 dark:text-amber-400"
+                  : "text-slate-400 dark:text-slate-500"
             }`}
           >
             <path
@@ -636,10 +636,10 @@ export default function TriagePage() {
           <p
             className={`text-xs leading-relaxed ${
               level === "High"
-                ? "text-red-800"
+                ? "text-red-800 dark:text-red-300"
                 : level === "Medium"
-                  ? "text-amber-800"
-                  : "text-slate-600"
+                  ? "text-amber-800 dark:text-amber-300"
+                  : "text-slate-600 dark:text-slate-300"
             }`}
           >
             <strong>Escalation note: </strong>
@@ -660,10 +660,10 @@ export default function TriagePage() {
           { label: "Processed", value: "On-device · No internet used" },
         ].map(({ label, value }) => (
           <div key={label} className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
               {label}:
             </span>
-            <span className="text-[11px] text-slate-500 font-medium">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
               {value}
             </span>
           </div>
@@ -671,9 +671,9 @@ export default function TriagePage() {
       </div>
 
       {/* ── Action buttons ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-5 flex flex-col sm:flex-row items-center gap-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-5 flex flex-col sm:flex-row items-center gap-3">
         {/* Disclaimer */}
-        <p className="text-[11px] text-slate-400 leading-relaxed flex-1">
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed flex-1">
           This AI assessment is a clinical decision-support tool only. It does
           not replace the judgement of a trained health worker or clinician.
         </p>
@@ -685,8 +685,8 @@ export default function TriagePage() {
             disabled={saved}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border transition-all ${
               saved
-                ? "bg-emerald-50 border-emerald-200 text-emerald-700 cursor-default"
-                : "bg-white border-slate-300 text-slate-700 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900/50 dark:text-emerald-400 cursor-default"
+                : "bg-white border-slate-300 text-slate-700 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-700 dark:hover:text-teal-300 dark:hover:bg-teal-950/40"
             }`}
           >
             {saved ? (
@@ -732,12 +732,12 @@ export default function TriagePage() {
             disabled={escalated}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border transition-all ${
               escalated
-                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-default"
+                ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-800 dark:text-slate-500 cursor-default"
                 : level === "High"
                   ? "bg-red-600 border-red-600 text-white hover:bg-red-700 shadow-md shadow-red-600/25 hover:-translate-y-0.5"
                   : level === "Medium"
                     ? "bg-amber-500 border-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/25 hover:-translate-y-0.5"
-                    : "border-slate-300 text-slate-700 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50"
+                    : "border-slate-300 text-slate-700 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-700 dark:hover:text-teal-300 dark:hover:bg-teal-950/40"
             }`}
           >
             {escalated ? (

@@ -599,7 +599,7 @@ export default function PatientRecordsPage({
 
       {/* Error State with Retry */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 p-6 rounded-2xl border border-red-100 dark:border-red-900/40 flex flex-col items-center justify-center py-12 text-center transition-colors">
+        <div role="alert" className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 p-6 rounded-2xl border border-red-100 dark:border-red-900/40 flex flex-col items-center justify-center py-12 text-center transition-colors">
           <svg
             viewBox="0 0 24 24"
             fill="none"

@@ -14,9 +14,10 @@ interface AuthContextType {
   user: User | null
   profile: AuthProfile | null
   loading: boolean
+  profileResolved: boolean
   signOut: () => Promise<void>
-  loginDemoUser: () => void
-  loginDemoAdmin: () => void
+  loginDemoUser: () => Promise<void>
+  loginDemoAdmin: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,9 +25,10 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  profileResolved: false,
   signOut: async () => {},
-  loginDemoUser: () => {},
-  loginDemoAdmin: () => {},
+  loginDemoUser: async () => {},
+  loginDemoAdmin: async () => {},
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -36,6 +38,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<AuthProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  // True once a staff-profile lookup has finished (found or confirmed absent).
+  const [profileResolved, setProfileResolved] = useState(false)
 
   // Demo bypass flag
   const [isDemo, setIsDemo] = useState(false)
@@ -46,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let mounted = true
 
     async function fetchProfile(userId: string) {
+      if (mounted) setProfileResolved(false)
       try {
         const { data, error } = await supabase
           .from("staff")
@@ -61,6 +66,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
+        if (mounted) setProfile(null)
+      } finally {
+        if (mounted) setProfileResolved(true)
       }
     }
 
@@ -74,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (mounted) setLoading(false)
           })
         } else {
+          setProfileResolved(true)
           setLoading(false)
         }
       }
@@ -90,6 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchProfile(currentSession.user.id)
       } else {
         setProfile(null)
+        setProfileResolved(true)
       }
     })
 
@@ -99,7 +109,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isDemo])
 
-  const loginDemoAdmin = () => {
+  const loginDemoAdmin = async () => {
+    // Preferred path: a real Supabase session so auth.uid() exists (required
+    // once RLS is enabled). Falls back to the client-side bypass below only
+    // while the seeded demo user does not exist / RLS is still disabled.
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: "admin@healstats.org",
+      password: "Admin@123456",
+    })
+    if (!error && data.session) return // onAuthStateChange loads the profile
+
     setIsDemo(true)
     setSession({} as Session)
     setUser({ id: "admin-bypass-id" } as User)
@@ -109,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       role: "admin",
       clinic_id: null, // null = access to all clinics (system-level admin)
     })
+    setProfileResolved(true)
     setLoading(false)
 
     // Attempt to hydrate from DB if the seeded admin staff row exists
@@ -122,7 +142,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       })
   }
 
-  const loginDemoUser = () => {
+  const loginDemoUser = async () => {
+    // Preferred path: a real Supabase session (RLS-ready). Falls back to the
+    // client-side bypass below only while the seeded demo user does not exist.
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: "worker@clinic.org",
+      password: "password123",
+    })
+    if (!error && data.session) return // onAuthStateChange loads the profile
+
     setIsDemo(true)
     setSession({} as Session)
     setUser({ id: "demo-user-id" } as User)
@@ -132,6 +160,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       role: "worker",
       clinic_id: "11111111-1111-1111-1111-111111111111",
     })
+    setProfileResolved(true)
     setLoading(false)
 
     // Writes (e.g. visits.staff_id) need a real staff.id; hydrate from the seeded demo row if present.
@@ -152,6 +181,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(null)
       setUser(null)
       setProfile(null)
+      setProfileResolved(true)
     } else {
       await supabase.auth.signOut()
     }
@@ -159,7 +189,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, signOut, loginDemoUser, loginDemoAdmin }}
+      value={{ session, user, profile, loading, profileResolved, signOut, loginDemoUser, loginDemoAdmin }}
     >
       {children}
     </AuthContext.Provider>

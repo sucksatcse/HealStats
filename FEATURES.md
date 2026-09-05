@@ -25,17 +25,23 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Patient Registration | Patient Records | Implemented | Critical |
 | Patient Search | Patient Records | Implemented | High |
 | Visit Records & Forms | Patient Records | Implemented | High |
-| Offline Storage | Offline-First | Not Started | Critical |
-| Automatic Sync | Offline-First | Not Started | Critical |
-| OCR | Intelligence | Not Started | Optional |
-| AI-Assisted Triage | Intelligence | Not Started | Optional |
+| Offline Storage | Offline-First | Implemented | Critical |
+| Automatic Sync | Offline-First | Implemented | Critical |
+| OCR | Intelligence | Implemented | Optional |
+| AI-Assisted Triage | Intelligence | Deferred (Optional) | Optional |
+| AI Assistant (Chatbot) | Intelligence | Implemented | Medium |
 | Admin Dashboard | Administration | Implemented | Medium |
 | Staff Management | Administration | Implemented | Medium |
-| Emergency Mode | Disaster Response | In Progress | High |
-| Outbreak Detection | Disaster Response | Planned | Medium |
-| Bangla/English | Accessibility | Implemented | Critical |
+| Emergency Mode | Disaster Response | Implemented | High |
+| Outbreak Detection | Disaster Response | Implemented | Medium |
+| Emergency Triage Queue | Disaster Response | Implemented | High |
+| Clinic Coverage Map | Administration | Implemented | Medium |
+| Bangla/English | Accessibility | Implemented (partial page coverage) | Critical |
 | Dark Mode | UI/UX | Implemented | High |
-| PWA | Platform | Not Started | High |
+| Motion & Animation | UI/UX | Implemented | Medium |
+| Error/Empty/Loading States | UI/UX | Implemented | High |
+| End-to-End Testing | Quality | Implemented (safe flows) | Medium |
+| PWA | Platform | Implemented | High |
 
 ---
 
@@ -57,19 +63,50 @@ HealthStats is designed around:
 ### Login
 - **Who can log in**: Pre-approved community health workers and clinic administrators.
 - **Authentication Provider**: Supabase Auth (Email/Password).
-- **Session Handling**: Managed globally via `AuthContext.tsx`. Unauthenticated users are redirected to `/login`.
-- **Demo Mode**: For development and exhibition testing, entering `worker@clinic.org` with `password123` bypasses Supabase Auth and injects a mock session.
+- **Session Handling**: Managed globally via `AuthContext.tsx`. On load the session is
+  restored from Supabase and the staff profile (role + `clinic_id`) is resolved before
+  any protected view renders (a loading spinner is shown meanwhile). Unauthenticated
+  users on a protected page are redirected to the appropriate login screen. On sign-out
+  the session is cleared and protected content becomes inaccessible.
+- **Edge cases handled (Task 25)**: session restored across browser refresh; expired/
+  invalid sessions fall back to login; a valid session with **no linked `staff` profile**
+  shows an explicit "Account not linked" screen with a Sign out action (instead of a
+  dead-end); no flash of protected/admin content before authorization resolves; sign-in
+  network/unexpected failures surface a plain-language error.
+- **Demo Mode**: For development and exhibition testing, `worker@clinic.org` /
+  `password123` (and the `admin@healstats.org` admin creds) first attempt a **real**
+  Supabase session (so authorization works under RLS); if that demo user does not exist,
+  it falls back to an injected mock session. The mock fallback is valid only while RLS is
+  disabled.
+
+### Self-Registration (Sign Up)
+- **Status**: Implemented (`SignUpPage.tsx`).
+- **Flow**: Creates a Supabase Auth user (`supabase.auth.signUp`) and a linked `staff` row (name, email, `auth_user_id`, optional `clinic_id` chosen from the live clinics list). Handles email-confirmation vs. immediate-session cases and reports duplicate-email/validation errors inline.
+- **Security**: The role is **always `worker`** — admin accounts are never created via public signup. Reachable from the landing page → Log in → "Create an account".
+- **Limitation**: Because MVP RLS is disabled, the client can insert the `staff` row directly. Under production RLS this step should move to an Edge Function or a DB trigger (`on auth.users` insert). See `LIMITATIONS.md`.
 
 ### Role-Based Access
 - **Worker**: Authorized to log visits and register patients only for their assigned clinic.
 - **Admin**: Authorized to view aggregated analytics across all clinics.
+- **Enforcement**: Route access is gated in `App.tsx` by session + resolved `role` (not
+  merely by hiding navigation links) — a worker cannot land on the admin dashboard, and
+  unauthenticated users cannot render protected pages. The admin login screen additionally
+  rejects a valid non-admin account (signs out with a clear message) rather than routing it
+  onward. Note this is **client-side** enforcement; true server-side isolation requires
+  enabling RLS (see below).
 
 ### Clinic-Level Access
 Users are mapped to physical clinics via the `staff` table (`clinic_id`). The application strictly relies on this injected ID for mutations (like patient registration) rather than trusting user-provided inputs.
 
+### Profiles (Task 26)
+- **Staff "My Profile"** (`StaffProfilePage.tsx`): a read-only profile for the signed-in user, sourced entirely from the authenticated staff record — full name, role label (Health Worker / Administrator), assigned clinic (resolved from Supabase; "All clinics" for system-level admins), short staff ID, and best-effort account email. Reached from the shared user-menu avatar → **My Profile** in both the worker and admin dashboards. Read-only by design — name/role/clinic changes are directed to an administrator (no fake save).
+- **Patient profile** (`PatientDetailPage.tsx`): the existing patient detail experience serves as the patient profile — header (name, short ID, urgency badge on the 1–5 scale, symptom category, clinic, registered/total-visits/last-visit), plus Vitals History, Visit History and Diagnoses tabs, all from live Supabase data with honest loading/empty/error states. Only accessible to authenticated staff through the existing Patient Records / triage / outbreak navigation (no public patient route). No invented medical fields.
+
+
 ### Row Level Security (RLS)
 The intended production security architecture uses Supabase RLS to protect all tables (`clinics`, `staff`, `patients`, `visits`, `sync_log`) and Security Definer functions to enforce that workers only interact with their own clinic's data. 
 *(Note: In the current MVP development state, RLS is intentionally disabled in `initial_schema.sql` to facilitate rapid prototyping. Therefore, RLS does not currently protect the deployed MVP).*
+A prepared migration `20260905000000_enable_rls.sql` defines the clinic-scoped policies and the demo logins now establish real sessions, but RLS is **not yet applied** — it requires seeding the demo Auth users and end-to-end testing first. See `LIMITATIONS.md`.
 
 ---
 
@@ -110,22 +147,22 @@ The intended production security architecture uses Supabase RLS to protect all t
 
 ## 5. Offline-First Capability
 
-*This is the core architectural pillar of HealthStats, currently pending implementation.*
+*This is the core architectural pillar of HealthStats. Local queueing and background sync are **implemented** (Tasks 7–8); multi-device conflict resolution and a Service Worker for offline asset caching remain planned.*
 
 ### Online Mode
-When internet is available, data mutations will bypass the local queue and save directly to Supabase.
+When internet is available, data mutations save directly to Supabase (visits set `synced_at` immediately).
 
 ### Offline Mode
-When the network drops, mutations will be gracefully intercepted without blocking the user.
+When the network drops, patient registrations and visits are gracefully queued locally without blocking the user.
 
 ### Local Storage
-Planned to utilize browser-based storage (IndexedDB via Dexie.js) to store pending records locally on the device.
+Implemented using browser-based storage (IndexedDB via Dexie.js, `lib/offlineDb.ts`) to store pending records on the device.
 
 ### Sync Queue & Status
-Records created offline will sit in a local queue. The application will monitor `navigator.onLine` and display sync badges in the navigation sidebar (e.g., "14 records queued").
+Records created offline sit in a local queue. `lib/syncService.ts` monitors `navigator.onLine` and pushes the queue on reconnect; the Sync Monitor page shows queued records and network state.
 
 ### Conflict Resolution
-Conflict resolution logic (handling edits to the same record by two offline devices) is planned and is not currently implemented.
+Conflict resolution logic (handling edits to the same record by two offline devices) is planned and is **not** currently implemented.
 
 ---
 
@@ -139,16 +176,24 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ## 7. OCR / Paper Record Digitization
 
-- **Status**: Planned (UI static shell exists: `DigitizePage.tsx`)
-- **Purpose**: To quickly digitize legacy paper-based healthcare records using optical character recognition (OCR), easing the transition to the EHR system.
+- **Status**: Implemented (Task 9A; `DigitizePage.tsx` using on-device Tesseract.js)
+- **Purpose**: To quickly digitize legacy paper-based healthcare records using optical character recognition (OCR), easing the transition to the EHR system. Extracted fields are presented for worker review/edit before saving; OCR output is assistive and not guaranteed accurate.
 
 ---
 
 ## 8. AI-Assisted Triage
-
-- **Status**: Optional / Future
 - **Purpose**: An algorithm (rule-based or lightweight ML) to automatically calculate an `urgency_score` based on entered vitals and symptoms, flagging patients who require immediate attention.
 *(Note: This feature is currently deferred as an optional future enhancement. The project's primary intelligence path focuses on OCR digitization.)*
+
+---
+
+## 8.5 AI Assistant (Chatbot)
+
+- **Status**: Implemented
+- **Purpose**: A conversational assistant (`ChatWidget.tsx`) that helps authorized users retrieve real information from HealthStats and explains how the platform works.
+- **Capabilities**: An intent engine (`chatbotService.ts`) maps free-text questions to **real Supabase queries** reused from `adminService` — total patients, records today, pending syncs, high-risk patients (count and named list), outbreak/cluster status, clinic activity, and patient look-up by name. Data-backed answers require an authenticated session and are scoped by the user's role/clinic (workers see only their clinic). On the public landing page the assistant answers only platform how-to questions (offline sync, OCR, triage, emergency mode, language, dark mode). Every figure comes from a live query; empty results, zero counts and database errors are reported honestly.
+- **Grounding & limitations**: The assistant **never fabricates** patient, clinic, outbreak or medical data — it has no generative model and no external API; it only relays real query results or fixed platform facts. It is not a medical-advice tool (disclaimer shown). Because MVP RLS is disabled, data access is gated at the application layer via the auth context. Language is English-only.
+- **Optional LLM mode (Groq)**: A secure Supabase Edge Function (`supabase/functions/groq-chat`) can power natural-language answers via Groq. The API key is stored **server-side** as a Supabase secret (never in the frontend bundle); the function fetches grounded, clinic-scoped Supabase context and instructs the model to answer only from it. If the function is not deployed or the device is offline, the assistant **falls back to the local grounded intent engine**, so behaviour never breaks. Enabling it sends clinic-scoped context to Groq (a third party) — a deployment/privacy choice for the operator.
 
 ---
 
@@ -184,11 +229,22 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ---
 
-## 13. Language Support
+## 12.5 Clinic Operations Map
 
 - **Status**: Implemented
-- **Supported**: Bangla and English
-- **Mechanism**: A global `LanguageContext` allows instant UI translation. Core navigation and clinical forms are actively translated.
+- **Purpose**: A geographic overview of the clinic network so administrators can see where care is being delivered and which clinics have gone quiet.
+- **Capabilities**: Wired to live Supabase data via `adminService.fetchClinicMapData()`. For every clinic it aggregates real patient counts, visit activity (last 24 hours / last 7 days), pending-sync backlog (`synced_at IS NULL`), recent high-risk cases (urgency ≥ 4) and the last visit time. Clinics are plotted on a hand-drawn Bangladesh SVG map by matching their `zone`/`name` against a district coordinate lookup (presentation-layer geocoding — the schema has **no** latitude/longitude and none was added). Each clinic is coloured by an honest activity status derived from visit recency: **Active** (visit in 24h), **Recent** (visit in 7d) or **Quiet** (no visits in 7d). Includes searchable/filterable sidebar, a quiet-clinic spotlight, hover tooltips, a per-clinic detail bar, loading/empty/error states and manual refresh.
+- **Limitations**: No real per-clinic device/network status exists in the schema, so the map deliberately shows clinical *activity* rather than connectivity. Clinics whose `zone`/`name` does not match a known district are listed as "not on map" instead of being given a fabricated location. English-only, consistent with the other admin views.
+
+---
+
+## 13. Language Support
+
+- **Status**: Implemented (infrastructure complete; UI coverage in progress)
+- **Supported**: Bangla and English (English is the fallback)
+- **Mechanism**: Application-wide internationalization built on `i18next` + `react-i18next` (Task 18). One centralized config (`src/i18n/index.ts`) with namespaced English/Bangla resources (`src/i18n/locales/en.ts`, `bn.ts`: `common`, `navigation`, `urgency`, `map`, `chatbot`, `errors`). i18next is the **single source of truth** for the active language; the existing `LanguageContext`/`useLang()` now delegates to it, so the language switcher, all `useTranslation()` components and all legacy inline-label components stay in sync. The selected language is persisted in `localStorage` (`hs-lang`) via the browser language detector and survives refresh and navigation.
+- **Translated via keys (`t()`)**: the Ops Map (Task 16, `ClinicOpsPanel`) and the AI Assistant (Task 17, `ChatWidget` + `chatbotService`, including grounded replies), plus shared `common`/`urgency` labels. The landing page, navbar (switcher, links, CTAs) and dashboards remain localized through the shared language state.
+- **Coverage / limitations**: Many deep worker/admin/clinical pages are **not yet translated** and still render English strings (e.g. `StaffPage`, `PatientRecordsPage`, `PatientDetailPage`, `VitalsPage`, `NewPatientPage`, `DigitizePage`, `SyncMonitorPage`, `FlaggedPatientsPage`, `EmergencyDashboard`, `EmergencyTriagePage`, `OutbreakDetectionPage`, `LoginPage`/`AdminLoginPage`, `SettingsPage`). The i18n architecture is in place for these to be migrated incrementally. Canonical database values (symptom categories, roles, urgency numbers) are **never** translated — only their display labels are.
 
 ---
 
@@ -196,15 +252,21 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 - **Status**: Implemented
 - **Features**: Desktop-first responsive layout, accessible typography, loading skeleton states, and explicit empty states.
-- **Dark Mode**: Fully integrated via `ThemeContext` for low-light environments and battery saving.
+- **Motion (Task 20)**: A small, consistent CSS motion language in `index.css` — entrance utilities (`animate-fade-in`, `animate-fade-up`, `animate-slide-up`, `animate-scale-in`) with `stagger-1…8` delay helpers, plus existing success/skeleton/sync animations. Timings are short (micro-interactions ~120–200ms, transitions ~150–300ms, entrances ~300–450ms) with ease-out curves. Applied tastefully: staggered landing-page hero reveal, calm dashboard card fade-in, and subtle chat message entrance; data-dense tables stay calm. A mandatory global `prefers-reduced-motion: reduce` guard near-instantly disables animations/transitions for users who request it. No marketing-style continuous/parallax motion; teal brand, urgency colors and Emergency Mode hierarchy are unchanged.
+- **States (Task 21)**: Screens communicate loading, empty, error and recovery clearly. Content-heavy views use skeleton loaders; lists/tables have distinct "no data" vs "no results (clear filters)" empty states; failed loads show a plain-language message plus a Retry/Refresh action; Supabase calls fail gracefully (per-card `Promise.allSettled` on the admin dashboard) without exposing raw errors. Offline-first status is surfaced on the login, dashboard and sync screens ("saved locally, will sync when back online") rather than as a server error. The shared reusable state library (`EmptyStates.tsx`: `OfflineState`, `NoPatientsState`, `SyncFailedState`) is dark/light aware, accessible (`role="status"`/`"alert"`, `aria-live`, `aria-hidden` on decorative art) and takes real counts via props instead of placeholders. The chatbot message log and map states announce via ARIA live regions. Outbreak "no clusters detected" and triage "no patients requiring triage" use careful, non-diagnostic wording.
+- **Dark Mode**: Fully integrated via `ThemeContext` for low-light environments and battery saving. Class-based (`.dark` on `<html>`), persisted in `localStorage` (`hs-theme`), with a flash-of-incorrect-theme guard applied in `index.html` before first paint (Task 19). A centralized Ashen Nebula token system (`--an-*` custom properties in `index.css`) plus consistent `dark:` utility variants now cover the full application — landing/auth, worker dashboard and clinical forms (patient registration, vitals, patient detail, OCR/digitize, sync), admin views (records, staff, flagged, analytics, settings, resources, alerts), map, emergency/triage, and the AI chatbot. Clinical urgency/status colors and Emergency Mode visual hierarchy are preserved with dark-tuned tints (no neon), and light mode is unchanged.
 *(UI components strictly adhere to `docs/frontend-uiux.md`).*
 
 ---
 
 ## 15. Progressive Web App (PWA)
 
-- **Status**: Planned
-- **Capabilities**: Missing `manifest.json` and service worker caching required for true PWA installation and offline asset serving.
+- **Status**: Implemented (basic)
+- **Capabilities**: `frontend/public/manifest.webmanifest` + `icon.svg` are linked
+  from `index.html`, and a network-first service worker (`frontend/public/sw.js`,
+  registered in production only) provides an offline app-shell cache fallback
+  without risking stale online content. Advanced precaching of hashed assets and
+  richer offline strategies remain future work.
 
 ---
 
@@ -253,26 +315,28 @@ flowchart LR
 - React, Vite, Tailwind setup
 - Supabase schema & authentication scaffolding
 
-### Phase 1 — Patient & Visit Records (In Progress)
-- Patient registration (Completed)
-- Patient lists and retrieval
-- Visit forms
+### Phase 1 — Patient & Visit Records (Completed)
+- Patient registration
+- Patient lists and retrieval, patient detail
+- Visit / vitals forms
 
-### Phase 2 — Offline Engine (Pending)
-- IndexedDB storage integration
-- Background sync queue
+### Phase 2 — Offline Engine (Completed)
+- IndexedDB storage integration (Dexie)
+- Background sync queue (conflict resolution + Service Worker pending)
 
-### Phase 3 — Intelligence (Pending)
-- OCR for digitizing paper healthcare records (Proof of Concept)
+### Phase 3 — Intelligence (Completed / Partial)
+- OCR for digitizing paper healthcare records (implemented, Tesseract.js)
+- Grounded AI Assistant (implemented); AI-assisted triage scoring deferred
 
-### Phase 4 — Emergency & Admin (Pending)
+### Phase 4 — Emergency & Admin (Completed)
 - Admin dashboards connected to live data
-- Emergency mode alert feeds
-- Symptom clustering (Outbreak Detection)
+- Emergency Mode, Emergency Triage Queue, Clinic Operations Map
+- Symptom clustering (Outbreak Detection); external weather/flood alert feeds pending
 
-### Phase 5 — Testing & Demo (Pending)
-- PWA manifests
-- Exhibition preparations
+### Phase 5 — Testing & Demo (In Progress)
+- End-to-end tests with Playwright (auth, landing desktop/mobile, i18n, dark mode, chatbot) — implemented (Task 22); run against a production preview server using the demo-login bypass (no real DB writes). DB-mutating flow coverage and unit tests pending an isolated test DB.
+- PWA manifests (pending)
+- Exhibition preparations (pending)
 
 ---
 
@@ -282,7 +346,8 @@ flowchart LR
 |---|---|---|
 | Database Schema | Implemented | `clinics`, `staff`, `patients`, `visits`, `sync_log` created |
 | RLS | Planned / Production Required | RLS is the intended production security architecture but is disabled in the current MVP development schema |
-| Authentication | Implemented | UI + Context + Demo Bypass + Admin role routing |
+| Authentication | Implemented | UI + Context + Demo Bypass + Admin role routing; hardened session restore, missing-profile handling, route-level role enforcement, no-flash guards (Task 25) |
+| Profiles (Patient & Staff) | Implemented | Task 26; read-only staff My Profile from auth record + existing patient detail profile; user-menu navigation; no schema change |
 | Patient Registration | Implemented | Task 4 completed; successfully saves to Supabase |
 | Patient Details/List | Implemented | Tasks 5/6; list and detail read from Supabase |
 | Admin Patient Records | Implemented | Task 11; multi-clinic joins, name/ID/UUID search, 1–5 urgency filter, skeleton loader, dual empty states, CSV export, detail navigation |
@@ -292,9 +357,11 @@ flowchart LR
 | Emergency Mode | Implemented | Task 14; live database metrics (`clinics`, `visits` 48h, `patients`, `staff`), zone aggregation, 1–5 triage queue with detail drill-down, SOS broadcast modal, situation report CSV export |
 | Outbreak Detection | Implemented | Task 14.5; threshold-based symptom cluster engine (`adminService.fetchOutbreakAnalysis()`), syndrome classification, early-warning banner, WHO checklist, patient drill-down, CSV export (`OutbreakDetectionPage.tsx`) |
 | Emergency Triage Queue | Implemented | Task 15; authoritative 1–5 urgency scale, Red/Yellow/Green triage bands, interactive clinical status workflows (Start Care / In Treatment / Discharge / Revert), multi-attribute search, band filtering, CSV export, patient detail drill-down (`EmergencyTriagePage.tsx`) |
+| Clinic Operations Map | Implemented | Task 16; live `clinics`/`patients`/`visits` aggregation via `fetchClinicMapData()`, district-name geocoding onto the Bangladesh SVG map, honest Active/Recent/Quiet activity status, patient/visit/pending-sync/high-risk metrics per clinic, quiet-clinic spotlight, filters, detail bar, loading/empty/error states (`ClinicOpsPanel.tsx`) |
+| AI Assistant (Chatbot) | Implemented | Task 17; grounded intent engine (`chatbotService.ts`) reusing `adminService` queries for patient counts, records today, pending sync, high-risk list, outbreak status, clinic activity and patient look-up; auth/role scoped; platform how-to when signed out; never fabricates data (`ChatWidget.tsx`) |
 | Offline Storage | Implemented | Task 7; Dexie.js offlineDb with pendingRecords queue |
 | Background Sync | Implemented | Task 8; SyncService automatic sync on reconnection + SyncMonitorPage |
-| PWA | Not Started | Manifest pending |
+| PWA | Implemented | Manifest + network-first service worker (basic) |
 | OCR | Implemented | Task 9A; Tesseract.js client-side OCR on DigitizePage |
 
 ---
@@ -316,7 +383,7 @@ Currently, the strongest demoable features are:
 ## 22. Known Limitations
 
 - **Emergency Mode:** External weather/flood sensor feeds remain planned (internal database metrics, zones, triage, and broadcast are fully implemented).
-- **Worker Home Dashboard:** Recent patients list and quick stats on the worker home screen are still placeholder figures.
+- **Worker Home Dashboard:** Quick stats (Patients Today, Total Patients, Pending Sync, High-Risk) and the recently-visited list are wired to live Supabase data (Task 24); the header shows the real (shortened) staff ID and an honest last-synced value (— until a sync occurs in-session) — no fabricated placeholders.
 - **Translation:** Some deep UI elements lack complete Bangla translation strings.
 
 ---
