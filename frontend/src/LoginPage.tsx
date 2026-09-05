@@ -57,7 +57,9 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex flex-col">
+    <>
+      <div className="an-atmosphere" aria-hidden="true" />
+      <div className="min-h-screen flex flex-col" style={{background: 'var(--an-bg)', position: 'relative', zIndex: 0}}>
       {/* ─── Offline/Online badge ─── */}
       <div className="fixed top-4 right-4 z-50">
         <div
@@ -124,7 +126,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
           </div>
 
           {/* Card */}
-          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8">
+          <div className="rounded-3xl p-8" style={{background: 'var(--an-glass-bg)', backdropFilter: 'blur(24px)', border: '1px solid var(--an-border)', boxShadow: 'var(--an-glass-shadow-lg)'}}>
             <h2 className="text-lg font-semibold text-teal-950 mb-1">
               Sign in to your account
             </h2>
@@ -402,5 +404,6 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
         </div>
       </div>
     </div>
+    </>
   )
 }

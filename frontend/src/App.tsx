@@ -310,7 +310,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--an-bg)'}}>
         <svg
           className="animate-spin w-8 h-8 text-teal-600"
           viewBox="0 0 24 24"
@@ -374,8 +374,10 @@ export default function App() {
   /* ── Landing page ── */
   return (
     <>
+      {/* ── Ashen Nebula atmospheric background — fixed behind all content ── */}
+      <div className="an-atmosphere" aria-hidden="true" />
       <div
-        className={`min-h-full bg-white dark:bg-slate-900 text-[#0f2724] dark:text-slate-100 transition-colors duration-200 ${
+        className={`min-h-full text-[--an-text-primary] transition-colors duration-200 ${
           lang === "bn" ? "lang-bn" : ""
         }`}
       >
@@ -387,7 +389,7 @@ export default function App() {
         />
 
         {/* ─── Hero ─── */}
-        <section className="relative overflow-hidden bg-white dark:bg-slate-900">
+        <section className="relative overflow-hidden" style={{background: 'transparent'}}>
           <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-[1fr_1fr] gap-0 min-h-[calc(100vh-64px)]">
             {/* Left: copy */}
             <div className="flex flex-col justify-center py-16 lg:py-24 lg:pr-16 z-10">
@@ -419,7 +421,7 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-4">
                 <a
                   href="#get-started"
-                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
                 >
                   {t.hero.ctaPrimary}
                   <svg
@@ -436,14 +438,14 @@ export default function App() {
                 </a>
                 <button
                   onClick={() => setPage("login")}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-100 border border-teal-200 dark:border-teal-700 hover:border-teal-400 dark:hover:border-teal-500 px-6 py-3.5 rounded-xl transition-all"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-100 border border-teal-200 dark:border-teal-700 hover:border-teal-400 dark:hover:border-teal-500 px-6 py-3.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
                 >
                   {t.hero.ctaSecondary}
                 </button>
               </div>
 
               {/* Trust signals */}
-              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100 dark:border-teal-800">
+              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60">
                 {[
                   {
                     icon: (
@@ -472,7 +474,7 @@ export default function App() {
                     <svg
                       viewBox="0 0 16 16"
                       fill="currentColor"
-                      className="w-4 h-4 text-teal-500"
+                      className="w-4 h-4 text-teal-600 dark:text-teal-400"
                     >
                       {s.icon}
                     </svg>
@@ -484,16 +486,16 @@ export default function App() {
 
             {/* Right: image panel */}
             <div className="relative hidden lg:block">
-              <div className="absolute inset-0 bg-teal-600" />
+              <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #115e59 100%)'}} />
               <img
                 src="https://images.unsplash.com/photo-1621353880071-4752fa42cbc7?w=900&h=1000&fit=crop&auto=format"
                 alt="Healthcare worker consulting with a patient at a rural clinic"
-                className="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-60"
+                className="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-55"
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-700/80 via-teal-600/60 to-teal-800/90" />
+              <div className="absolute inset-0" style={{background: 'linear-gradient(to br, rgba(15,118,110,0.80) 0%, rgba(13,148,136,0.55) 50%, rgba(17,94,89,0.92) 100%)'}} />
 
               {/* Floating offline card */}
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5">
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5 border border-white/20 dark:border-slate-700/60">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="w-9 h-9 rounded-lg bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center flex-shrink-0">
                     <svg
@@ -529,7 +531,7 @@ export default function App() {
               </div>
 
               {/* Top-right label */}
-              <div className="absolute top-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white">
+              <div className="absolute top-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white shadow-lg">
                 <p className="text-xs font-semibold uppercase tracking-widest text-teal-100 mb-1">
                   {t.hero.activeToday}
                 </p>
@@ -546,17 +548,18 @@ export default function App() {
 
         {/* ─── Stats strip ─── */}
         <section
-          className="bg-teal-900 dark:bg-slate-800 py-14"
-          id="how-it-works"
+          className="py-14 border-y border-teal-800/40 shadow-inner"
+          id="stats"
+          style={{background: 'linear-gradient(135deg, #0a2e2b 0%, #0f766e 50%, #115e59 100%)'}}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-10">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-teal-700 dark:lg:divide-slate-700">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-teal-700/60">
               {t.stats.map(({ value, label }) => (
                 <div key={label} className="text-center lg:px-8">
-                  <p className="font-display text-4xl lg:text-5xl text-white mb-1">
+                  <p className="font-display text-4xl lg:text-5xl text-white mb-1.5 tracking-tight">
                     {value}
                   </p>
-                  <p className="text-sm text-teal-300 dark:text-slate-400 font-medium">
+                  <p className="text-sm text-teal-200 font-medium">
                     {label}
                   </p>
                 </div>
@@ -566,7 +569,7 @@ export default function App() {
         </section>
 
         {/* ─── Features ─── */}
-        <section className="py-24 bg-teal-50 dark:bg-slate-950" id="features">
+        <section className="py-24" id="features" style={{background: 'transparent'}}>
           <div className="max-w-7xl mx-auto px-6 lg:px-10">
             <div className="max-w-2xl mb-16">
               <p className="text-xs font-bold tracking-[0.15em] uppercase text-teal-600 dark:text-teal-400 mb-3">
@@ -584,7 +587,8 @@ export default function App() {
               {t.features.cards.map(({ title, desc }, i) => (
                 <div
                   key={title}
-                  className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-teal-100 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-lg hover:shadow-teal-100 dark:hover:shadow-teal-900/20 transition-all group"
+                  className="an-card-glass rounded-2xl p-8 hover:shadow-lg transition-all group cursor-default"
+                  style={{borderColor: 'var(--an-border)', background: 'var(--an-glass-bg)', backdropFilter: 'blur(20px)'}}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-teal-50 dark:bg-teal-900/40 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/60 flex items-center justify-center text-teal-600 dark:text-teal-400 mb-6 transition-colors">
                     {FEATURE_ICONS[i]}
@@ -603,13 +607,14 @@ export default function App() {
 
         {/* ─── How it works ─── */}
         <section
-          className="py-24 bg-white dark:bg-slate-900"
+          className="py-24"
           id="how-it-works-detail"
+          style={{background: 'transparent'}}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-2 gap-16 items-center">
             {/* Visual */}
             <div className="relative">
-              <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-teal-100 dark:bg-teal-900">
+              <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-teal-100 dark:bg-teal-900 shadow-xl border border-teal-900/10 dark:border-teal-700/30">
                 <img
                   src="https://images.unsplash.com/photo-1680759291617-2923935d803a?w=800&h=600&fit=crop&auto=format"
                   alt="Healthcare team in a community clinic"
@@ -617,7 +622,7 @@ export default function App() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-teal-900/50 to-transparent" />
               </div>
-              <div className="absolute -bottom-6 -right-6 bg-teal-600 rounded-2xl p-5 shadow-xl text-white w-48">
+              <div className="absolute -bottom-6 -right-6 bg-teal-600 rounded-2xl p-5 shadow-xl text-white w-48 border border-teal-500/30">
                 <p className="text-xs font-semibold text-teal-200 uppercase tracking-wider mb-1">
                   {t.howItWorks.syncTime}
                 </p>
@@ -641,7 +646,7 @@ export default function App() {
               <div className="space-y-6">
                 {t.howItWorks.steps.map(({ step, title, body }) => (
                   <div key={step} className="flex gap-5">
-                    <span className="font-display text-2xl text-teal-200 dark:text-teal-700 font-bold w-8 flex-shrink-0 mt-0.5">
+                    <span className="font-display text-2xl text-teal-600 dark:text-teal-400 font-bold w-8 flex-shrink-0 mt-0.5">
                       {step}
                     </span>
                     <div>
@@ -664,8 +669,9 @@ export default function App() {
 
         {/* ─── Testimonials ─── */}
         <section
-          className="py-24 bg-teal-50 dark:bg-slate-950"
+          className="py-24"
           id="testimonials"
+          style={{background: 'transparent'}}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-10">
             <div className="text-center max-w-xl mx-auto mb-14">
@@ -680,12 +686,13 @@ export default function App() {
               {t.testimonials.items.map(({ quote, author, role }) => (
                 <div
                   key={author}
-                  className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-teal-100 dark:border-slate-800"
+                  className="rounded-2xl p-8"
+                  style={{background: 'var(--an-glass-bg)', backdropFilter: 'blur(20px)', border: '1px solid var(--an-border)', boxShadow: 'var(--an-glass-shadow)'}}
                 >
                   <svg
                     viewBox="0 0 32 24"
                     fill="none"
-                    className="w-8 h-6 text-teal-200 dark:text-teal-800 mb-5"
+                    className="w-8 h-6 text-teal-300 dark:text-teal-700 mb-5"
                   >
                     <path
                       d="M0 24V14.4C0 6.4 4.8 1.6 14.4 0L16 3.2C11.2 4.267 8.533 6.933 8 11.2H14.4V24H0zm17.6 0V14.4C17.6 6.4 22.4 1.6 32 0l1.6 3.2c-4.8 1.067-7.467 3.733-8 8H32V24H17.6z"
@@ -696,7 +703,7 @@ export default function App() {
                     {quote}
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white text-sm font-bold">
+                    <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
                       {author
                         .split(" ")
                         .map((n) => n[0])
@@ -707,7 +714,7 @@ export default function App() {
                       <p className="text-sm font-semibold text-teal-950 dark:text-white">
                         {author}
                       </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {role}
                       </p>
                     </div>
@@ -720,8 +727,9 @@ export default function App() {
 
         {/* ─── CTA ─── */}
         <section
-          className="bg-teal-700 dark:bg-teal-900 py-24"
+          className="py-24 border-y border-teal-800/40 shadow-inner"
           id="get-started"
+          style={{background: 'linear-gradient(135deg, #0a2e2b 0%, #0f766e 50%, #115e59 100%)'}}
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center justify-between gap-10">
             <div className="lg:max-w-xl">
@@ -732,16 +740,16 @@ export default function App() {
                 {t.cta.body}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-4 flex-shrink-0 w-full sm:w-auto">
               <a
                 href="#signup"
-                className="bg-white text-teal-700 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center"
+                className="bg-white text-teal-800 hover:text-teal-900 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
               >
                 {t.cta.primary}
               </a>
               <a
                 href="#demo"
-                className="border border-teal-400 dark:border-teal-600 text-white font-semibold text-sm px-8 py-4 rounded-xl hover:bg-teal-600 dark:hover:bg-teal-800 transition-colors w-full sm:w-auto text-center"
+                className="border border-teal-400 hover:border-white text-white font-semibold text-sm px-8 py-4 rounded-xl hover:bg-teal-700/60 transition-colors w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
               >
                 {t.cta.secondary}
               </a>
@@ -750,11 +758,11 @@ export default function App() {
         </section>
 
         {/* ─── Footer ─── */}
-        <footer className="bg-teal-950 text-teal-300 py-12">
+        <footer style={{background: '#0a1f1d', borderTop: '1px solid rgba(148,163,184,0.12)'}} className="text-slate-300 py-14">
           <div className="max-w-7xl mx-auto px-6 lg:px-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-7 h-7 rounded-md bg-teal-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-md bg-teal-600 flex items-center justify-center shadow-sm">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -773,7 +781,7 @@ export default function App() {
                   HealthStats
                 </span>
               </div>
-              <p className="text-sm text-teal-400 leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
                 Offline-first electronic health records for the world{"'"}s
                 underserved clinics.
               </p>
@@ -786,7 +794,6 @@ export default function App() {
                   "Features",
                   "Security",
                   "Integrations",
-                  "Pricing",
                   "Changelog",
                 ],
               },
@@ -815,7 +822,7 @@ export default function App() {
               },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <p className="text-xs font-bold uppercase tracking-widest text-teal-500 mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-teal-400 mb-4">
                   {heading}
                 </p>
                 <ul className="space-y-2.5">
@@ -848,14 +855,14 @@ export default function App() {
                                           : "system-states",
                             )
                           }
-                          className="text-sm text-teal-400 hover:text-white transition-colors text-left"
+                          className="text-sm text-teal-300 hover:text-white transition-colors text-left focus-visible:outline-none focus-visible:underline cursor-pointer"
                         >
                           {link}
                         </button>
                       ) : (
                         <a
-                          href="#"
-                          className="text-sm text-teal-400 hover:text-white transition-colors"
+                          href={link === "Features" ? "#features" : "#"}
+                          className="text-sm text-teal-300 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
                         >
                           {link}
                         </a>
@@ -867,11 +874,11 @@ export default function App() {
             ))}
           </div>
 
-          <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-10 pt-6 border-t border-teal-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-teal-600">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-12 pt-6 border-t border-teal-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400">
+            <p className="text-xs text-slate-400">
               © 2026 HealthStats. Open-source under the MPL 2.0 license.
             </p>
-            <p className="text-xs text-teal-600">
+            <p className="text-xs text-slate-400">
               Built for healthcare workers who keep going, no matter what.
             </p>
           </div>

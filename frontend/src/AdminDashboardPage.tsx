@@ -526,7 +526,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-[Work_Sans,system-ui,sans-serif] transition-colors">
+    <div className="flex h-screen overflow-hidden font-[Work_Sans,system-ui,sans-serif] transition-colors" style={{background: 'var(--an-bg)'}}>
 
       {/* Mobile overlay */}
       {sidebarOpen && (

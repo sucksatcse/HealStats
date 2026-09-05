@@ -230,7 +230,7 @@ export default function ClinicsMapSection() {
       }
 
   return (
-    <section id="coverage" className="py-24 bg-white dark:bg-slate-900">
+    <section id="coverage" className="py-24" style={{ background: "transparent" }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         {/* Heading */}
         <div className="max-w-2xl mb-12">

@@ -23,6 +23,36 @@ This is a healthcare and emergency-response application, not a generic SaaS dash
 - **Avoid:** Neon colors, excessive gradients, cyberpunk aesthetics, huge decorative elements, generic AI appearances, 3D effects, and excessive rounded cards.
 
 ## 3. DESIGN SYSTEM & COLORS
+
+### Ashen Nebula Theme (Active Visual Language)
+HealthStats uses the "Ashen Nebula" visual theme as its design foundation. This is a CSS custom-property design system defined in `index.css`.
+
+**Key design tokens (all in `index.css` `:root` and `.dark`):**
+- `--an-bg` / `--an-bg-dark` — Page background (#faf8f2 light, #100e0b dark)
+- `--an-surface`, `--an-surface-solid`, `--an-surface-raised` — Panel surfaces
+- `--an-border`, `--an-border-subtle`, `--an-border-strong` — Border hierarchy
+- `--an-text-primary`, `--an-text-secondary`, `--an-text-muted`, `--an-text-faint` — Text hierarchy
+- `--an-accent`, `--an-accent-hover`, `--an-accent-light`, `--an-accent-glow` — Healthcare teal accent
+- `--an-glass-bg`, `--an-glass-border`, `--an-glass-shadow`, `--an-glass-shadow-lg` — Glassmorphism
+
+**Atmospheric background layer:** The `.an-atmosphere` class applies a fixed, pointer-events-none background element with three blurred radial-gradient ellipses creating a calm slate-blue nebula haze over the base parchment background. Applied to: Landing page, LoginPage, AdminLoginPage. Fixed/static behind content without continuous animation overhead for maximum performance on field hardware.
+
+**Brand-Anchor Sections:** The solid teal gradient bands (`#0a2e2b` to `#0f766e` to `#115e59`) are intentional brand anchors:
+- **Stats strip:** 4 primary operational metrics (Clinics served, Patient records, Data integrity rate, Avg. offline durability) with teal background and white/teal typography.
+- **Final CTA band:** "Ready to bring reliable records to your clinic?" solid teal anchor with dual action buttons.
+- **Footer:** Dark neutral `#0a1f1d` with high-contrast `text-teal-300` / `hover:text-white` links (WCAG AA compliant). Never make the footer teal or full-gradient.
+
+**Utility classes defined in `index.css`:**
+- `.glass-nav` — Navbar glassmorphism treatment (backdrop-blur + border)
+- `.glass-card` / `.glass-card-lg` — Elevated glass card panels
+- `.glass-panel` — Subtle inset glass treatment
+- `.an-card` — Standard white card with nebula-toned border
+- `.an-card-glass` — Glass-blur card for marketing/landing sections
+- `.an-divider` — Section separator line
+- `.btn-primary` / `.btn-secondary` / `.btn-ghost` — Button system
+- `.an-input` — Form input with Ashen Nebula focus ring
+- `.badge-teal` — Teal status badge
+
 Healthcare colors should communicate meaning, not just decoration:
 - **Success:** successful operation
 - **Warning:** attention required
@@ -31,6 +61,9 @@ Healthcare colors should communicate meaning, not just decoration:
 - **Syncing:** synchronization in progress
 - **Emergency:** urgent operational state
 *Note: Do not rely solely on color to communicate status. Use icons, labels, badges, and visual hierarchy.*
+
+**Always use CSS variables** (`var(--an-bg)`, `var(--an-accent)`, etc.) for colors in page wrappers, login screens, and any new full-screen components. Do not hardcode `bg-slate-50 dark:bg-slate-950` — use `style={{background: 'var(--an-bg)'}}` instead.
+
 
 ## 4. TYPOGRAPHY & SPACING
 - **Typography:** Prioritize readability, medical information scanning, and mobile readability. Avoid extremely thin fonts. Use a consistent hierarchy (Display, H1, H2, Body, Caption, etc.).
