@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { useTheme } from "./ThemeContext"
 import { useAuth } from "./AuthContext"
@@ -61,6 +61,142 @@ const IconHeart = () => (
 )
 
 // ── Component ───────────────────────────────────────────────────────────────
+function renderInline(text: string, keyBase: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  const regex = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g
+  let last = 0
+  let i = 0
+  let m: RegExpExecArray | null
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index))
+    if (m[2] !== undefined) nodes.push(<strong key={`${keyBase}-b${i}`}>{m[2]}</strong>)
+    else if (m[3] !== undefined) nodes.push(<em key={`${keyBase}-i${i}`}>{m[3]}</em>)
+    else if (m[4] !== undefined)
+      nodes.push(
+        <code key={`${keyBase}-c${i}`} className="px-1 py-0.5 rounded bg-black/10 dark:bg-white/10 text-[12px]">
+          {m[4]}
+        </code>,
+      )
+    last = m.index + m[0].length
+    i++
+  }
+  if (last < text.length) nodes.push(text.slice(last))
+  return nodes
+}
+
+const rowCells = (r: string): string[] => {
+  const cells = r.split("|").map((c) => c.trim())
+  if (cells.length && cells[0] === "") cells.shift()
+  if (cells.length && cells[cells.length - 1] === "") cells.pop()
+  return cells
+}
+const isTableSeparator = (r: string): boolean =>
+  r.includes("|") && r.includes("-") && r.replace(/[\s|:-]/g, "") === ""
+
+/** Minimal, XSS-safe markdown renderer (bold/italic/code, lists, tables). */
+function MarkdownText({ text }: { text: string }) {
+  const lines = text.split("\n")
+  const blocks: ReactNode[] = []
+  let i = 0
+  let key = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    if (line.includes("|") && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const heads = rowCells(line)
+      i += 2
+      const rows: string[][] = []
+      while (i < lines.length && lines[i].includes("|")) {
+        rows.push(rowCells(lines[i]))
+        i++
+      }
+      blocks.push(
+        <div key={`t${key++}`} className="overflow-x-auto">
+          <table className="text-[12px] my-1 border-collapse">
+            <thead>
+              <tr>
+                {heads.map((h, hi) => (
+                  <th key={hi} className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left font-semibold">
+                    {renderInline(h, `h${hi}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={ri}>
+                  {r.map((c, ci) => (
+                    <td key={ci} className="border border-slate-300 dark:border-slate-600 px-2 py-1">
+                      {renderInline(c, `c${ri}-${ci}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      )
+      continue
+    }
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*]\s+/, ""))
+        i++
+      }
+      blocks.push(
+        <ul key={`u${key++}`} className="list-disc pl-4 space-y-0.5">
+          {items.map((it, ii) => (
+            <li key={ii}>{renderInline(it, `u${key}-${ii}`)}</li>
+          ))}
+        </ul>,
+      )
+      continue
+    }
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ""))
+        i++
+      }
+      blocks.push(
+        <ol key={`o${key++}`} className="list-decimal pl-4 space-y-0.5">
+          {items.map((it, ii) => (
+            <li key={ii}>{renderInline(it, `o${key}-${ii}`)}</li>
+          ))}
+        </ol>,
+      )
+      continue
+    }
+    if (line.trim() === "") {
+      i++
+      continue
+    }
+    const para: string[] = [line]
+    i++
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^\s*[-*]\s+/.test(lines[i]) &&
+      !/^\s*\d+\.\s+/.test(lines[i]) &&
+      !lines[i].includes("|")
+    ) {
+      para.push(lines[i])
+      i++
+    }
+    blocks.push(
+      <p key={`p${key++}`} className="leading-relaxed">
+        {para.map((l, li) => (
+          <span key={li}>
+            {renderInline(l, `p${key}-${li}`)}
+            {li < para.length - 1 ? <br /> : null}
+          </span>
+        ))}
+      </p>,
+    )
+  }
+  return <div className="text-sm space-y-1.5">{blocks}</div>
+}
+
 export default function ChatWidget() {
   const { dark } = useTheme()
   const { profile } = useAuth()
@@ -229,7 +365,9 @@ export default function ChatWidget() {
                     }`}
                     style={{ borderRadius: "4px 18px 18px 18px" }}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
+                    <div className="text-sm leading-relaxed">
+                      <MarkdownText text={msg.text} />
+                    </div>
                   </div>
                 </div>
               )}
