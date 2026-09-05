@@ -122,10 +122,15 @@
 
 ## 10. AI Chatbot (Task 17)
 
-- ℹ️ **Grounded intent engine, by design** — not generative, no external LLM API.
-  It answers a bounded set of questions from real queries + fixed platform facts
-  and defers anything else to a capabilities prompt. Broader NLU would require an
-  LLM integration (and careful privacy/secret handling).
+- ℹ️ **Grounded by design** — the built-in engine answers a bounded set of
+  questions from real queries + fixed platform facts and defers anything else to
+  a capabilities prompt.
+- 🟡 **Optional LLM mode (Groq)** via `supabase/functions/groq-chat` (server-side
+  key, grounded on clinic-scoped Supabase context). Requires deploying the
+  function + setting the `GROQ_API_KEY` secret; falls back to the local engine
+  otherwise. Enabling it sends clinic-scoped context to Groq (third party) — an
+  operator privacy decision. Prompt-injection/fabrication are mitigated by strict
+  system instructions but not eliminated.
 
 ---
 
@@ -134,5 +139,8 @@
 - ⬜ **PWA**: missing `manifest.json` + service worker (required for installable,
   offline-capable app).
 - ⬜ **Hosting/CI-CD**: not deployed to a production host; no GitHub Actions.
-- ⬜ **Edge Functions / DB triggers / webhooks**: none exist (e.g. server-side
-  sync validation, high-urgency alerting).
+- 🟡 **Edge Functions**: one exists — `supabase/functions/groq-chat` (server-side
+  Groq proxy). Must be deployed (`supabase functions deploy groq-chat`) with the
+  `GROQ_API_KEY` secret set to activate LLM mode; otherwise the assistant uses the
+  local grounded engine. Other server-side automation (sync validation,
+  high-urgency alerting, DB triggers/webhooks) does not exist.

@@ -21,6 +21,7 @@ import {
   fetchPatients,
 } from './adminService';
 import { shortId, urgencyFromScore } from './types';
+import { supabase } from './supabase';
 import i18n from '../i18n';
 
 export interface ChatContext {
@@ -237,12 +238,40 @@ async function statsAnswer(q: string, ctx: ChatContext): Promise<ChatAnswer> {
 }
 
 /**
+ * Ask the server-side Groq proxy (Supabase Edge Function `groq-chat`). The API
+ * key lives only on the server; the function fetches grounded, clinic-scoped
+ * Supabase context and answers from it. Returns null on any failure so the
+ * caller can fall back to the local grounded engine (offline / not deployed).
+ */
+async function answerViaGroq(question: string, ctx: ChatContext): Promise<ChatAnswer | null> {
+  if (!ctx.authenticated) return null;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return null;
+  try {
+    const { data, error } = await supabase.functions.invoke('groq-chat', {
+      body: { question, clinicId: ctx.clinicId, role: ctx.role },
+    });
+    if (error) return null;
+    const text = (data as { text?: string } | null)?.text?.trim();
+    if (!text) return null;
+    return { text, grounded: true };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Route a free-text question to the appropriate grounded handler.
- * Most-specific intents are checked first.
+ * When signed in and online, the server-side Groq proxy answers from live,
+ * clinic-scoped Supabase context; if it is unavailable the local grounded intent
+ * engine below answers instead (also used offline and for the public page).
+ * Most-specific local intents are checked first.
  */
 export async function answerQuery(question: string, ctx: ChatContext): Promise<ChatAnswer> {
   const q = question.toLowerCase().trim();
   if (!q) return { text: capabilities(ctx), grounded: false };
+
+  const viaGroq = await answerViaGroq(question, ctx);
+  if (viaGroq) return viaGroq;
 
   try {
     if (

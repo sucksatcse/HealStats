@@ -171,6 +171,12 @@ A **grounded intent engine** (`lib/chatbotService.ts`), not a generative model a
 - **Access is scoped:** data answers require an authenticated session and are scoped by role/clinic; the public landing page only answers "how it works" questions.
 - **It does not perform clinical decision-making** and is not a substitute for medical advice.
 
+**Optional LLM mode (Groq):** a secure Supabase Edge Function (`supabase/functions/groq-chat`) can answer in natural language via Groq. The API key is stored **server-side** as a Supabase secret — never in the frontend bundle — and the function grounds the model on clinic-scoped Supabase data. If it is not deployed (or the device is offline) the assistant automatically falls back to the built-in grounded engine. To enable:
+```bash
+supabase functions deploy groq-chat
+supabase secrets set GROQ_API_KEY=<your-rotated-groq-key>   # never commit this
+```
+
 ---
 
 ## Internationalization & Theme
