@@ -199,6 +199,9 @@ export default function ChatWidget() {
         <div
           className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0"
           style={{ scrollbarWidth: "none" }}
+          role="log"
+          aria-live="polite"
+          aria-atomic="false"
         >
           {messages.map((msg, idx) => (
             <div key={msg.id} className="animate-slide-up">

@@ -340,7 +340,7 @@ export default function ClinicOpsPanel() {
               ))}
             </div>
           ) : error ? (
-            <div className="p-6 text-center">
+            <div className="p-6 text-center" role="alert">
               <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
                 {t("map:loadError")}
               </p>
@@ -352,7 +352,7 @@ export default function ClinicOpsPanel() {
               </button>
             </div>
           ) : entries.length === 0 ? (
-            <div className="p-6 text-center">
+            <div className="p-6 text-center" role="status">
               <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                 {t("map:noClinics")}
               </p>
@@ -764,7 +764,7 @@ export default function ClinicOpsPanel() {
 
             {/* Loading overlay */}
             {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-slate-950/40 backdrop-blur-[1px]">
+              <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-slate-950/40 backdrop-blur-[1px]" role="status" aria-live="polite">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-lg">
                   <svg
                     viewBox="0 0 20 20"
