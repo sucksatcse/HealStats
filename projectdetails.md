@@ -6,7 +6,7 @@
 > 2. **UPDATE this file AFTER every merged change.**
 > 3. Never violate the Architecture Rules below.
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 Current phase: Data Wiring
 
 ---
@@ -59,6 +59,7 @@ Health Worker → Login (Cached) → Register Patient → IndexedDB → Sync Que
 ## 7. Technology Stack
 - **Frontend**: React 19, TypeScript 5.7, Vite 8
 - **Styling**: Tailwind CSS 4.0
+- **Internationalization**: i18next + react-i18next + i18next-browser-languagedetector (English fallback, Bangla)
 - **Backend / Database**: Supabase, PostgreSQL
 - **Authentication**: Supabase Auth (Email/Password)
 
@@ -166,7 +167,9 @@ HealthStats/
 ## 21. Known Limitations
 - Offline Sync is functional (Dexie background queue syncs to Supabase on reconnection).
 - RLS is temporarily disabled in the MVP schema.
-- Admin, Emergency, Sync, Triage and the worker dashboard home still display static mock data.
+- Admin, Emergency, Sync, Triage and the Clinic Operations Map are wired to live Supabase data; the Alerts Center and the worker dashboard home still display static mock data.
+- The AI Assistant is a grounded intent engine (real queries + fixed platform facts), not a generative model; it answers a bounded set of questions and defers anything outside that set to a capabilities prompt.
+- Internationalization: the i18n foundation is complete and the language switcher works app-wide, but only the Ops Map, AI Assistant and shared labels are translated via `t()`; many deep admin/clinical pages still render English strings pending incremental migration.
 - Clinical forms (Vitals/Visit) are English-only; visits cannot be edited after saving.
 
 ## 22. Important Decisions Log
@@ -179,12 +182,18 @@ HealthStats/
 | D-005 | 2026-09-04 | OCR established as the primary intelligence path; AI Triage deferred to optional/future. |
 | D-006 | 2026-09-04 | `visits.urgency_score` uses a 1–5 integer scale (1 Stable, 2 Low, 3 Moderate, 4 High, 5 Critical), shared by `VitalsPage`, `PatientRecordsPage` and `PatientDetailPage`. `symptom_category` stores one of `diarrhea/gastrointestinal`, `fever`, `respiratory`, `skin/rash`, `other`. |
 | D-007 | 2026-09-05 | UI/UX Foundation: "Ashen Nebula" visual theme adopted. CSS custom-property design token system (`--an-*` prefix) defined in `index.css`. Atmospheric radial-gradient background layer (`.an-atmosphere`) applied to public pages. Glassmorphism utilities (`.glass-nav`, `.glass-card`, `.an-card-glass`) standardized. All page backgrounds switched from hardcoded Tailwind colors to `var(--an-bg)`. |
+| D-008 | 2026-09-05 | Map Integration (Task 16): the Ops Map visualizes clinical **activity** (visit recency) and data-flow metrics, NOT device/network connectivity, because the schema tracks no per-clinic device status. Clinics are geolocated by matching `zone`/`name` to an in-app district-coordinate lookup (presentation layer only); no latitude/longitude columns were added and no mapping library was introduced. Unmatched clinics are listed as "not on map" rather than being given a fabricated position. |
+| D-009 | 2026-09-05 | AI Chatbot (Task 17): the assistant is a **grounded intent engine**, not a generative model or external LLM API. It answers only from real Supabase queries (reusing `adminService`) or fixed platform-fact strings, and never fabricates patient/clinic/outbreak/medical data. Data answers require authentication and are scoped by role/clinic at the application layer (MVP RLS is disabled). No new dependency or backend was added. |
+| D-010 | 2026-09-05 | Internationalization (Task 18): adopted **i18next + react-i18next** as the single source of truth for the active language. The legacy `LanguageContext`/`useLang()` was refactored to delegate to i18next (no competing language systems). Namespaced static resources (`src/i18n/locales/en.ts`, `bn.ts`); English is the fallback. Persistence via `localStorage` key `hs-lang` (browser language detector). Translations are local/static — no external translation API and no patient data leaves the client. Canonical DB values (symptom categories, roles) and urgency numbers are never translated, only their display labels. |
 
 ## 23. Change Log
 - **2026-09-03**: Implemented Task 4 (Patient Registration). Wired `NewPatientPage.tsx` to `patients` table. Added mock bypass to `AuthContext.tsx`.
 - **2026-09-04**: Rewrote `README.md` and `FEATURES.md` to establish accurate sources of truth. Restructured `projectdetails.md` according to the new standard.
 - **2026-09-04**: Implemented Task 6 (Visits). `VitalsPage.tsx` inserts into `visits`; `PatientDetailPage.tsx` reads patient + visits from Supabase; `DashboardPage.tsx` passes the selected patient between list → detail → visit form; `PatientRecordsPage.tsx` gained an `onViewPatient` callback; `AuthContext.tsx` demo login hydrates from the real `staff` row. Also fixed 21 pre-existing TS syntax errors (missing `;` in inline object types) and removed the deprecated `baseUrl` from `tsconfig.json`.
 - **2026-09-05**: UI/UX Foundation Polish — Ashen Nebula Theme (Pre-Task 16). Implemented comprehensive CSS design token system in `index.css` with `--an-*` custom properties, atmospheric background layer (`.an-atmosphere`), glassmorphism utilities (`.glass-nav`, `.glass-card`, `.an-card-glass`), updated skeleton loaders, button system, form inputs, and focus rings. Applied nebula theme to `App.tsx` (landing page), `AppNavbar.tsx`, `LoginPage.tsx`, `AdminLoginPage.tsx`, `DashboardPage.tsx`, `AdminDashboardPage.tsx`. `tsc --noEmit` and `vite build` both exit 0.
+- **2026-09-05**: Implemented Task 16 (Map Integration). Rewrote `ClinicOpsPanel.tsx` from hardcoded mock clinics to live Supabase data via the new `adminService.fetchClinicMapData()` (aggregates patient counts, 24h/7d visit activity, pending-sync backlog and recent high-risk cases per clinic with `Promise.allSettled`). Added `ClinicActivity`, `ClinicMapEntry` and `ClinicMapData` types to `types.ts`. Clinics are geocoded onto the Bangladesh SVG map by district-name lookup; unmatched clinics are surfaced as "not on map". Added honest Active/Recent/Quiet activity status, loading/empty/error states, refresh, filters, quiet-clinic spotlight and a per-clinic detail bar. `tsc --noEmit` and `vite build` both exit 0.
+- **2026-09-05**: Implemented Task 17 (AI Chatbot). Added `chatbotService.ts` — a grounded intent engine that routes free-text questions to real Supabase queries (reusing `adminService`) for patient counts, records today, pending sync, high-risk patients (count + named list), outbreak status, clinic activity and patient look-up by name. Rewrote `ChatWidget.tsx` to be auth-aware (`useAuth`), replacing the simulated `getResponse`/random typing with real async answers; data answers require authentication and are scoped by role/clinic, while the public landing page only answers platform how-to questions. No fabricated data, no new dependency. `tsc --noEmit` and `vite build` both exit 0.
+- **2026-09-05**: Implemented Task 18 (Internationalization). Added i18next + react-i18next + browser language detector; centralized config in `src/i18n/index.ts` with namespaced English/Bangla resources (`locales/en.ts`, `bn.ts`). Refactored `LanguageContext` to delegate to i18next (single source of truth) and imported `./i18n` in `main.tsx`. Migrated the Ops Map (`ClinicOpsPanel`) and AI Assistant (`ChatWidget` + `chatbotService`, incl. grounded replies) to `t()` with semantic keys and interpolation; added shared `common`/`urgency` labels. Language persists in `localStorage` (`hs-lang`) and updates the whole UI instantly. Browser smoke test confirmed EN↔BN switching with no raw keys; `tsc --noEmit` and `vite build` both exit 0. Deep admin/clinical pages remain English-only pending incremental migration.
 
 ## 24. Instructions for AI Coding Agents
 1. **Read `projectdetails.md` first.**

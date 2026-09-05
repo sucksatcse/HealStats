@@ -1,240 +1,49 @@
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useTheme } from "./ThemeContext"
+import {
+  fetchClinicMapData,
+  type ClinicActivity,
+  type ClinicMapEntry,
+} from "./lib/adminService"
 
-// ── Types ──────────────────────────────────────────────────────────────────
-type Status = "online" | "delay" | "offline"
-type Filter = "all" | Status
+type TFunc = (key: string, opts?: Record<string, unknown>) => string
 
-interface Clinic {
-  id: number
-  name: string
-  district: string
-  status: Status
-  lastSync: string
-  patients: number
-  x: number
-  y: number // SVG coords (viewBox 0 0 380 450)
-}
+// ── Activity status visual config ─────────────────────────────────────────────
+// Honest status derived from real visit recency (see ClinicActivity in types.ts).
+type Filter = "all" | ClinicActivity
 
-// ── Clinic dataset (18 clinics, realistic BD distribution) ─────────────────
-const CLINICS: Clinic[] = [
-  {
-    id: 1,
-    name: "Dhaka Central Hub",
-    district: "Dhaka",
-    status: "online",
-    lastSync: "2m ago",
-    patients: 347,
-    x: 193,
-    y: 210,
-  },
-  {
-    id: 2,
-    name: "Chittagong Port Station",
-    district: "Chittagong",
-    status: "online",
-    lastSync: "5m ago",
-    patients: 218,
-    x: 297,
-    y: 318,
-  },
-  {
-    id: 3,
-    name: "Sylhet Highland Post",
-    district: "Sylhet",
-    status: "delay",
-    lastSync: "42m ago",
-    patients: 89,
-    x: 314,
-    y: 160,
-  },
-  {
-    id: 4,
-    name: "Rajshahi Rural Centre",
-    district: "Rajshahi",
-    status: "offline",
-    lastSync: "3h ago",
-    patients: 0,
-    x: 52,
-    y: 186,
-  },
-  {
-    id: 5,
-    name: "Khulna Delta Clinic",
-    district: "Khulna",
-    status: "online",
-    lastSync: "1m ago",
-    patients: 156,
-    x: 118,
-    y: 340,
-  },
-  {
-    id: 6,
-    name: "Barisal Riverside Post",
-    district: "Barisal",
-    status: "delay",
-    lastSync: "28m ago",
-    patients: 73,
-    x: 192,
-    y: 326,
-  },
-  {
-    id: 7,
-    name: "Mymensingh Community Hub",
-    district: "Mymensingh",
-    status: "online",
-    lastSync: "3m ago",
-    patients: 201,
-    x: 193,
-    y: 162,
-  },
-  {
-    id: 8,
-    name: "Comilla Eastern Station",
-    district: "Comilla",
-    status: "offline",
-    lastSync: "5h ago",
-    patients: 0,
-    x: 254,
-    y: 256,
-  },
-  {
-    id: 9,
-    name: "Rangpur Northern Post",
-    district: "Rangpur",
-    status: "online",
-    lastSync: "7m ago",
-    patients: 134,
-    x: 92,
-    y: 88,
-  },
-  {
-    id: 10,
-    name: "Jessore Border Clinic",
-    district: "Jessore",
-    status: "delay",
-    lastSync: "1h ago",
-    patients: 45,
-    x: 88,
-    y: 278,
-  },
-  {
-    id: 11,
-    name: "Faridpur Central Hub",
-    district: "Faridpur",
-    status: "online",
-    lastSync: "12m ago",
-    patients: 167,
-    x: 152,
-    y: 240,
-  },
-  {
-    id: 12,
-    name: "Noakhali Coastal Station",
-    district: "Noakhali",
-    status: "offline",
-    lastSync: "8h ago",
-    patients: 0,
-    x: 254,
-    y: 300,
-  },
-  {
-    id: 13,
-    name: "Cox's Bazar Beach Post",
-    district: "Cox's Bazar",
-    status: "online",
-    lastSync: "4m ago",
-    patients: 298,
-    x: 322,
-    y: 390,
-  },
-  {
-    id: 14,
-    name: "Dinajpur Frontier Clinic",
-    district: "Dinajpur",
-    status: "online",
-    lastSync: "9m ago",
-    patients: 88,
-    x: 68,
-    y: 102,
-  },
-  {
-    id: 15,
-    name: "Bogra District Centre",
-    district: "Bogra",
-    status: "delay",
-    lastSync: "55m ago",
-    patients: 112,
-    x: 110,
-    y: 144,
-  },
-  {
-    id: 16,
-    name: "Narayanganj Urban Hub",
-    district: "Narayanganj",
-    status: "online",
-    lastSync: "1m ago",
-    patients: 423,
-    x: 215,
-    y: 234,
-  },
-  {
-    id: 17,
-    name: "Tangail Road Station",
-    district: "Tangail",
-    status: "online",
-    lastSync: "6m ago",
-    patients: 94,
-    x: 170,
-    y: 186,
-  },
-  {
-    id: 18,
-    name: "Moulvibazar Tea Post",
-    district: "Moulvibazar",
-    status: "offline",
-    lastSync: "12h ago",
-    patients: 0,
-    x: 298,
-    y: 192,
-  },
-]
-
-// ── Status visual config ────────────────────────────────────────────────────
 const S = {
-  online: {
+  active: {
     fill: "#22c55e",
-    label: "Online",
+    label: "Active",
     dot: "bg-emerald-500",
-    text: "text-emerald-700 dark:text-emerald-400",
     badge:
       "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400",
     card: "hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10",
     pulseR: "5;18;5",
     pulseDur: "3s",
   },
-  delay: {
+  recent: {
     fill: "#f59e0b",
-    label: "Delay",
+    label: "Recent",
     dot: "bg-amber-400",
-    text: "text-amber-700 dark:text-amber-400",
     badge:
       "text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400",
     card: "hover:bg-amber-50/40 dark:hover:bg-amber-900/10",
     pulseR: "5;16;5",
-    pulseDur: "2.2s",
+    pulseDur: "2.4s",
   },
-  offline: {
-    fill: "#ef4444",
-    label: "Offline",
-    dot: "bg-rose-500",
-    text: "text-rose-700 dark:text-rose-400",
-    badge: "text-rose-700 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-400",
-    card: "hover:bg-rose-50/40 dark:hover:bg-rose-900/10",
-    pulseR: "5;16;5",
-    pulseDur: "1.8s",
+  quiet: {
+    fill: "#94a3b8",
+    label: "Quiet",
+    dot: "bg-slate-400",
+    badge: "text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300",
+    card: "hover:bg-slate-50 dark:hover:bg-slate-800/40",
+    pulseR: "5;12;5",
+    pulseDur: "3.4s",
   },
-} satisfies Record<Status, object>
+} satisfies Record<ClinicActivity, object>
 
 // ── Bangladesh SVG paths (viewBox 0 0 380 450) ─────────────────────────────
 const BD_PATH =
@@ -255,29 +64,166 @@ const RIVER_PADMA = "M 16,244 C 58,244 98,248 138,252 C 168,257 194,264 220,274"
 const RIVER_MEGHNA =
   "M 220,155 C 224,196 228,236 230,276 C 234,313 244,352 265,410"
 
+// ── District → SVG coordinate lookup ───────────────────────────────────────
+// Presentation-layer geocoding only. The database stores no coordinates, so
+// clinics are placed on the map by matching their `zone` (or name) against known
+// Bangladeshi district/division names. Clinics with no match are listed in the
+// sidebar as "unmapped" rather than being given a fabricated location.
+const DISTRICT_COORDS: Record<string, { x: number; y: number }> = {
+  dhaka: { x: 193, y: 210 },
+  narayanganj: { x: 215, y: 234 },
+  gazipur: { x: 200, y: 190 },
+  tangail: { x: 170, y: 186 },
+  faridpur: { x: 152, y: 240 },
+  chittagong: { x: 297, y: 318 },
+  chattogram: { x: 297, y: 318 },
+  coxsbazar: { x: 322, y: 390 },
+  comilla: { x: 254, y: 256 },
+  cumilla: { x: 254, y: 256 },
+  noakhali: { x: 254, y: 300 },
+  sylhet: { x: 314, y: 160 },
+  moulvibazar: { x: 298, y: 192 },
+  rajshahi: { x: 52, y: 186 },
+  bogra: { x: 110, y: 144 },
+  bogura: { x: 110, y: 144 },
+  dinajpur: { x: 68, y: 102 },
+  rangpur: { x: 92, y: 88 },
+  khulna: { x: 118, y: 340 },
+  jessore: { x: 88, y: 278 },
+  jashore: { x: 88, y: 278 },
+  barisal: { x: 192, y: 326 },
+  barishal: { x: 192, y: 326 },
+  mymensingh: { x: 193, y: 162 },
+}
+
+/** Normalize a location string for matching: lowercase, strip non-alphanumerics. */
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "")
+}
+
+/** Resolve a clinic to base map coordinates via its zone, then its name. */
+function resolveCoords(entry: ClinicMapEntry): { x: number; y: number } | null {
+  const candidates = [entry.zone, entry.name].filter(Boolean) as string[]
+  for (const raw of candidates) {
+    const n = normalize(raw)
+    for (const key of Object.keys(DISTRICT_COORDS)) {
+      if (n.includes(key) || key.includes(n)) return DISTRICT_COORDS[key]
+    }
+  }
+  return null
+}
+
+interface PositionedClinic extends ClinicMapEntry {
+  x: number
+  y: number
+}
+
+/**
+ * Assign map coordinates, spreading clinics that share a district apart with a
+ * deterministic golden-angle spiral so pins never perfectly overlap.
+ */
+function positionClinics(entries: ClinicMapEntry[]): {
+  mapped: PositionedClinic[]
+  unmapped: ClinicMapEntry[]
+} {
+  const mapped: PositionedClinic[] = []
+  const unmapped: ClinicMapEntry[] = []
+  const seen = new Map<string, number>()
+
+  for (const entry of entries) {
+    const base = resolveCoords(entry)
+    if (!base) {
+      unmapped.push(entry)
+      continue
+    }
+    const bucket = `${base.x},${base.y}`
+    const i = seen.get(bucket) ?? 0
+    seen.set(bucket, i + 1)
+    let x = base.x
+    let y = base.y
+    if (i > 0) {
+      const angle = i * 2.399963 // golden angle in radians
+      const radius = 9 + Math.floor((i - 1) / 8) * 7
+      x = base.x + Math.cos(angle) * radius
+      y = base.y + Math.sin(angle) * radius
+    }
+    mapped.push({ ...entry, x, y })
+  }
+  return { mapped, unmapped }
+}
+
+// ── Relative-time helper ─────────────────────────────────────────────────────
+function timeAgo(iso: string | null, t: TFunc): string {
+  if (!iso) return t("map:timeNoVisits")
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return t("map:timeJustNow")
+  if (mins < 60) return t("map:timeMinutes", { count: mins })
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return t("map:timeHours", { count: hrs })
+  const days = Math.floor(hrs / 24)
+  return t("map:timeDays", { count: days })
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 export default function ClinicOpsPanel() {
   const { dark } = useTheme()
-  const [emergencyMode, setEmergencyMode] = useState(false)
+  const { t } = useTranslation()
+  const [spotlight, setSpotlight] = useState(false)
   const [filter, setFilter] = useState<Filter>("all")
-  const [hovId, setHovId] = useState<number | null>(null)
-  const [selId, setSelId] = useState<number | null>(null)
+  const [hovId, setHovId] = useState<string | null>(null)
+  const [selId, setSelId] = useState<string | null>(null)
 
-  const counts = {
-    online: CLINICS.filter((c) => c.status === "online").length,
-    delay: CLINICS.filter((c) => c.status === "delay").length,
-    offline: CLINICS.filter((c) => c.status === "offline").length,
-  }
-  const offlineCount = counts.offline
+  const [entries, setEntries] = useState<ClinicMapEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [loadedAt, setLoadedAt] = useState<number | null>(null)
 
-  const displayList = CLINICS.filter(
-    (c) => filter === "all" || c.status === filter,
-  ).sort((a, b) => {
-    const ord: Record<Status, number> = { offline: 0, delay: 1, online: 2 }
-    return ord[a.status] - ord[b.status]
-  })
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    const res = await fetchClinicMapData()
+    if (res.error) {
+      setError(res.error)
+      setEntries([])
+    } else {
+      setEntries(res.clinics)
+    }
+    setLoadedAt(Date.now())
+    setLoading(false)
+  }, [])
 
-  const hovClinic = CLINICS.find((c) => c.id === hovId) ?? null
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const { mapped, unmapped } = useMemo(() => positionClinics(entries), [entries])
+
+  const counts = useMemo(
+    () => ({
+      active: entries.filter((c) => c.activity === "active").length,
+      recent: entries.filter((c) => c.activity === "recent").length,
+      quiet: entries.filter((c) => c.activity === "quiet").length,
+    }),
+    [entries],
+  )
+  const quietCount = counts.quiet
+
+  const displayList = useMemo(
+    () =>
+      entries
+        .filter((c) => filter === "all" || c.activity === filter)
+        .sort((a, b) => {
+          const ord: Record<ClinicActivity, number> = { active: 0, recent: 1, quiet: 2 }
+          const d = ord[a.activity] - ord[b.activity]
+          if (d !== 0) return d
+          return b.patientCount - a.patientCount
+        }),
+    [entries, filter],
+  )
+
+  const hovClinic = mapped.find((c) => c.id === hovId) ?? null
+  const selClinic = entries.find((c) => c.id === selId) ?? null
 
   // SVG map color scheme
   const mc = dark
@@ -296,8 +242,7 @@ export default function ClinicOpsPanel() {
         sea: "#dbeffe",
       }
 
-  // Tooltip position (pins are inside a 380×450 SVG that fills a ratio-locked container)
-  function tipTransform(c: Clinic) {
+  function tipTransform(c: PositionedClinic) {
     const goLeft = c.x > 225
     const goBelow = c.y < 115
     if (goBelow) return goLeft ? "translate(-108%, 16%)" : "translate(-5%, 16%)"
@@ -313,24 +258,22 @@ export default function ClinicOpsPanel() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                {CLINICS.length} Clinics
+                {loading ? t("common:loading") : t("map:clinicsCount", { count: entries.length })}
               </h3>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Bangladesh network
+                {t("map:network")}
               </p>
             </div>
-            {/* Emergency mode toggle */}
+            {/* Spotlight quiet clinics */}
             <button
-              onClick={() => setEmergencyMode((m) => !m)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all duration-200 ${
-                emergencyMode
-                  ? "bg-rose-600 text-white shadow-lg shadow-rose-600/30 hover:bg-rose-700"
-                  : "border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-600 dark:hover:text-rose-400"
+              onClick={() => setSpotlight((m) => !m)}
+              disabled={loading || !!error}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                spotlight
+                  ? "bg-slate-800 text-white shadow-lg shadow-slate-800/20 hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900"
+                  : "border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
             >
-              {emergencyMode && (
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping flex-shrink-0" />
-              )}
               <svg
                 viewBox="0 0 16 16"
                 fill="currentColor"
@@ -338,36 +281,36 @@ export default function ClinicOpsPanel() {
               >
                 <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 4h2v5H7V4zm0 6h2v2H7v-2z" />
               </svg>
-              {emergencyMode ? "Deactivate" : "Emergency"}
+              {spotlight ? t("common:clear") : t("map:quiet")}
             </button>
           </div>
 
-          {/* Status summary pills */}
+          {/* Activity summary pills */}
           <div className="flex gap-1.5">
             <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/25 px-2 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              {counts.online}
+              {counts.active}
             </span>
             <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/25 px-2 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-              {counts.delay}
+              {counts.recent}
             </span>
             <span
               className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full ${
-                emergencyMode
-                  ? "text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/30 animate-pulse"
-                  : "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/25"
+                spotlight
+                  ? "text-slate-800 dark:text-slate-100 bg-slate-200 dark:bg-slate-700"
+                  : "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800"
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
-              {counts.offline}
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
+              {counts.quiet}
             </span>
           </div>
         </div>
 
         {/* Filter tabs */}
         <div className="flex gap-0.5 px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-          {(["all", "online", "delay", "offline"] as Filter[]).map((f) => (
+          {(["all", "active", "recent", "quiet"] as Filter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -377,94 +320,116 @@ export default function ClinicOpsPanel() {
                   : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              {f === "all"
-                ? "All"
-                : f === "online"
-                  ? "OK"
-                  : f === "delay"
-                    ? "Slow"
-                    : "Down"}
+              {f === "all" ? t("common:all") : t(`map:${f}`)}
             </button>
           ))}
         </div>
 
         {/* Clinic list */}
         <div className="flex-1 overflow-y-auto">
-          {displayList.map((clinic) => {
-            const cfg = S[clinic.status]
-            const isSel = selId === clinic.id
-            const isEmergencyOffline =
-              emergencyMode && clinic.status === "offline"
-            return (
+          {loading ? (
+            <div className="p-4 space-y-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-start gap-3 animate-pulse">
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 mt-1" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                    <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="p-6 text-center">
+              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                {t("map:loadError")}
+              </p>
               <button
-                key={clinic.id}
-                onClick={() => setSelId(isSel ? null : clinic.id)}
-                className={`w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800 transition-all duration-150 flex items-start gap-3 ${
-                  isEmergencyOffline
-                    ? "bg-rose-50 dark:bg-rose-950/30"
-                    : isSel
-                      ? "bg-teal-50 dark:bg-teal-900/20"
-                      : cfg.card
-                }`}
+                onClick={load}
+                className="mt-3 text-xs font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 px-3 py-1.5 rounded-lg transition-colors"
               >
-                {/* Pulsing dot */}
-                <div className="mt-1 flex-shrink-0 relative">
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full ${cfg.dot} ${
-                      clinic.status !== "online" ? "animate-pulse" : ""
-                    }`}
-                  />
-                  {isEmergencyOffline && (
-                    <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75" />
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-1">
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight truncate">
-                      {clinic.name}
-                    </p>
-                    {isEmergencyOffline && (
-                      <span className="text-[9px] font-extrabold tracking-wider text-white bg-rose-600 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                        ALERT
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                    {clinic.district} · {clinic.lastSync}
-                  </p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.badge}`}
-                    >
-                      {cfg.label}
-                    </span>
-                    {clinic.patients > 0 && (
-                      <span className="text-xs text-slate-400 dark:text-slate-500">
-                        {clinic.patients} pts
-                      </span>
-                    )}
-                    {clinic.status === "offline" && (
-                      <span className="text-xs text-slate-400 dark:text-slate-500">
-                        Unreachable
-                      </span>
-                    )}
-                  </div>
-                  {isEmergencyOffline && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                      }}
-                      className="mt-2 w-full text-center text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 py-1.5 rounded-md transition-colors"
-                    >
-                      Dispatch Response
-                    </button>
-                  )}
-                </div>
+                {t("common:retry")}
               </button>
-            )
-          })}
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                {t("map:noClinics")}
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                {t("map:noClinicsDesc")}
+              </p>
+            </div>
+          ) : (
+            <>
+              {displayList.map((clinic) => {
+                const cfg = S[clinic.activity]
+                const isSel = selId === clinic.id
+                const isSpotlit = spotlight && clinic.activity === "quiet"
+                return (
+                  <button
+                    key={clinic.id}
+                    onClick={() => setSelId(isSel ? null : clinic.id)}
+                    className={`w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800 transition-all duration-150 flex items-start gap-3 ${
+                      isSpotlit
+                        ? "bg-slate-100 dark:bg-slate-800/60"
+                        : isSel
+                          ? "bg-teal-50 dark:bg-teal-900/20"
+                          : cfg.card
+                    }`}
+                  >
+                    {/* Activity dot */}
+                    <div className="mt-1 flex-shrink-0 relative">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${cfg.dot} ${
+                          clinic.activity === "active" ? "" : "animate-pulse"
+                        }`}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight truncate">
+                          {clinic.name}
+                        </p>
+                        {clinic.pendingSync > 0 && (
+                          <span className="text-[9px] font-extrabold tracking-wider text-white bg-amber-500 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
+                            {t("map:queued", { count: clinic.pendingSync })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                        {clinic.zone || t("map:unzoned")} · {timeAgo(clinic.lastVisitAt, t)}
+                      </p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span
+                          className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.badge}`}
+                        >
+                          {t(`map:${clinic.activity}`)}
+                        </span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">
+                          {clinic.patientCount} {t("common:patientsUnit")}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+
+              {/* Unmapped clinics (no district match — shown honestly, not pinned) */}
+              {unmapped.length > 0 && (
+                <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+                    {t("map:notOnMap", { count: unmapped.length })}
+                  </p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    {t("map:notOnMapDesc", { names: unmapped.map((c) => c.name).join(", ") })}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </aside>
 
@@ -484,28 +449,33 @@ export default function ClinicOpsPanel() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                Clinic Operations Map
+                {t("map:title")}
               </h2>
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                Real-time status · Updated 2m ago
+                {t("map:subtitleLive")}
+                {loadedAt
+                  ? ` · ${t("map:updated", { time: timeAgo(new Date(loadedAt).toISOString(), t) })}`
+                  : ""}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/25 px-2.5 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-              LIVE
+              {t("common:live")}
             </div>
             <button
-              className="w-8 h-8 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center text-slate-400 hover:text-teal-600 hover:border-teal-300 dark:hover:border-teal-600 transition-colors"
-              aria-label="Refresh map"
+              onClick={load}
+              disabled={loading}
+              className="w-8 h-8 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center text-slate-400 hover:text-teal-600 hover:border-teal-300 dark:hover:border-teal-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label={t("map:refreshAria")}
             >
               <svg
                 viewBox="0 0 20 20"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={1.8}
-                className="w-4 h-4"
+                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
               >
                 <path
                   strokeLinecap="round"
@@ -514,57 +484,34 @@ export default function ClinicOpsPanel() {
                 />
               </svg>
             </button>
-            <div className="flex border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-              <button className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-r border-slate-200 dark:border-slate-700 text-base leading-none">
-                +
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-base leading-none">
-                −
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Emergency mode alert banner */}
-        {emergencyMode && (
-          <div className="bg-rose-600 text-white px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-              <span className="w-2 h-2 rounded-full bg-white absolute" />
-            </div>
-            <svg
-              viewBox="0 0 20 20"
-              fill="white"
-              className="w-4 h-4 flex-shrink-0"
-            >
+        {/* Spotlight info banner */}
+        {spotlight && !loading && !error && (
+          <div className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0">
               <path
                 fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                 clipRule="evenodd"
               />
             </svg>
-            <p className="text-sm font-bold tracking-wide flex-1">
-              EMERGENCY MODE ACTIVE —{" "}
-              <span className="font-extrabold">
-                {offlineCount} clinic{offlineCount !== 1 ? "s" : ""}
-              </span>{" "}
-              require immediate attention
+            <p className="text-sm font-semibold tracking-wide flex-1">
+              {t("map:spotlightBanner", { count: quietCount })}
             </p>
-            <button className="text-xs font-bold bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap">
-              Broadcast Alert
-            </button>
             <button
-              onClick={() => setEmergencyMode(false)}
+              onClick={() => setSpotlight(false)}
               className="text-xs font-bold underline hover:no-underline opacity-80 hover:opacity-100 transition-opacity whitespace-nowrap"
             >
-              Deactivate
+              {t("common:clear")}
             </button>
           </div>
         )}
 
         {/* SVG Map */}
         <div
-          className="flex-1 flex items-center justify-center p-6 overflow-hidden"
+          className="flex-1 flex items-center justify-center p-6 overflow-hidden relative"
           style={{ background: mc.sea }}
         >
           {/* Subtle ambient gradients */}
@@ -589,7 +536,7 @@ export default function ClinicOpsPanel() {
             <svg
               viewBox="0 0 380 450"
               className="w-full h-full drop-shadow-2xl"
-              aria-label="Bangladesh clinic operations map"
+              aria-label={t("map:ariaMap")}
             >
               <defs>
                 <pattern
@@ -666,30 +613,29 @@ export default function ClinicOpsPanel() {
                 opacity="0.6"
               />
 
-              {/* Emergency: zone circles around offline clinics */}
-              {emergencyMode &&
-                CLINICS.filter((c) => c.status === "offline").map((c) => (
-                  <circle
-                    key={`zone-${c.id}`}
-                    cx={c.x}
-                    cy={c.y}
-                    r="42"
-                    fill="rgba(239,68,68,0.07)"
-                    stroke="rgba(239,68,68,0.3)"
-                    strokeWidth="1"
-                    strokeDasharray="6 4"
-                  />
-                ))}
+              {/* Spotlight: rings around quiet clinics */}
+              {spotlight &&
+                mapped
+                  .filter((c) => c.activity === "quiet")
+                  .map((c) => (
+                    <circle
+                      key={`zone-${c.id}`}
+                      cx={c.x}
+                      cy={c.y}
+                      r="30"
+                      fill="rgba(100,116,139,0.08)"
+                      stroke="rgba(100,116,139,0.4)"
+                      strokeWidth="1"
+                      strokeDasharray="6 4"
+                    />
+                  ))}
 
               {/* Clinic pins */}
-              {CLINICS.map((clinic, i) => {
-                const cfg = S[clinic.status]
+              {mapped.map((clinic, i) => {
+                const cfg = S[clinic.activity]
                 const fill = cfg.fill as string
                 const isSel = selId === clinic.id
                 const isHov = hovId === clinic.id
-                const isEmergOff = emergencyMode && clinic.status === "offline"
-                const pulseR = isEmergOff ? "6;26;6" : cfg.pulseR as string
-                const pulseDur = isEmergOff ? "1.2s" : cfg.pulseDur as string
 
                 return (
                   <g
@@ -700,24 +646,18 @@ export default function ClinicOpsPanel() {
                     style={{ cursor: "pointer" }}
                   >
                     {/* Animated pulse ring */}
-                    <circle
-                      cx={clinic.x}
-                      cy={clinic.y}
-                      r="5"
-                      fill={fill}
-                      opacity="0"
-                    >
+                    <circle cx={clinic.x} cy={clinic.y} r="5" fill={fill} opacity="0">
                       <animate
                         attributeName="r"
-                        values={pulseR}
-                        dur={pulseDur}
+                        values={cfg.pulseR as string}
+                        dur={cfg.pulseDur as string}
                         repeatCount="indefinite"
                         begin={`${(i % 8) * 0.3}s`}
                       />
                       <animate
                         attributeName="opacity"
-                        values={isEmergOff ? "0.5;0;0.5" : "0.35;0;0.35"}
-                        dur={pulseDur}
+                        values="0.35;0;0.35"
+                        dur={cfg.pulseDur as string}
                         repeatCount="indefinite"
                         begin={`${(i % 8) * 0.3}s`}
                       />
@@ -737,12 +677,7 @@ export default function ClinicOpsPanel() {
 
                     {/* Hover glow */}
                     {isHov && (
-                      <circle
-                        cx={clinic.x}
-                        cy={clinic.y}
-                        r="13"
-                        fill={`${fill}22`}
-                      />
+                      <circle cx={clinic.x} cy={clinic.y} r="13" fill={`${fill}22`} />
                     )}
 
                     {/* Pin body */}
@@ -752,29 +687,11 @@ export default function ClinicOpsPanel() {
                       r={isHov || isSel ? 8 : 6}
                       fill={fill}
                       stroke="white"
-                      strokeWidth={clinic.status === "offline" ? 2 : 1.5}
+                      strokeWidth={1.5}
                     />
 
-                    {/* Offline X mark */}
-                    {clinic.status === "offline" && (
-                      <g stroke="white" strokeWidth="1.8" strokeLinecap="round">
-                        <line
-                          x1={clinic.x - 2.5}
-                          y1={clinic.y - 2.5}
-                          x2={clinic.x + 2.5}
-                          y2={clinic.y + 2.5}
-                        />
-                        <line
-                          x1={clinic.x + 2.5}
-                          y1={clinic.y - 2.5}
-                          x2={clinic.x - 2.5}
-                          y2={clinic.y + 2.5}
-                        />
-                      </g>
-                    )}
-
-                    {/* Online checkmark */}
-                    {clinic.status === "online" && (
+                    {/* Active checkmark */}
+                    {clinic.activity === "active" && (
                       <path
                         d={`M ${clinic.x - 2.5},${clinic.y} L ${clinic.x - 0.5},${clinic.y + 2} L ${clinic.x + 2.8},${clinic.y - 2}`}
                         fill="none"
@@ -785,8 +702,8 @@ export default function ClinicOpsPanel() {
                       />
                     )}
 
-                    {/* Delay dash */}
-                    {clinic.status === "delay" && (
+                    {/* Recent dash */}
+                    {clinic.activity === "recent" && (
                       <line
                         x1={clinic.x - 3}
                         y1={clinic.y}
@@ -796,6 +713,11 @@ export default function ClinicOpsPanel() {
                         strokeWidth="2"
                         strokeLinecap="round"
                       />
+                    )}
+
+                    {/* Quiet dot */}
+                    {clinic.activity === "quiet" && (
+                      <circle cx={clinic.x} cy={clinic.y} r="1.6" fill="white" />
                     )}
                   </g>
                 )
@@ -815,8 +737,8 @@ export default function ClinicOpsPanel() {
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl px-3.5 py-2.5 min-w-[170px]">
                   <div className="flex items-center gap-2 mb-1.5">
                     <div
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${S[hovClinic.status].dot} ${
-                        hovClinic.status !== "online" ? "animate-pulse" : ""
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${S[hovClinic.activity].dot} ${
+                        hovClinic.activity === "active" ? "" : "animate-pulse"
                       }`}
                     />
                     <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">
@@ -824,134 +746,101 @@ export default function ClinicOpsPanel() {
                     </p>
                   </div>
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1">
-                    {hovClinic.district} · {hovClinic.lastSync}
+                    {hovClinic.zone || t("map:unzoned")} · {timeAgo(hovClinic.lastVisitAt, t)}
                   </p>
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${S[hovClinic.status].badge}`}
+                      className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${S[hovClinic.activity].badge}`}
                     >
-                      {S[hovClinic.status].label}
+                      {t(`map:${hovClinic.activity}`)}
                     </span>
-                    {hovClinic.patients > 0 && (
-                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                        {hovClinic.patients} patients
-                      </span>
-                    )}
-                    {hovClinic.status === "offline" && (
-                      <span className="text-[11px] text-rose-500 dark:text-rose-400 font-semibold">
-                        Unreachable
-                      </span>
-                    )}
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      {hovClinic.patientCount} {t("common:patients")}
+                    </span>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Loading overlay */}
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-slate-950/40 backdrop-blur-[1px]">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-lg">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    className="w-4 h-4 animate-spin"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v4h.582m15.356 2A8.001 8.001 0 004.582 8m0 0H9m11 11v-4h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  {t("map:loadingClinics")}
                 </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Selected clinic detail bar */}
+        {selClinic && (
+          <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center gap-x-6 gap-y-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${S[selClinic.activity].dot}`} />
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                {selClinic.name}
+              </span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                {selClinic.zone || t("map:unzoned")}
+              </span>
+            </div>
+            <div className="flex items-center gap-5 text-xs text-slate-500 dark:text-slate-400">
+              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.patientCount}</strong> {t("map:detailPatients")}</span>
+              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.visitsLast7d}</strong> {t("map:detailVisits7d")}</span>
+              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.highRisk}</strong> {t("map:detailHighRisk")}</span>
+              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.pendingSync}</strong> {t("map:detailPendingSync")}</span>
+              <span>{t("map:detailLastVisit", { time: timeAgo(selClinic.lastVisitAt, t) })}</span>
+            </div>
+            <button
+              onClick={() => setSelId(null)}
+              className="ml-auto text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            >
+              {t("common:close")}
+            </button>
+          </div>
+        )}
+
         {/* Status legend */}
         <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-6 flex-shrink-0">
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            Legend
+            {t("map:legend")}
           </span>
-          <div className="flex items-center gap-5 flex-1">
+          <div className="flex items-center gap-5 flex-1 flex-wrap">
             <div className="flex items-center gap-2">
-              <div className="relative w-5 h-5">
-                <svg viewBox="0 0 20 20" className="w-full h-full">
-                  <circle
-                    cx="10"
-                    cy="10"
-                    r="7"
-                    fill="#22c55e"
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M7,10 L9,12 L13,8"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
+              <span className="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Online / Synced
+                {t("map:legendActive")}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="relative w-5 h-5">
-                <svg viewBox="0 0 20 20" className="w-full h-full">
-                  <circle
-                    cx="10"
-                    cy="10"
-                    r="7"
-                    fill="#f59e0b"
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <line
-                    x1="7"
-                    y1="10"
-                    x2="13"
-                    y2="10"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
+              <span className="w-3 h-3 rounded-full bg-amber-400 flex-shrink-0" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Sync Delay
+                {t("map:legendRecent")}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="relative w-5 h-5">
-                <svg viewBox="0 0 20 20" className="w-full h-full">
-                  <circle
-                    cx="10"
-                    cy="10"
-                    r="7"
-                    fill="#ef4444"
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <line
-                    x1="7.5"
-                    y1="7.5"
-                    x2="12.5"
-                    y2="12.5"
-                    stroke="white"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1="12.5"
-                    y1="7.5"
-                    x2="7.5"
-                    y2="12.5"
-                    stroke="white"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
+              <span className="w-3 h-3 rounded-full bg-slate-400 flex-shrink-0" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Offline
+                {t("map:legendQuiet")}
               </span>
             </div>
-            {emergencyMode && (
-              <div className="flex items-center gap-2 ml-2 pl-4 border-l border-slate-200 dark:border-slate-700">
-                <div className="w-4 h-4 rounded-full border-2 border-dashed border-rose-500 opacity-70 flex-shrink-0" />
-                <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wide">
-                  Emergency Zone
-                </span>
-              </div>
-            )}
           </div>
           <div className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">
-            {counts.online}/{CLINICS.length} online
+            {t("map:activeOf", { active: counts.active, total: entries.length })}
           </div>
         </div>
       </main>

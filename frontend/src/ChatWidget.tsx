@@ -1,45 +1,14 @@
 import { useState, useRef, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { useTheme } from "./ThemeContext"
+import { useAuth } from "./AuthContext"
+import { answerQuery, type ChatContext } from "./lib/chatbotService"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Message {
   id: number
   role: "user" | "assistant"
   text: string
-}
-
-// ── Initial greeting ───────────────────────────────────────────────────────
-const GREETING: Message = {
-  id: 0,
-  role: "assistant",
-  text: "Hi! I'm the HealthStats Assistant. I can help with patient records, clinic sync status, or guide you through the platform. How can I help?",
-}
-
-const QUICK_REPLIES = [
-  "How does offline sync work?",
-  "Find a patient record",
-  "Clinic status",
-]
-
-// ── Simulated response map ─────────────────────────────────────────────────
-function getResponse(input: string): string {
-  const q = input.toLowerCase()
-  if (q.includes("sync") || q.includes("offline") || q.includes("connect"))
-    return "Visit records sync automatically when connectivity is restored — no data is ever lost. The app queues all changes locally and uploads them the moment you're back online. You can monitor sync status under Admin → Sync Status."
-  if (q.includes("patient") || q.includes("record") || q.includes("find"))
-    return "Search for any patient by name, phone number, or patient ID from the Dashboard search bar. Full visit history, vitals, and triage assessments are accessible for each record."
-  if (
-    q.includes("clinic") ||
-    q.includes("status") ||
-    q.includes("ops") ||
-    q.includes("map")
-  )
-    return "The Ops Map shows real-time connection status for all 18 clinics. Green = synced, amber = sync delay (30 min+), red = offline. Enable Emergency Mode to highlight affected zones for rapid dispatch."
-  if (q.includes("triage") || q.includes("imci") || q.includes("assess"))
-    return "The triage module follows IMCI protocols and works fully offline. Field workers enter assessments on any device; results sync to the dashboard as soon as connectivity is available."
-  if (q.includes("emergency") || q.includes("alert") || q.includes("urgent"))
-    return "Activate Emergency Mode from the Ops Map to instantly highlight all offline clinics in red with pulsing zone indicators. Use Broadcast Alert to notify all connected clinics simultaneously."
-  return "Thanks for your question! I can help with visit records, clinic connectivity, triage workflows, and patient data. What would you like to know more about?"
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────
@@ -94,29 +63,57 @@ const IconHeart = () => (
 // ── Component ───────────────────────────────────────────────────────────────
 export default function ChatWidget() {
   const { dark } = useTheme()
+  const { profile } = useAuth()
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([GREETING])
+  const [messages, setMessages] = useState<Message[]>(() => [
+    { id: 0, role: "assistant", text: i18n.t("chatbot:greeting") },
+  ])
   const [input, setInput] = useState("")
   const [typing, setTyping] = useState(false)
   const [unread, setUnread] = useState(1)
   const msgEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const authenticated = !!profile
+  const ctx: ChatContext = {
+    authenticated,
+    role: profile?.role ?? null,
+    clinicId: profile?.clinic_id ?? null,
+  }
+  const quickReplies = authenticated
+    ? [
+        t("chatbot:quickAuthed1"),
+        t("chatbot:quickAuthed2"),
+        t("chatbot:quickAuthed3"),
+        t("chatbot:quickAuthed4"),
+      ]
+    : [t("chatbot:quickPublic1"), t("chatbot:quickPublic2"), t("chatbot:quickPublic3")]
+
   // Scroll to latest message
   useEffect(() => {
     msgEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, typing])
 
+  // Keep the greeting in the active language while it is still the only message.
+  useEffect(() => {
+    setMessages((m) =>
+      m.length === 1 && m[0].role === "assistant"
+        ? [{ id: 0, role: "assistant", text: i18n.t("chatbot:greeting") }]
+        : m,
+    )
+  }, [i18n.language])
+
   // Clear unread + focus input when opened
   useEffect(() => {
     if (open) {
       setUnread(0)
-      const t = setTimeout(() => inputRef.current?.focus(), 280)
-      return () => clearTimeout(t)
+      const focusTimer = setTimeout(() => inputRef.current?.focus(), 280)
+      return () => clearTimeout(focusTimer)
     }
   }, [open])
 
-  function send(text = input) {
+  async function send(text = input) {
     const trimmed = text.trim()
     if (!trimmed || typing) return
 
@@ -125,17 +122,16 @@ export default function ChatWidget() {
     setInput("")
     setTyping(true)
 
-    const delay = 850 + Math.random() * 550
-    setTimeout(() => {
-      setTyping(false)
-      const reply: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        text: getResponse(trimmed),
-      }
-      setMessages((m) => [...m, reply])
-      if (!open) setUnread((u) => u + 1)
-    }, delay)
+    const answer = await answerQuery(trimmed, ctx)
+
+    setTyping(false)
+    const reply: Message = {
+      id: Date.now() + 1,
+      role: "assistant",
+      text: answer.text,
+    }
+    setMessages((m) => [...m, reply])
+    if (!open) setUnread((u) => u + 1)
   }
 
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -152,7 +148,7 @@ export default function ChatWidget() {
       {/* ──────────── Chat window ──────────── */}
       <div
         role="dialog"
-        aria-label="HealthStats Assistant chat"
+        aria-label={t("chatbot:title")}
         aria-hidden={!open}
         className={`w-[360px] rounded-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 ease-out origin-bottom-right ${
           open
@@ -179,12 +175,12 @@ export default function ChatWidget() {
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white tracking-tight leading-none">
-              HealthStats Assistant
+              {t("chatbot:title")}
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
               <span className="text-[11px] text-teal-100 font-medium">
-                Online · typically replies instantly
+                {authenticated ? t("chatbot:statusAuthed") : t("chatbot:statusPublic")}
               </span>
             </div>
           </div>
@@ -193,7 +189,7 @@ export default function ChatWidget() {
           <button
             onClick={() => setOpen(false)}
             className="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-teal-100 hover:text-white transition-all active:scale-90"
-            aria-label="Minimize chat"
+            aria-label={t("chatbot:minimizeAria")}
           >
             <IconMinus />
           </button>
@@ -213,7 +209,7 @@ export default function ChatWidget() {
                     className="max-w-[78%] bg-teal-600 text-white px-4 py-2.5 shadow-sm"
                     style={{ borderRadius: "18px 4px 18px 18px" }}
                   >
-                    <p className="text-sm leading-relaxed">{msg.text}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
                   </div>
                 </div>
               ) : (
@@ -230,7 +226,7 @@ export default function ChatWidget() {
                     }`}
                     style={{ borderRadius: "4px 18px 18px 18px" }}
                   >
-                    <p className="text-sm leading-relaxed">{msg.text}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
                   </div>
                 </div>
               )}
@@ -238,7 +234,7 @@ export default function ChatWidget() {
               {/* Quick reply chips — only shown after the greeting */}
               {msg.role === "assistant" && idx === 0 && showQuickReplies && (
                 <div className="flex flex-wrap gap-1.5 mt-3 pl-8">
-                  {QUICK_REPLIES.map((q) => (
+                  {quickReplies.map((q) => (
                     <button
                       key={q}
                       onClick={() => send(q)}
@@ -311,7 +307,7 @@ export default function ChatWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKey}
-              placeholder="Ask a question…"
+              placeholder={t("chatbot:placeholder")}
               disabled={!open}
               className={`flex-1 bg-transparent text-sm outline-none ${
                 dark
@@ -322,7 +318,7 @@ export default function ChatWidget() {
             <button
               onClick={() => send()}
               disabled={!input.trim() || typing}
-              aria-label="Send message"
+              aria-label={t("chatbot:sendAria")}
               className="w-7 h-7 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
             >
               <IconSend />
@@ -333,7 +329,7 @@ export default function ChatWidget() {
               dark ? "text-slate-700" : "text-slate-300"
             }`}
           >
-            HealthStats AI · Not a substitute for medical advice
+            {t("chatbot:disclaimer")}
           </p>
         </div>
       </div>
@@ -341,7 +337,7 @@ export default function ChatWidget() {
       {/* ──────────── Toggle button ──────────── */}
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Close chat assistant" : "Open chat assistant"}
+        aria-label={open ? t("chatbot:closeAria") : t("chatbot:openAria")}
         aria-expanded={open}
         className={`pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
           open

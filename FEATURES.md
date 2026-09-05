@@ -29,10 +29,12 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 | Automatic Sync | Offline-First | Not Started | Critical |
 | OCR | Intelligence | Not Started | Optional |
 | AI-Assisted Triage | Intelligence | Not Started | Optional |
+| AI Assistant (Chatbot) | Intelligence | Implemented | Medium |
 | Admin Dashboard | Administration | Implemented | Medium |
 | Staff Management | Administration | Implemented | Medium |
 | Emergency Mode | Disaster Response | In Progress | High |
 | Outbreak Detection | Disaster Response | Planned | Medium |
+| Clinic Coverage Map | Administration | Implemented | Medium |
 | Bangla/English | Accessibility | Implemented | Critical |
 | Dark Mode | UI/UX | Implemented | High |
 | PWA | Platform | Not Started | High |
@@ -145,10 +147,17 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 ---
 
 ## 8. AI-Assisted Triage
-
-- **Status**: Optional / Future
 - **Purpose**: An algorithm (rule-based or lightweight ML) to automatically calculate an `urgency_score` based on entered vitals and symptoms, flagging patients who require immediate attention.
 *(Note: This feature is currently deferred as an optional future enhancement. The project's primary intelligence path focuses on OCR digitization.)*
+
+---
+
+## 8.5 AI Assistant (Chatbot)
+
+- **Status**: Implemented
+- **Purpose**: A conversational assistant (`ChatWidget.tsx`) that helps authorized users retrieve real information from HealthStats and explains how the platform works.
+- **Capabilities**: An intent engine (`chatbotService.ts`) maps free-text questions to **real Supabase queries** reused from `adminService` — total patients, records today, pending syncs, high-risk patients (count and named list), outbreak/cluster status, clinic activity, and patient look-up by name. Data-backed answers require an authenticated session and are scoped by the user's role/clinic (workers see only their clinic). On the public landing page the assistant answers only platform how-to questions (offline sync, OCR, triage, emergency mode, language, dark mode). Every figure comes from a live query; empty results, zero counts and database errors are reported honestly.
+- **Grounding & limitations**: The assistant **never fabricates** patient, clinic, outbreak or medical data — it has no generative model and no external API; it only relays real query results or fixed platform facts. It is not a medical-advice tool (disclaimer shown). Because MVP RLS is disabled, data access is gated at the application layer via the auth context. Language is English-only.
 
 ---
 
@@ -184,11 +193,22 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ---
 
-## 13. Language Support
+## 12.5 Clinic Operations Map
 
 - **Status**: Implemented
-- **Supported**: Bangla and English
-- **Mechanism**: A global `LanguageContext` allows instant UI translation. Core navigation and clinical forms are actively translated.
+- **Purpose**: A geographic overview of the clinic network so administrators can see where care is being delivered and which clinics have gone quiet.
+- **Capabilities**: Wired to live Supabase data via `adminService.fetchClinicMapData()`. For every clinic it aggregates real patient counts, visit activity (last 24 hours / last 7 days), pending-sync backlog (`synced_at IS NULL`), recent high-risk cases (urgency ≥ 4) and the last visit time. Clinics are plotted on a hand-drawn Bangladesh SVG map by matching their `zone`/`name` against a district coordinate lookup (presentation-layer geocoding — the schema has **no** latitude/longitude and none was added). Each clinic is coloured by an honest activity status derived from visit recency: **Active** (visit in 24h), **Recent** (visit in 7d) or **Quiet** (no visits in 7d). Includes searchable/filterable sidebar, a quiet-clinic spotlight, hover tooltips, a per-clinic detail bar, loading/empty/error states and manual refresh.
+- **Limitations**: No real per-clinic device/network status exists in the schema, so the map deliberately shows clinical *activity* rather than connectivity. Clinics whose `zone`/`name` does not match a known district are listed as "not on map" instead of being given a fabricated location. English-only, consistent with the other admin views.
+
+---
+
+## 13. Language Support
+
+- **Status**: Implemented (infrastructure complete; UI coverage in progress)
+- **Supported**: Bangla and English (English is the fallback)
+- **Mechanism**: Application-wide internationalization built on `i18next` + `react-i18next` (Task 18). One centralized config (`src/i18n/index.ts`) with namespaced English/Bangla resources (`src/i18n/locales/en.ts`, `bn.ts`: `common`, `navigation`, `urgency`, `map`, `chatbot`, `errors`). i18next is the **single source of truth** for the active language; the existing `LanguageContext`/`useLang()` now delegates to it, so the language switcher, all `useTranslation()` components and all legacy inline-label components stay in sync. The selected language is persisted in `localStorage` (`hs-lang`) via the browser language detector and survives refresh and navigation.
+- **Translated via keys (`t()`)**: the Ops Map (Task 16, `ClinicOpsPanel`) and the AI Assistant (Task 17, `ChatWidget` + `chatbotService`, including grounded replies), plus shared `common`/`urgency` labels. The landing page, navbar (switcher, links, CTAs) and dashboards remain localized through the shared language state.
+- **Coverage / limitations**: Many deep worker/admin/clinical pages are **not yet translated** and still render English strings (e.g. `StaffPage`, `PatientRecordsPage`, `PatientDetailPage`, `VitalsPage`, `NewPatientPage`, `DigitizePage`, `SyncMonitorPage`, `FlaggedPatientsPage`, `EmergencyDashboard`, `EmergencyTriagePage`, `OutbreakDetectionPage`, `LoginPage`/`AdminLoginPage`, `SettingsPage`). The i18n architecture is in place for these to be migrated incrementally. Canonical database values (symptom categories, roles, urgency numbers) are **never** translated — only their display labels are.
 
 ---
 
@@ -292,6 +312,8 @@ flowchart LR
 | Emergency Mode | Implemented | Task 14; live database metrics (`clinics`, `visits` 48h, `patients`, `staff`), zone aggregation, 1–5 triage queue with detail drill-down, SOS broadcast modal, situation report CSV export |
 | Outbreak Detection | Implemented | Task 14.5; threshold-based symptom cluster engine (`adminService.fetchOutbreakAnalysis()`), syndrome classification, early-warning banner, WHO checklist, patient drill-down, CSV export (`OutbreakDetectionPage.tsx`) |
 | Emergency Triage Queue | Implemented | Task 15; authoritative 1–5 urgency scale, Red/Yellow/Green triage bands, interactive clinical status workflows (Start Care / In Treatment / Discharge / Revert), multi-attribute search, band filtering, CSV export, patient detail drill-down (`EmergencyTriagePage.tsx`) |
+| Clinic Operations Map | Implemented | Task 16; live `clinics`/`patients`/`visits` aggregation via `fetchClinicMapData()`, district-name geocoding onto the Bangladesh SVG map, honest Active/Recent/Quiet activity status, patient/visit/pending-sync/high-risk metrics per clinic, quiet-clinic spotlight, filters, detail bar, loading/empty/error states (`ClinicOpsPanel.tsx`) |
+| AI Assistant (Chatbot) | Implemented | Task 17; grounded intent engine (`chatbotService.ts`) reusing `adminService` queries for patient counts, records today, pending sync, high-risk list, outbreak status, clinic activity and patient look-up; auth/role scoped; platform how-to when signed out; never fabricates data (`ChatWidget.tsx`) |
 | Offline Storage | Implemented | Task 7; Dexie.js offlineDb with pendingRecords queue |
 | Background Sync | Implemented | Task 8; SyncService automatic sync on reconnection + SyncMonitorPage |
 | PWA | Not Started | Manifest pending |
