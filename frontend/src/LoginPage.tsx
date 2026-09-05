@@ -65,8 +65,8 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
         <div
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-sm border backdrop-blur-sm transition-all ${
             isOnline
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-              : "bg-slate-100 border-slate-200 text-slate-500"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400"
+              : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400"
           }`}
         >
           <span
@@ -82,7 +82,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
       <div className="px-8 pt-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-teal-700 hover:text-teal-900 font-medium transition-colors group"
+          className="flex items-center gap-1.5 text-sm text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-300 font-medium transition-colors group"
         >
           <svg
             viewBox="0 0 20 20"
@@ -119,18 +119,18 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                 />
               </svg>
             </div>
-            <h1 className="font-display text-3xl text-teal-950 mb-1">
+            <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1">
               Health<span className="text-teal-600">Stats</span>
             </h1>
-            <p className="text-sm text-slate-500">Healthcare Worker Portal</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Healthcare Worker Portal</p>
           </div>
 
           {/* Card */}
           <div className="rounded-3xl p-8" style={{background: 'var(--an-glass-bg)', backdropFilter: 'blur(24px)', border: '1px solid var(--an-border)', boxShadow: 'var(--an-glass-shadow-lg)'}}>
-            <h2 className="text-lg font-semibold text-teal-950 mb-1">
+            <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">
               Sign in to your account
             </h2>
-            <p className="text-sm text-slate-500 mb-7">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-7">
               {isOnline
                 ? "Enter your credentials to access the portal."
                 : "You're offline. Your local records are still accessible."}
@@ -138,7 +138,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
 
             {/* Error */}
             {error && (
-              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5">
+              <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5">
                 <svg
                   viewBox="0 0 20 20"
                   fill="currentColor"
@@ -159,12 +159,12 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
               <div>
                 <label
                   htmlFor="workerId"
-                  className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5"
+                  className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5"
                 >
                   Email Address
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                     <svg
                       viewBox="0 0 20 20"
                       fill="none"
@@ -186,7 +186,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                     placeholder="e.g. name@clinic.org"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
                   />
                 </div>
               </div>
@@ -196,19 +196,19 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                 <div className="flex items-center justify-between mb-1.5">
                   <label
                     htmlFor="password"
-                    className="block text-xs font-semibold text-slate-600 uppercase tracking-wide"
+                    className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide"
                   >
                     Password
                   </label>
                   <button
                     type="button"
-                    className="text-xs text-teal-600 hover:text-teal-800 font-medium transition-colors"
+                    className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
                   >
                     Forgot password?
                   </button>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                     <svg
                       viewBox="0 0 20 20"
                       fill="none"
@@ -230,12 +230,12 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -282,7 +282,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
               <label className="flex items-center gap-2.5 cursor-pointer group">
                 <div className="relative">
                   <input type="checkbox" className="peer sr-only" />
-                  <div className="w-4 h-4 rounded border-2 border-slate-300 group-hover:border-teal-400 peer-checked:border-teal-600 peer-checked:bg-teal-600 transition-all" />
+                  <div className="w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600 group-hover:border-teal-400 peer-checked:border-teal-600 peer-checked:bg-teal-600 transition-all" />
                   <svg
                     viewBox="0 0 12 12"
                     fill="none"
@@ -297,7 +297,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                     />
                   </svg>
                 </div>
-                <span className="text-sm text-slate-600 select-none">
+                <span className="text-sm text-slate-600 dark:text-slate-300 select-none">
                   Keep me signed in on this device
                 </span>
               </label>
@@ -339,7 +339,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
 
             {/* Offline mode notice */}
             {!isOnline && (
-              <div className="mt-5 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <div className="mt-5 flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl px-4 py-3">
                 <svg
                   viewBox="0 0 20 20"
                   fill="currentColor"
@@ -351,7 +351,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <p className="text-xs text-amber-700 leading-relaxed">
+                <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
                   <strong>Offline mode:</strong> Your locally cached records are
                   accessible after login. Changes will sync when connectivity is
                   restored.
@@ -362,7 +362,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
 
           {/* Footer note */}
           <div className="mt-6 text-center space-y-3">
-            <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
+            <div className="flex items-center justify-center gap-4 text-xs text-slate-400 dark:text-slate-500">
               <span className="flex items-center gap-1">
                 <svg
                   viewBox="0 0 16 16"
@@ -373,7 +373,7 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                 </svg>
                 256-bit TLS encryption
               </span>
-              <span className="w-px h-3 bg-slate-200" />
+              <span className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
               <span className="flex items-center gap-1">
                 <svg
                   viewBox="0 0 16 16"
@@ -388,14 +388,14 @@ export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
                 </svg>
                 WHO-certified platform
               </span>
-              <span className="w-px h-3 bg-slate-200" />
+              <span className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
               <span>Works offline</span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
               New to HealthStats?{" "}
               <a
                 href="#"
-                className="text-teal-600 hover:text-teal-800 font-medium transition-colors"
+                className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
               >
                 Contact your clinic admin
               </a>

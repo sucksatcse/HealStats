@@ -143,18 +143,18 @@ function Sparkline({
 
 // ── Urgency badge ──────────────────────────────────────────────────────────────
 const URGENCY_BADGE_CLS: Record<string, string> = {
-  Critical: "bg-red-50 text-red-700 border-red-200",
-  High: "bg-orange-50 text-orange-700 border-orange-200",
-  Moderate: "bg-amber-50 text-amber-700 border-amber-200",
-  Low: "bg-sky-50 text-sky-700 border-sky-200",
-  Stable: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Critical: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50",
+  High: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50",
+  Moderate: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50",
+  Low: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/50",
+  Stable: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50",
 }
 
 function UrgencyBadge({ score }: { score: number | null }) {
   const label = urgencyLabel(score)
   const cls = label
     ? URGENCY_BADGE_CLS[label]
-    : "bg-slate-50 text-slate-500 border-slate-200"
+    : "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-800"
   return (
     <span
       className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${cls}`}
@@ -244,7 +244,7 @@ export default function PatientDetailPage({
   if (!patientId) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center max-w-5xl mx-auto w-full">
-        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-slate-400 dark:text-slate-500">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -259,10 +259,10 @@ export default function PatientDetailPage({
             />
           </svg>
         </div>
-        <h2 className="text-lg font-semibold text-slate-700">
+        <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
           No patient selected
         </h2>
-        <p className="text-sm text-slate-500 mt-1 max-w-sm">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
           Open a record from the Patients list, or register a new patient to
           view their history here.
         </p>
@@ -273,8 +273,8 @@ export default function PatientDetailPage({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
-        <div className="w-10 h-10 border-4 border-slate-200 border-t-teal-600 rounded-full animate-spin" />
-        <p className="mt-4 text-slate-500 font-medium">
+        <div className="w-10 h-10 border-4 border-slate-200 dark:border-slate-700 border-t-teal-600 rounded-full animate-spin" />
+        <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium">
           Loading patient record...
         </p>
       </div>
@@ -283,13 +283,13 @@ export default function PatientDetailPage({
 
   if (error || !patient) {
     return (
-      <div className="bg-red-50 text-red-700 p-6 rounded-2xl border border-red-100 flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
+      <div className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 p-6 rounded-2xl border border-red-100 dark:border-red-900/50 flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="w-12 h-12 mb-4 text-red-400"
+          className="w-12 h-12 mb-4 text-red-400 dark:text-red-500"
         >
           <circle cx="12" cy="12" r="10" />
           <path
@@ -311,7 +311,7 @@ export default function PatientDetailPage({
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto pb-10 w-full">
       {/* ── Patient header card ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         {/* Teal accent bar */}
         <div className="h-2 bg-gradient-to-r from-teal-500 to-teal-700" />
 
@@ -327,23 +327,23 @@ export default function PatientDetailPage({
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h1 className="font-display text-2xl text-teal-950 leading-tight">
+                <h1 className="font-display text-2xl text-teal-950 dark:text-white leading-tight">
                   {patient.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
                     {patient.age ?? "—"} yrs
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                  <span className="text-sm text-slate-500">
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
                     {sexLabel(patient.sex)}
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                  <span className="text-sm text-slate-500">
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
                     {patient.village ?? "—"}
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                  <span className="font-mono text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                  <span className="font-mono text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                     {shortId(patient.id)}
                   </span>
                 </div>
@@ -351,7 +351,7 @@ export default function PatientDetailPage({
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <UrgencyBadge score={latestVisit.urgency_score} />
                     {latestVisit.symptom_category && (
-                      <span className="text-[11px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
                         {categoryLabel(latestVisit.symptom_category)}
                       </span>
                     )}
@@ -386,7 +386,7 @@ export default function PatientDetailPage({
             </div>
 
             {/* Meta row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
               {[
                 { label: "Registered", value: fmtDate(patient.created_at) },
                 {
@@ -400,10 +400,10 @@ export default function PatientDetailPage({
                 { label: "Clinic", value: patient.clinics?.name ?? "—" },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
                     {label}
                   </p>
-                  <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
                     {value}
                   </p>
                 </div>
@@ -414,15 +414,15 @@ export default function PatientDetailPage({
       </div>
 
       {/* ── Tab bar ── */}
-      <div className="flex gap-1 bg-slate-100 rounded-2xl p-1">
+      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1">
         {TABS.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setTab(id as typeof tab)}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all ${
               tab === id
-                ? "bg-white text-teal-700 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             }`}
           >
             {label}
@@ -434,11 +434,11 @@ export default function PatientDetailPage({
           TAB 1 — Vitals History
       ══════════════════════════════════════════════ */}
       {tab === "vitals" && vitalsHistory.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-14 text-center">
-          <p className="text-sm font-medium text-slate-500">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             No vitals recorded yet
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             Measurements entered during a visit will appear here.
           </p>
         </div>
@@ -501,18 +501,18 @@ export default function PatientDetailPage({
               return (
                 <div
                   key={label}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 pt-4 pb-3 flex flex-col gap-2 overflow-hidden"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-4 pt-4 pb-3 flex flex-col gap-2 overflow-hidden"
                 >
                   <div className="flex items-start justify-between">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
                       {label}
                     </p>
                     {status && (
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                           status === "Normal"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-amber-50 text-amber-600"
+                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+                            : "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
                         }`}
                       >
                         {status}
@@ -520,10 +520,10 @@ export default function PatientDetailPage({
                     )}
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="font-display text-2xl text-slate-900">
+                    <span className="font-display text-2xl text-slate-900 dark:text-white">
                       {lv ?? "—"}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">
+                    <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
                       {unit}
                     </span>
                   </div>
@@ -538,14 +538,14 @@ export default function PatientDetailPage({
                         width={180}
                       />
                     ) : (
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {data.length === 0
                           ? "Not recorded"
                           : "Trend needs 2+ readings"}
                       </span>
                     )}
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 pt-1">
+                  <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1">
                     <span>
                       {series[0] ? fmtDate(series[0].created_at, false) : ""}
                     </span>
@@ -562,18 +562,18 @@ export default function PatientDetailPage({
           </div>
 
           {/* Detailed vitals table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 All Readings — {vitalsHistory.length} visit
                 {vitalsHistory.length === 1 ? "" : "s"}
               </h3>
-              <span className="text-xs text-slate-400">Oldest → newest</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Oldest → newest</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
+                  <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
                     {[
                       "Date",
                       "Sys / Dia (mmHg)",
@@ -586,7 +586,7 @@ export default function PatientDetailPage({
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap"
+                        className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 whitespace-nowrap"
                       >
                         {h}
                       </th>
@@ -604,8 +604,8 @@ export default function PatientDetailPage({
                       <span
                         className={
                           warn
-                            ? "text-amber-600 font-semibold"
-                            : "text-slate-700"
+                            ? "text-amber-600 dark:text-amber-400 font-semibold"
+                            : "text-slate-700 dark:text-slate-200"
                         }
                       >
                         {n ?? "—"}
@@ -614,16 +614,16 @@ export default function PatientDetailPage({
                     return (
                       <tr
                         key={v.id}
-                        className={`border-b border-slate-100 last:border-0 ${
-                          isLatest ? "bg-teal-50/50" : "hover:bg-slate-50"
+                        className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${
+                          isLatest ? "bg-teal-50/50 dark:bg-teal-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800"
                         } transition-colors`}
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
                             {fmtDate(v.created_at)}
                           </span>
                           {isLatest && (
-                            <span className="ml-2 text-[10px] font-bold text-teal-600 bg-teal-100 px-1.5 py-0.5 rounded-full">
+                            <span className="ml-2 text-[10px] font-bold text-teal-600 dark:text-teal-400 bg-teal-100 dark:bg-teal-950/40 px-1.5 py-0.5 rounded-full">
                               Latest
                             </span>
                           )}
@@ -632,8 +632,8 @@ export default function PatientDetailPage({
                           <span
                             className={`font-semibold ${
                               (vt.systolic ?? 0) >= 140
-                                ? "text-amber-600"
-                                : "text-slate-700"
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-slate-700 dark:text-slate-200"
                             }`}
                           >
                             {vt.systolic ?? "—"}/{vt.diastolic ?? "—"}
@@ -668,11 +668,11 @@ export default function PatientDetailPage({
           TAB 2 — Visit History
       ══════════════════════════════════════════════ */}
       {tab === "visits" && visits.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-14 text-center">
-          <p className="text-sm font-medium text-slate-500">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             No visits recorded yet
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             Use “New Visit” to record vitals and symptoms for this patient.
           </p>
         </div>
@@ -680,15 +680,15 @@ export default function PatientDetailPage({
       {tab === "visits" && visits.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {visits.length} recorded visit{visits.length === 1 ? "" : "s"}
             </p>
             {visits.every((v) => v.synced_at) ? (
-              <span className="text-xs text-teal-600 font-medium">
+              <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
                 All synced ✓
               </span>
             ) : (
-              <span className="text-xs text-amber-600 font-medium">
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 {visits.filter((v) => !v.synced_at).length} pending sync
               </span>
             )}
@@ -697,7 +697,7 @@ export default function PatientDetailPage({
           {/* Timeline */}
           <div className="relative">
             {/* Vertical line */}
-            <div className="absolute left-[19px] top-6 bottom-6 w-px bg-slate-200" />
+            <div className="absolute left-[19px] top-6 bottom-6 w-px bg-slate-200 dark:bg-slate-800" />
 
             <div className="flex flex-col gap-3">
               {visits.map((v, i) => {
@@ -710,7 +710,7 @@ export default function PatientDetailPage({
                         className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold z-10 border-2 ${
                           i === 0
                             ? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20"
-                            : "bg-white text-slate-500 border-slate-200"
+                            : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"
                         }`}
                       >
                         {visits.length - i}
@@ -718,37 +718,37 @@ export default function PatientDetailPage({
                     </div>
 
                     {/* Card */}
-                    <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                       <button
                         onClick={() => setVisitExpanded(open ? null : i)}
                         aria-expanded={open}
-                        className="w-full px-5 py-4 flex items-start justify-between gap-3 text-left hover:bg-slate-50 transition-colors"
+                        className="w-full px-5 py-4 flex items-start justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm text-slate-800">
+                            <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">
                               {fmtDate(v.created_at)}
                             </span>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
                               {fmtTime(v.created_at)}
                             </span>
                             <UrgencyBadge score={v.urgency_score} />
                             {v.symptom_category && (
-                              <span className="text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
                                 {categoryLabel(v.symptom_category)}
                               </span>
                             )}
                             {v.synced_at ? (
-                              <span className="text-[10px] font-medium text-emerald-600">
+                              <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                                 ✓ Synced
                               </span>
                             ) : (
-                              <span className="text-[10px] font-medium text-amber-600">
+                              <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
                                 Pending sync
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 truncate">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                             {v.symptoms?.split("\n")[0] || "No symptoms recorded"}
                           </p>
                         </div>
@@ -757,7 +757,7 @@ export default function PatientDetailPage({
                           fill="none"
                           stroke="currentColor"
                           strokeWidth={2}
-                          className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform mt-0.5 ${
+                          className={`w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0 transition-transform mt-0.5 ${
                             open ? "rotate-180" : ""
                           }`}
                         >
@@ -770,7 +770,7 @@ export default function PatientDetailPage({
                       </button>
 
                       {open && (
-                        <div className="border-t border-slate-100 px-5 py-4 grid sm:grid-cols-2 gap-4">
+                        <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-4 grid sm:grid-cols-2 gap-4">
                           {[
                             {
                               label: "Clinician",
@@ -792,17 +792,17 @@ export default function PatientDetailPage({
                             },
                           ].map(({ label, value, wide }) => (
                             <div key={label} className={wide ? "sm:col-span-2" : ""}>
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">
                                 {label}
                               </p>
-                              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                              <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
                                 {value}
                               </p>
                             </div>
                           ))}
                           {v.vitals && Object.keys(v.vitals).length > 0 && (
                             <div className="sm:col-span-2">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
                                 Vitals
                               </p>
                               <div className="flex flex-wrap gap-2">
@@ -822,15 +822,15 @@ export default function PatientDetailPage({
                                   .map(([k, lbl, unit]) => (
                                     <span
                                       key={k}
-                                      className="text-xs bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1 text-slate-700"
+                                      className="text-xs bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200"
                                     >
-                                      <span className="text-slate-400 font-medium mr-1">
+                                      <span className="text-slate-400 dark:text-slate-500 font-medium mr-1">
                                         {lbl}
                                       </span>
                                       <span className="font-semibold">
                                         {v.vitals![k]}
                                       </span>
-                                      <span className="text-slate-400 ml-0.5">
+                                      <span className="text-slate-400 dark:text-slate-500 ml-0.5">
                                         {unit}
                                       </span>
                                     </span>
@@ -853,11 +853,11 @@ export default function PatientDetailPage({
           TAB 3 — Diagnoses (from visits.diagnosis)
       ══════════════════════════════════════════════ */}
       {tab === "diagnosis" && diagnosed.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-14 text-center">
-          <p className="text-sm font-medium text-slate-500">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             No diagnoses recorded yet
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             Diagnoses entered on the visit form will be listed here.
           </p>
         </div>
@@ -867,40 +867,40 @@ export default function PatientDetailPage({
           {diagnosed.map((v) => (
             <div
               key={v.id}
-              className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
             >
-              <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-start justify-between gap-3">
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h3 className="font-semibold text-slate-800">
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                       {fmtDate(v.created_at)}
                     </h3>
                     <UrgencyBadge score={v.urgency_score} />
                     {v.symptom_category && (
-                      <span className="text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
                         {categoryLabel(v.symptom_category)}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                     {fmtTime(v.created_at)} · {v.staff?.name ?? "Unknown clinician"}
                   </p>
                 </div>
               </div>
               <div className="px-5 py-4 grid sm:grid-cols-2 gap-5">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
                     Diagnosis / Assessment
                   </p>
-                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
                     {v.diagnosis}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
                     Presenting Symptoms
                   </p>
-                  <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 rounded-xl border border-slate-100 px-3 py-3 whitespace-pre-line">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 px-3 py-3 whitespace-pre-line">
                     {v.symptoms || "—"}
                   </p>
                 </div>

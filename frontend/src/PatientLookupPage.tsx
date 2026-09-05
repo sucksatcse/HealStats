@@ -196,9 +196,9 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-teal-50 flex flex-col font-[Work_Sans,system-ui,sans-serif]">
+    <div className="min-h-screen bg-teal-50 dark:bg-slate-950 flex flex-col font-[Work_Sans,system-ui,sans-serif]">
       {/* ── Simple top bar ── */}
-      <header className="bg-white border-b border-teal-100">
+      <header className="bg-white dark:bg-slate-900 border-b border-teal-100 dark:border-slate-800">
         <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center">
@@ -216,13 +216,13 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 />
               </svg>
             </div>
-            <span className="font-display text-xl text-teal-900">
-              Health<span className="text-teal-600">Stats</span>
+            <span className="font-display text-xl text-teal-900 dark:text-white">
+              Health<span className="text-teal-600 dark:text-teal-400">Stats</span>
             </span>
           </div>
           <button
             onClick={onBack}
-            className="flex items-center gap-1 text-sm font-semibold text-teal-700 hover:text-teal-900 transition-colors"
+            className="flex items-center gap-1 text-sm font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-white transition-colors"
           >
             {Icon.back} Home
           </button>
@@ -237,19 +237,19 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
               <div className="w-20 h-20 rounded-3xl bg-teal-600 text-white flex items-center justify-center mx-auto mb-5 p-5">
                 {Icon.clipboard}
               </div>
-              <h1 className="font-display text-3xl sm:text-4xl text-teal-950 leading-tight mb-3">
+              <h1 className="font-display text-3xl sm:text-4xl text-teal-950 dark:text-white leading-tight mb-3">
                 Check Your Visit
               </h1>
-              <p className="text-lg text-slate-600 leading-relaxed max-w-md mx-auto">
+              <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto">
                 Type your Patient ID number to see your last visit and your next
                 visit date.
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl border border-teal-100 shadow-sm p-6 sm:p-8">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-teal-100 dark:border-slate-800 shadow-sm p-6 sm:p-8">
               <label
                 htmlFor="pid"
-                className="block text-lg font-semibold text-teal-950 mb-3"
+                className="block text-lg font-semibold text-teal-950 dark:text-white mb-3"
               >
                 Your Patient ID
               </label>
@@ -264,16 +264,16 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 onKeyDown={(e) => e.key === "Enter" && lookup()}
                 placeholder="PT-00412"
                 autoComplete="off"
-                className="w-full text-center text-2xl sm:text-3xl font-bold tracking-wider uppercase text-teal-900 placeholder:text-slate-300 placeholder:font-normal border-2 border-teal-200 rounded-2xl px-4 py-5 focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15 transition-all"
+                className="w-full text-center text-2xl sm:text-3xl font-bold tracking-wider uppercase text-teal-900 dark:text-white dark:bg-slate-900 placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:font-normal border-2 border-teal-200 dark:border-teal-800 rounded-2xl px-4 py-5 focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15 transition-all"
               />
-              <p className="text-sm text-slate-400 mt-3 text-center">
+              <p className="text-sm text-slate-400 dark:text-slate-500 mt-3 text-center">
                 Your ID is on your clinic card. It looks like{" "}
-                <span className="font-semibold text-slate-500">PT-00412</span>.
+                <span className="font-semibold text-slate-500 dark:text-slate-400">PT-00412</span>.
               </p>
 
               {notFound && (
-                <div className="mt-5 flex items-start gap-3 bg-amber-50 border-2 border-amber-200 rounded-2xl px-4 py-4 text-amber-800">
-                  <span className="text-amber-500 flex-shrink-0">
+                <div className="mt-5 flex items-start gap-3 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-900/50 rounded-2xl px-4 py-4 text-amber-800 dark:text-amber-300">
+                  <span className="text-amber-500 dark:text-amber-400 flex-shrink-0">
                     {Icon.warning}
                   </span>
                   <div>
@@ -291,7 +291,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
               <button
                 onClick={lookup}
                 disabled={id.trim() === ""}
-                className="w-full mt-6 flex items-center justify-center gap-3 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xl font-bold py-5 rounded-2xl shadow-lg shadow-teal-600/20 transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:shadow-none"
+                className="w-full mt-6 flex items-center justify-center gap-3 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 text-white text-xl font-bold py-5 rounded-2xl shadow-lg shadow-teal-600/20 transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:shadow-none"
               >
                 {Icon.search}
                 Show My Visit
@@ -299,18 +299,18 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
             </div>
 
             {/* Try-it hint */}
-            <p className="text-center text-sm text-slate-400 mt-6">
+            <p className="text-center text-sm text-slate-400 dark:text-slate-500 mt-6">
               Try:{" "}
               <button
                 onClick={() => setId("PT-00412")}
-                className="font-semibold text-teal-600 underline"
+                className="font-semibold text-teal-600 dark:text-teal-400 underline"
               >
                 PT-00412
               </button>
               {" · "}
               <button
                 onClick={() => setId("PT-00358")}
-                className="font-semibold text-teal-600 underline"
+                className="font-semibold text-teal-600 dark:text-teal-400 underline"
               >
                 PT-00358
               </button>
@@ -324,8 +324,8 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 {Icon.person}
               </div>
               <div>
-                <p className="text-base text-slate-500">Visit summary for</p>
-                <h1 className="font-display text-3xl text-teal-950 leading-tight">
+                <p className="text-base text-slate-500 dark:text-slate-400">Visit summary for</p>
+                <h1 className="font-display text-3xl text-teal-950 dark:text-white leading-tight">
                   {record.name}
                 </h1>
               </div>
@@ -367,15 +367,15 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
             </div>
 
             {/* Help */}
-            <div className="mt-6 bg-white rounded-2xl border border-teal-100 px-5 py-4 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+            <div className="mt-6 bg-white dark:bg-slate-900 rounded-2xl border border-teal-100 dark:border-slate-800 px-5 py-4 flex items-center gap-3">
+              <span className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
                 {Icon.phone}
               </span>
               <div>
-                <p className="font-semibold text-teal-950 text-base leading-tight">
+                <p className="font-semibold text-teal-950 dark:text-white text-base leading-tight">
                   Need help?
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   Call your clinic or ask a health worker.
                 </p>
               </div>
@@ -383,7 +383,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
 
             <button
               onClick={reset}
-              className="w-full mt-6 flex items-center justify-center gap-2 border-2 border-teal-300 text-teal-800 hover:bg-white text-lg font-bold py-4 rounded-2xl transition-colors"
+              className="w-full mt-6 flex items-center justify-center gap-2 border-2 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200 hover:bg-white dark:hover:bg-slate-800 text-lg font-bold py-4 rounded-2xl transition-colors"
             >
               {Icon.back} Check Another ID
             </button>
@@ -392,7 +392,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
       </main>
 
       <footer className="py-6 text-center">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-400 dark:text-slate-500">
           Your information is private and safe.
         </p>
       </footer>
@@ -415,21 +415,21 @@ function SummaryCard({
   sub: string
 }) {
   const tones = {
-    teal: { icon: "bg-teal-100 text-teal-700", edge: "border-l-teal-400" },
+    teal: { icon: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300", edge: "border-l-teal-400" },
     violet: {
-      icon: "bg-violet-100 text-violet-700",
+      icon: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
       edge: "border-l-violet-400",
     },
-    amber: { icon: "bg-amber-100 text-amber-700", edge: "border-l-amber-400" },
+    amber: { icon: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300", edge: "border-l-amber-400" },
     green: {
-      icon: "bg-emerald-100 text-emerald-700",
+      icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
       edge: "border-l-emerald-400",
     },
   }[tone]
 
   return (
     <div
-      className={`bg-white rounded-2xl border border-teal-100 border-l-8 ${tones.edge} p-5 sm:p-6 flex items-start gap-4`}
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-teal-100 dark:border-slate-800 border-l-8 ${tones.edge} p-5 sm:p-6 flex items-start gap-4`}
     >
       <span
         className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 p-3.5 ${tones.icon}`}
@@ -437,11 +437,11 @@ function SummaryCard({
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-base text-slate-500 font-medium">{label}</p>
-        <p className="text-2xl sm:text-[28px] font-bold text-teal-950 leading-tight mt-0.5">
+        <p className="text-base text-slate-500 dark:text-slate-400 font-medium">{label}</p>
+        <p className="text-2xl sm:text-[28px] font-bold text-teal-950 dark:text-white leading-tight mt-0.5">
           {value}
         </p>
-        <p className="text-lg text-slate-600 leading-snug mt-1.5">{sub}</p>
+        <p className="text-lg text-slate-600 dark:text-slate-300 leading-snug mt-1.5">{sub}</p>
       </div>
     </div>
   )

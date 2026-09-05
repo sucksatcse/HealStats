@@ -219,14 +219,14 @@ const STATUS_CONFIG: Record<SyncStatus, {
       <svg
         viewBox="0 0 16 16"
         fill="currentColor"
-        className="w-4 h-4 text-slate-400"
+        className="w-4 h-4 text-slate-400 dark:text-slate-500"
       >
         <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm-.5 2.5v3.25l2.5 1.5.5-.87-2-1.19V5.5h-1z" />
       </svg>
     ),
     label: "Queued",
-    row: "hover:bg-slate-50",
-    badge: "bg-slate-100 text-slate-500 border-slate-200",
+    row: "hover:bg-slate-50 dark:hover:bg-slate-800",
+    badge: "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
   },
   syncing: {
     icon: (
@@ -235,7 +235,7 @@ const STATUS_CONFIG: Record<SyncStatus, {
         fill="none"
         stroke="currentColor"
         strokeWidth={1.8}
-        className="w-4 h-4 text-violet-500 animate-spin"
+        className="w-4 h-4 text-violet-500 dark:text-violet-400 animate-spin"
       >
         <path strokeLinecap="round" d="M8 2a6 6 0 016 6M2 8a6 6 0 016-6" />
         <path
@@ -246,8 +246,8 @@ const STATUS_CONFIG: Record<SyncStatus, {
       </svg>
     ),
     label: "Syncing…",
-    row: "bg-violet-50/40 hover:bg-violet-50",
-    badge: "bg-violet-100 text-violet-700 border-violet-200",
+    row: "bg-violet-50/40 hover:bg-violet-50 dark:bg-violet-950/40 dark:hover:bg-violet-950/40",
+    badge: "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-900/50",
   },
   synced: {
     icon: (
@@ -256,7 +256,7 @@ const STATUS_CONFIG: Record<SyncStatus, {
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
-        className="w-4 h-4 text-emerald-500"
+        className="w-4 h-4 text-emerald-500 dark:text-emerald-400"
       >
         <circle cx="8" cy="8" r="6.5" />
         <path
@@ -267,8 +267,8 @@ const STATUS_CONFIG: Record<SyncStatus, {
       </svg>
     ),
     label: "Synced",
-    row: "hover:bg-slate-50 opacity-70",
-    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    row: "hover:bg-slate-50 dark:hover:bg-slate-800 opacity-70",
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50",
   },
   failed: {
     icon: (
@@ -277,24 +277,24 @@ const STATUS_CONFIG: Record<SyncStatus, {
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
-        className="w-4 h-4 text-red-500"
+        className="w-4 h-4 text-red-500 dark:text-red-400"
       >
         <circle cx="8" cy="8" r="6.5" />
         <path strokeLinecap="round" d="M8 5v4m0 2v.5" />
       </svg>
     ),
     label: "Failed",
-    row: "bg-red-50/50 hover:bg-red-50",
-    badge: "bg-red-100 text-red-700 border-red-200",
+    row: "bg-red-50/50 hover:bg-red-50 dark:bg-red-950/40 dark:hover:bg-red-950/40",
+    badge: "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50",
   },
 }
 
 const TYPE_COLOR: Record<SyncRecord["type"], string> = {
-  "New Patient": "bg-teal-100 text-teal-700",
-  "Visit Record": "bg-sky-100 text-sky-700",
-  "Vitals Entry": "bg-violet-100 text-violet-700",
-  "Digitized Record": "bg-amber-100 text-amber-700",
-  "AI Triage": "bg-rose-100 text-rose-700",
+  "New Patient": "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
+  "Visit Record": "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
+  "Vitals Entry": "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
+  "Digitized Record": "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  "AI Triage": "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -315,14 +315,14 @@ function StatCard({
   color: string
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
         {label}
       </p>
       <p className={`font-display text-3xl font-bold ${color} mb-0.5`}>
         {value}
       </p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
+      {sub && <p className="text-xs text-slate-400 dark:text-slate-500">{sub}</p>}
     </div>
   )
 }
@@ -439,13 +439,13 @@ export default function SyncPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+          <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
             Sync Status
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
             Last synced:{" "}
-            <span className="font-semibold text-slate-600">{lastSynced}</span>
-            <span className="mx-2 text-slate-200">·</span>
+            <span className="font-semibold text-slate-600 dark:text-slate-300">{lastSynced}</span>
+            <span className="mx-2 text-slate-200 dark:text-slate-700">·</span>
             Kayes District Clinic · HW-20451
           </p>
         </div>
@@ -454,11 +454,11 @@ export default function SyncPage() {
           disabled={!isOnline || isSyncing || pending.length === 0}
           className={`flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-xl shadow-sm transition-all ${
             !isOnline
-              ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+              ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
               : isSyncing
                 ? "bg-violet-500 text-white cursor-wait shadow-violet-500/20"
                 : pending.length === 0
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
                   : "bg-teal-600 hover:bg-teal-700 text-white shadow-teal-600/20 hover:-translate-y-0.5 hover:shadow-md"
           }`}
         >
@@ -492,20 +492,20 @@ export default function SyncPage() {
       <div
         className={`rounded-2xl border px-5 py-4 flex flex-wrap items-start gap-4 transition-all ${
           isOnline
-            ? "bg-emerald-50 border-emerald-200"
-            : "bg-amber-50 border-amber-200"
+            ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/50"
+            : "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50"
         }`}
       >
         <div
           className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            isOnline ? "bg-emerald-100" : "bg-amber-100"
+            isOnline ? "bg-emerald-100 dark:bg-emerald-950/40" : "bg-amber-100 dark:bg-amber-950/40"
           }`}
         >
           {isOnline ? (
             <svg
               viewBox="0 0 20 20"
               fill="currentColor"
-              className="w-5 h-5 text-emerald-600"
+              className="w-5 h-5 text-emerald-600 dark:text-emerald-400"
             >
               <path
                 fillRule="evenodd"
@@ -517,7 +517,7 @@ export default function SyncPage() {
             <svg
               viewBox="0 0 20 20"
               fill="currentColor"
-              className="w-5 h-5 text-amber-600"
+              className="w-5 h-5 text-amber-600 dark:text-amber-400"
             >
               <path d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06L3.28 2.22zM10 20a1 1 0 100-2 1 1 0 000 2z" />
             </svg>
@@ -526,7 +526,7 @@ export default function SyncPage() {
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-semibold mb-0.5 ${
-              isOnline ? "text-emerald-900" : "text-amber-900"
+              isOnline ? "text-emerald-900 dark:text-emerald-300" : "text-amber-900 dark:text-amber-300"
             }`}
           >
             {isOnline
@@ -535,7 +535,7 @@ export default function SyncPage() {
           </p>
           <p
             className={`text-xs leading-relaxed ${
-              isOnline ? "text-emerald-700" : "text-amber-700"
+              isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"
             }`}
           >
             {isOnline
@@ -547,7 +547,7 @@ export default function SyncPage() {
         </div>
         {isOnline && pending.length > 0 && !isSyncing && (
           <div
-            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0 self-center bg-emerald-100 text-emerald-700`}
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0 self-center bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             {fmtKB(totalKB)} ready
@@ -584,9 +584,9 @@ export default function SyncPage() {
       </div>
 
       {/* ── Records table card ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
         {/* Table toolbar */}
-        <div className="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center gap-3">
+        <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-3">
           {/* Filter chips */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {FILTERS.map(({ id, label, count }) =>
@@ -597,7 +597,7 @@ export default function SyncPage() {
                   className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all ${
                     filter === id
                       ? "bg-teal-600 text-white border-teal-600"
-                      : "bg-white text-slate-500 border-slate-200 hover:border-teal-300 hover:text-teal-700"
+                      : "bg-white text-slate-500 border-slate-200 hover:border-teal-300 hover:text-teal-700 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800 dark:hover:border-teal-700 dark:hover:text-teal-300"
                   }`}
                 >
                   {label}
@@ -605,7 +605,7 @@ export default function SyncPage() {
                     className={`text-[10px] font-bold min-w-[18px] text-center px-1 py-0.5 rounded-full ${
                       filter === id
                         ? "bg-white/20 text-white"
-                        : "bg-slate-100 text-slate-500"
+                        : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                     }`}
                   >
                     {count}
@@ -616,7 +616,7 @@ export default function SyncPage() {
           </div>
 
           {/* Total size */}
-          <span className="ml-auto text-xs text-slate-400">
+          <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
             {fmtKB(records.reduce((s, r) => s + r.sizeKB, 0))} total ·{" "}
             {displayed.length} record{displayed.length !== 1 ? "s" : ""}
           </span>
@@ -626,7 +626,7 @@ export default function SyncPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
+              <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
                 {[
                   "Record Type",
                   "Patient",
@@ -637,7 +637,7 @@ export default function SyncPage() {
                 ].map((h, i) => (
                   <th
                     key={i}
-                    className={`px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 ${
+                    className={`px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 ${
                       h === "" ? "w-10" : ""
                     }`}
                   >
@@ -651,13 +651,13 @@ export default function SyncPage() {
                 <tr>
                   <td colSpan={6} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                      <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950/40 rounded-2xl flex items-center justify-center">
                         <svg
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth={2}
-                          className="w-6 h-6 text-emerald-600"
+                          className="w-6 h-6 text-emerald-600 dark:text-emerald-400"
                         >
                           <path
                             strokeLinecap="round"
@@ -667,10 +667,10 @@ export default function SyncPage() {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-600">
+                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                           All clear
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                           No records match this filter
                         </p>
                       </div>
@@ -683,7 +683,7 @@ export default function SyncPage() {
                   return (
                     <tr
                       key={record.id}
-                      className={`border-b border-slate-100 last:border-0 transition-colors ${sc.row}`}
+                      className={`border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors ${sc.row}`}
                     >
                       {/* Type */}
                       <td className="px-4 py-3.5">
@@ -693,7 +693,7 @@ export default function SyncPage() {
                           >
                             {TYPE_ICON[record.type]}
                           </div>
-                          <span className="text-sm font-medium text-slate-700 whitespace-nowrap">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
                             {record.type}
                           </span>
                         </div>
@@ -701,21 +701,21 @@ export default function SyncPage() {
 
                       {/* Patient */}
                       <td className="px-4 py-3.5">
-                        <p className="text-sm font-semibold text-slate-800">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                           {record.patient}
                         </p>
-                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
                           {record.patientId}
                         </p>
                       </td>
 
                       {/* Created */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 dark:text-slate-300">
                           {record.createdAt}
                         </span>
                         {record.syncedAt && (
-                          <p className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
                             ↑ {record.syncedAt}
                           </p>
                         )}
@@ -723,7 +723,7 @@ export default function SyncPage() {
 
                       {/* Size */}
                       <td className="px-4 py-3.5">
-                        <span className="text-sm text-slate-500 font-mono tabular-nums">
+                        <span className="text-sm text-slate-500 dark:text-slate-400 font-mono tabular-nums">
                           {fmtKB(record.sizeKB)}
                         </span>
                       </td>
@@ -751,7 +751,7 @@ export default function SyncPage() {
                             <button
                               onClick={() => handleRetry(record.id)}
                               title="Retry"
-                              className="text-teal-600 hover:text-teal-800 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-teal-50 transition-all"
+                              className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all"
                             >
                               Retry
                             </button>
@@ -761,7 +761,7 @@ export default function SyncPage() {
                             <button
                               onClick={() => handleDismiss(record.id)}
                               title="Remove from list"
-                              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-all"
+                              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                             >
                               <svg
                                 viewBox="0 0 14 14"
@@ -788,8 +788,8 @@ export default function SyncPage() {
         </div>
 
         {/* Table footer */}
-        <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-slate-400">
+        <div className="px-5 py-3 bg-slate-50/60 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-slate-400 dark:text-slate-500">
             Records are encrypted with AES-256 before leaving this device.
           </p>
           <div className="flex items-center gap-3">
@@ -800,14 +800,14 @@ export default function SyncPage() {
                     prev.filter((r) => r.status !== "synced"),
                   )
                 }
-                className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 Clear synced
               </button>
             )}
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               Auto-sync:{" "}
-              <span className="font-semibold text-teal-600">enabled</span>
+              <span className="font-semibold text-teal-600 dark:text-teal-400">enabled</span>
             </span>
           </div>
         </div>
@@ -816,8 +816,8 @@ export default function SyncPage() {
       {/* ── Legend + explainer ── */}
       <div className="grid sm:grid-cols-2 gap-4">
         {/* Status legend */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
             Status Reference
           </p>
           <div className="space-y-2.5">
@@ -845,10 +845,10 @@ export default function SyncPage() {
                   <div key={status} className="flex items-start gap-2.5">
                     <div className="mt-0.5 flex-shrink-0">{sc.icon}</div>
                     <div>
-                      <span className="text-xs font-semibold text-slate-700">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                         {sc.label}
                       </span>
-                      <span className="text-xs text-slate-400 ml-1.5">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 ml-1.5">
                         {desc}
                       </span>
                     </div>
@@ -860,8 +860,8 @@ export default function SyncPage() {
         </div>
 
         {/* How sync works */}
-        <div className="bg-teal-50 border border-teal-100 rounded-2xl px-5 py-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-teal-500 mb-3">
+        <div className="bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-800 rounded-2xl px-5 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-teal-500 dark:text-teal-400 mb-3">
             How automatic sync works
           </p>
           <div className="space-y-2.5">
@@ -887,7 +887,7 @@ export default function SyncPage() {
                 <span className="w-5 h-5 rounded-full bg-teal-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                   {step}
                 </span>
-                <p className="text-xs text-teal-800 leading-relaxed">{text}</p>
+                <p className="text-xs text-teal-800 dark:text-teal-300 leading-relaxed">{text}</p>
               </div>
             ))}
           </div>

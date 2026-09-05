@@ -134,28 +134,28 @@ const TYPE_META: Record<Kind, {
     label: "High-Urgency Patient",
     icon: Icon.flag,
     ring: "border-l-red-500",
-    iconCls: "bg-red-50 text-red-600",
+    iconCls: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",
     dot: "bg-red-500",
   },
   emergency: {
     label: "Emergency Mode",
     icon: Icon.alert,
     ring: "border-l-orange-500",
-    iconCls: "bg-orange-50 text-orange-600",
+    iconCls: "bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400",
     dot: "bg-orange-500",
   },
   staff: {
     label: "Staff Account",
     icon: Icon.staff,
     ring: "border-l-violet-500",
-    iconCls: "bg-violet-50 text-violet-600",
+    iconCls: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400",
     dot: "bg-violet-500",
   },
   sync: {
     label: "Sync",
     icon: Icon.sync,
     ring: "border-l-emerald-500",
-    iconCls: "bg-emerald-50 text-emerald-600",
+    iconCls: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
     dot: "bg-emerald-500",
   },
 }
@@ -307,16 +307,16 @@ export default function AlertsCenterPage() {
           <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center relative flex-shrink-0">
             {Icon.bell}
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-slate-50">
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-slate-50 dark:border-slate-950">
                 {unreadCount}
               </span>
             )}
           </div>
           <div>
-            <h1 className="font-display text-2xl text-teal-950 leading-tight">
+            <h1 className="font-display text-2xl text-teal-950 dark:text-white leading-tight">
               Notifications
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
               {unreadCount > 0
                 ? `${unreadCount} unread alert${unreadCount !== 1 ? "s" : ""}`
                 : "You're all caught up"}
@@ -326,7 +326,7 @@ export default function AlertsCenterPage() {
         <button
           onClick={markAll}
           disabled={unreadCount === 0}
-          className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 disabled:text-slate-400 disabled:bg-slate-100 disabled:cursor-not-allowed px-3.5 py-2 rounded-xl transition-colors"
+          className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 disabled:text-slate-400 disabled:bg-slate-100 dark:text-teal-300 dark:hover:text-teal-200 dark:bg-teal-950/40 dark:hover:bg-teal-900/40 dark:disabled:text-slate-500 dark:disabled:bg-slate-800 disabled:cursor-not-allowed px-3.5 py-2 rounded-xl transition-colors"
         >
           {Icon.check} Mark all as read
         </button>
@@ -347,13 +347,13 @@ export default function AlertsCenterPage() {
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
                 active
                   ? "bg-teal-600 border-teal-600 text-white"
-                  : "bg-white border-slate-200 text-slate-500 hover:border-teal-300 hover:text-teal-700"
+                  : "bg-white border-slate-200 text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:border-teal-700 dark:hover:text-teal-300"
               }`}
             >
               {f.label}
               <span
                 className={`text-[10px] ${
-                  active ? "text-teal-100" : "text-slate-400"
+                  active ? "text-teal-100" : "text-slate-400 dark:text-slate-500"
                 }`}
               >
                 {count}
@@ -361,7 +361,7 @@ export default function AlertsCenterPage() {
             </button>
           )
         })}
-        <label className="flex items-center gap-2 text-xs font-medium text-slate-500 ml-auto cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 ml-auto cursor-pointer select-none">
           <span className="relative inline-flex">
             <input
               type="checkbox"
@@ -369,7 +369,7 @@ export default function AlertsCenterPage() {
               checked={unreadOnly}
               onChange={(e) => setUnreadOnly(e.target.checked)}
             />
-            <span className="w-9 h-5 rounded-full bg-slate-200 peer-checked:bg-teal-500 transition-colors" />
+            <span className="w-9 h-5 rounded-full bg-slate-200 dark:bg-slate-700 peer-checked:bg-teal-500 transition-colors" />
             <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4" />
           </span>
           Unread only
@@ -378,12 +378,12 @@ export default function AlertsCenterPage() {
 
       {/* ── List ── */}
       {visible.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 py-20 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center mx-auto mb-3">
+        <div className="bg-white rounded-2xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 py-20 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-slate-50 text-slate-300 dark:bg-slate-800 dark:text-slate-600 flex items-center justify-center mx-auto mb-3">
             {Icon.inbox}
           </div>
-          <p className="text-sm font-semibold text-slate-600">Nothing here</p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Nothing here</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             No notifications match this filter.
           </p>
         </div>
@@ -394,7 +394,7 @@ export default function AlertsCenterPage() {
             if (items.length === 0) return null
             return (
               <div key={group}>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5 px-1">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2.5 px-1">
                   {group}
                 </p>
                 <div className="space-y-2.5">
@@ -403,7 +403,7 @@ export default function AlertsCenterPage() {
                     return (
                       <div
                         key={a.id}
-                        className={`group relative bg-white rounded-2xl border border-slate-200 border-l-4 ${m.ring} px-4 py-3.5 flex gap-3.5 transition-all hover:shadow-md ${
+                        className={`group relative bg-white rounded-2xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 border-l-4 ${m.ring} px-4 py-3.5 flex gap-3.5 transition-all hover:shadow-md ${
                           a.read ? "" : "ring-1 ring-teal-500/10"
                         }`}
                       >
@@ -420,8 +420,8 @@ export default function AlertsCenterPage() {
                             <p
                               className={`text-sm leading-snug ${
                                 a.read
-                                  ? "font-medium text-slate-700"
-                                  : "font-bold text-slate-900"
+                                  ? "font-medium text-slate-700 dark:text-slate-200"
+                                  : "font-bold text-slate-900 dark:text-white"
                               }`}
                             >
                               {a.title}
@@ -431,28 +431,28 @@ export default function AlertsCenterPage() {
                                 className={`w-2 h-2 rounded-full ${m.dot} flex-shrink-0 mt-1.5`}
                               />
                             )}
-                            <span className="ml-auto text-[11px] text-slate-400 whitespace-nowrap flex-shrink-0 mt-0.5">
+                            <span className="ml-auto text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap flex-shrink-0 mt-0.5">
                               {a.time}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-1">
                             {a.message}
                           </p>
                           <div className="flex items-center gap-4 mt-2.5">
                             {a.cta && (
-                              <button className="flex items-center gap-1 text-xs font-semibold text-teal-600 hover:text-teal-800 transition-colors">
+                              <button className="flex items-center gap-1 text-xs font-semibold text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300 transition-colors">
                                 {a.cta} {Icon.arrow}
                               </button>
                             )}
                             <button
                               onClick={() => toggleRead(a.id)}
-                              className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                              className="text-xs font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
                             >
                               {a.read ? "Mark unread" : "Mark read"}
                             </button>
                             <button
                               onClick={() => dismiss(a.id)}
-                              className="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                              className="text-xs font-medium text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               Dismiss
                             </button>

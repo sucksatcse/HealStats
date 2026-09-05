@@ -397,7 +397,7 @@ export default function AdminLoginPage({
         <div className="flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 transition-colors group"
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors group"
           >
             <svg
               viewBox="0 0 16 16"
@@ -414,7 +414,7 @@ export default function AdminLoginPage({
             </svg>
             Worker portal
           </button>
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
             Admin access only
           </span>
         </div>
@@ -423,32 +423,32 @@ export default function AdminLoginPage({
         <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full py-10">
           {/* Heading */}
           <div className="mb-8">
-            <div className="inline-flex items-center gap-2 mb-4 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-full">
+            <div className="inline-flex items-center gap-2 mb-4 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/50 px-3 py-1.5 rounded-full">
               <svg
                 viewBox="0 0 14 14"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={1.8}
-                className="w-3.5 h-3.5 text-teal-600"
+                className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400"
               >
                 <rect x="2" y="6" width="10" height="7" rx="1.5" />
                 <path strokeLinecap="round" d="M4.5 6V4.5a2.5 2.5 0 015 0V6" />
               </svg>
-              <span className="text-xs font-bold text-teal-700 uppercase tracking-wider">
+              <span className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider">
                 Admin Portal
               </span>
             </div>
-            <h2 className="font-display text-3xl text-teal-950 mb-1.5">
+            <h2 className="font-display text-3xl text-teal-950 dark:text-white mb-1.5">
               Sign in to admin
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Authorized district health officers only.
             </p>
           </div>
 
           {/* Forgot-password confirmation */}
           {forgotSent && (
-            <div className="flex items-start gap-2.5 bg-teal-50 border border-teal-200 text-teal-700 text-sm rounded-2xl px-4 py-3 mb-5">
+            <div className="flex items-start gap-2.5 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/50 text-teal-700 dark:text-teal-300 text-sm rounded-2xl px-4 py-3 mb-5">
               <svg
                 viewBox="0 0 16 16"
                 fill="none"
@@ -469,7 +469,7 @@ export default function AdminLoginPage({
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl px-4 py-3 mb-5">
+            <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-2xl px-4 py-3 mb-5">
               <svg
                 viewBox="0 0 16 16"
                 fill="currentColor"
@@ -491,12 +491,12 @@ export default function AdminLoginPage({
             <div>
               <label
                 htmlFor="admin-email"
-                className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5"
+                className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5"
               >
                 Admin Email
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                   <svg
                     viewBox="0 0 18 18"
                     fill="none"
@@ -518,7 +518,7 @@ export default function AdminLoginPage({
                     setEmail(e.target.value)
                     setError("")
                   }}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
                 />
               </div>
             </div>
@@ -528,20 +528,20 @@ export default function AdminLoginPage({
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="admin-password"
-                  className="block text-xs font-bold uppercase tracking-widest text-slate-500"
+                  className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"
                 >
                   Password
                 </label>
                 <button
                   type="button"
                   onClick={handleForgot}
-                  className="text-xs font-semibold text-teal-600 hover:text-teal-800 transition-colors"
+                  className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors"
                 >
                   Forgot password?
                 </button>
               </div>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                   <svg
                     viewBox="0 0 18 18"
                     fill="none"
@@ -563,12 +563,12 @@ export default function AdminLoginPage({
                     setPassword(e.target.value)
                     setError("")
                   }}
-                  className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+                  className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                   aria-label={showPwd ? "Hide password" : "Show password"}
                 >
                   {showPwd ? (
@@ -604,7 +604,7 @@ export default function AdminLoginPage({
             </div>
 
             {/* MFA note */}
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
               Multi-factor authentication may be required for admin accounts.
               Check your authenticator app after submitting.
             </p>
@@ -666,14 +666,14 @@ export default function AdminLoginPage({
               <div className="w-full border-t border-slate-100" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-[11px] text-slate-400 font-medium">
+              <span className="px-3 bg-white dark:bg-slate-900 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
                 or
               </span>
             </div>
           </div>
 
           {/* SSO placeholder */}
-          <button className="w-full flex items-center justify-center gap-2.5 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 hover:bg-teal-50/50 py-3 rounded-xl transition-all">
+          <button className="w-full flex items-center justify-center gap-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50/50 py-3 rounded-xl transition-all">
             <svg viewBox="0 0 18 18" fill="none" className="w-4.5 h-4.5">
               <circle
                 cx="9"
@@ -707,7 +707,7 @@ export default function AdminLoginPage({
 
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
             © 2026 HealthStats · Admin Portal v3.2.1
           </p>
           <div className="flex items-center gap-3">
@@ -715,7 +715,7 @@ export default function AdminLoginPage({
               <a
                 key={link}
                 href="#"
-                className="text-[11px] text-slate-400 hover:text-teal-600 transition-colors"
+                className="text-[11px] text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
               >
                 {link}
               </a>

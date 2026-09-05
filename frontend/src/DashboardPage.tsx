@@ -184,7 +184,7 @@ const RECENT_PATIENTS = [
     visits: 6,
     status: "follow-up",
     initials: "MK",
-    color: "bg-rose-100 text-rose-700",
+    color: "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400",
   },
   {
     id: "PT-00389",
@@ -196,7 +196,7 @@ const RECENT_PATIENTS = [
     visits: 14,
     status: "chronic",
     initials: "IT",
-    color: "bg-violet-100 text-violet-700",
+    color: "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400",
   },
   {
     id: "PT-00401",
@@ -208,7 +208,7 @@ const RECENT_PATIENTS = [
     visits: 3,
     status: "antenatal",
     initials: "FD",
-    color: "bg-pink-100 text-pink-700",
+    color: "bg-pink-100 dark:bg-pink-950/40 text-pink-700 dark:text-pink-400",
   },
   {
     id: "PT-00376",
@@ -220,7 +220,7 @@ const RECENT_PATIENTS = [
     visits: 2,
     status: "acute",
     initials: "OC",
-    color: "bg-sky-100 text-sky-700",
+    color: "bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400",
   },
   {
     id: "PT-00365",
@@ -232,7 +232,7 @@ const RECENT_PATIENTS = [
     visits: 22,
     status: "chronic",
     initials: "KB",
-    color: "bg-amber-100 text-amber-700",
+    color: "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400",
   },
   {
     id: "PT-00358",
@@ -244,24 +244,24 @@ const RECENT_PATIENTS = [
     visits: 1,
     status: "acute",
     initials: "SB",
-    color: "bg-teal-100 text-teal-700",
+    color: "bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300",
   },
 ]
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   "follow-up": {
     label: "Follow-up",
-    cls: "bg-blue-50 text-blue-600 border-blue-200",
+    cls: "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50",
   },
   chronic: {
     label: "Chronic",
-    cls: "bg-violet-50 text-violet-600 border-violet-200",
+    cls: "bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-900/50",
   },
   antenatal: {
     label: "Antenatal",
-    cls: "bg-pink-50 text-pink-600 border-pink-200",
+    cls: "bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-900/50",
   },
-  acute: { label: "Acute", cls: "bg-amber-50 text-amber-600 border-amber-200" },
+  acute: { label: "Acute", cls: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50" },
 }
 
 const NAV_ITEMS = [
@@ -320,7 +320,7 @@ const STATS = [
     value: "23",
     sub: "+4 since morning",
     subBn: "সকাল থেকে +৪",
-    accent: "text-teal-700",
+    accent: "text-teal-700 dark:text-teal-300",
   },
   {
     label: "Total Records",
@@ -328,7 +328,7 @@ const STATS = [
     value: "1,048",
     sub: "across all visits",
     subBn: "সব ভিজিট জুড়ে",
-    accent: "text-slate-700",
+    accent: "text-slate-700 dark:text-slate-200",
   },
   {
     label: "Pending Sync",
@@ -336,7 +336,7 @@ const STATS = [
     value: "14",
     sub: "queued locally",
     subBn: "স্থানীয়ভাবে সারিবদ্ধ",
-    accent: "text-amber-700",
+    accent: "text-amber-700 dark:text-amber-400",
   },
   {
     label: "This Month",
@@ -344,7 +344,7 @@ const STATS = [
     value: "187",
     sub: "visits recorded",
     subBn: "ভিজিট রেকর্ড হয়েছে",
-    accent: "text-violet-700",
+    accent: "text-violet-700 dark:text-violet-400",
   },
 ]
 
@@ -768,16 +768,16 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
               {/* Greeting */}
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
-                  <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+                  <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
                     {greeting}, {t.name} 👋
                   </h1>
-                  <p className="text-sm text-slate-500 mt-0.5">{today}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{today}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide font-semibold">
                     {t.clinic}
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">{t.workerId}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t.workerId}</p>
                 </div>
               </div>
 
@@ -785,15 +785,15 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
               <div
                 className={`rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-4 ${
                   isOnline
-                    ? "bg-emerald-50 border-emerald-200"
-                    : "bg-amber-50 border-amber-200"
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50"
+                    : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50"
                 }`}
               >
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     isOnline
-                      ? "bg-emerald-100 text-emerald-600"
-                      : "bg-amber-100 text-amber-600"
+                      ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+                      : "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
                   }`}
                 >
                   {isOnline ? Icon.wifi : Icon.noWifi}
@@ -801,19 +801,19 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                 <div className="flex-1 min-w-0">
                   {isOnline ? (
                     <>
-                      <p className="text-sm font-semibold text-emerald-900">
+                      <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
                         {t.connected}
                       </p>
-                      <p className="text-xs text-emerald-700 mt-0.5">
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
                         {t.connectedSub(lastSync)}
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-sm font-semibold text-amber-900">
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
                         {t.offlineTitle}
                       </p>
-                      <p className="text-xs text-amber-700 mt-0.5">
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                         {t.offlineSub}
                       </p>
                     </>
@@ -835,7 +835,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
 
               {/* Quick actions */}
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
                   {t.quickActions}
                 </p>
                 <div className="flex flex-wrap gap-3">
@@ -851,7 +851,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                       label: t.searchPatient,
                       icon: Icon.search,
                       color:
-                        "bg-white hover:bg-teal-50 text-teal-700 border border-teal-200",
+                        "bg-white dark:bg-slate-900 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800",
                       action: () => {
                         const el = document.querySelector(
                           "input",
@@ -863,8 +863,8 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                       label: t.syncNow,
                       icon: Icon.sync,
                       color: isOnline
-                        ? "bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-white text-slate-400 border border-slate-200 cursor-not-allowed",
+                        ? "bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50"
+                        : "bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed",
                       action: handleSync,
                     },
                   ].map(({ label, icon, color, action }) => (
@@ -885,15 +885,15 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                 {STATS.map(({ label, labelBn, value, sub, subBn, accent }) => (
                   <div
                     key={label}
-                    className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md transition-shadow"
+                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:shadow-md transition-shadow"
                   >
-                    <p className="text-xs text-slate-400 font-medium mb-2">
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-2">
                       {lang === "bn" ? labelBn : label}
                     </p>
                     <p className={`font-display text-3xl ${accent} mb-1`}>
                       {lang === "bn" ? toBn(value) : value}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
                       {lang === "bn" ? subBn : sub}
                     </p>
                   </div>
@@ -904,18 +904,18 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="font-semibold text-slate-800 text-base">
+                    <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">
                       {t.recentTitle}
                     </h2>
                     {searchValue && (
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                         {t.showing(filteredPatients.length, searchValue)}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={() => setActiveNav("patients")}
-                    className="text-xs font-semibold text-teal-600 hover:text-teal-800 flex items-center gap-1 transition-colors"
+                    className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 flex items-center gap-1 transition-colors"
                   >
                     {t.viewAll}
                     {Icon.chevronRight}
@@ -923,21 +923,21 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                 </div>
 
                 {filteredPatients.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-slate-100 py-16 text-center">
-                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 py-16 text-center">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400 dark:text-slate-500">
                       {Icon.search}
                     </div>
-                    <p className="text-sm font-medium text-slate-500">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                       {t.noMatch(searchValue)}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">{t.tryHint}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t.tryHint}</p>
                   </div>
                 ) : (
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filteredPatients.map((p) => (
                       <div
                         key={p.id}
-                        className="bg-white rounded-2xl border border-slate-100 p-5 hover:border-teal-200 hover:shadow-md transition-all group cursor-pointer"
+                        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-md transition-all group cursor-pointer"
                       >
                         {/* Header */}
                         <div className="flex items-start gap-3 mb-4">
@@ -947,10 +947,10 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                             {p.initials}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-teal-700 transition-colors">
+                            <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">
                               {p.name}
                             </p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                               {lang === "bn" ? toBn(p.age) : p.age} {t.yrs} ·{" "}
                               {p.gender === "F" ? t.female : t.male} · {p.id}
                             </p>
@@ -965,11 +965,11 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                         </div>
 
                         {/* Diagnosis */}
-                        <div className="bg-slate-50 rounded-xl px-3 py-2.5 mb-4">
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-0.5">
+                        <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl px-3 py-2.5 mb-4">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-0.5">
                             {t.diagnosis}
                           </p>
-                          <p className="text-xs font-medium text-slate-700 leading-snug">
+                          <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-snug">
                             {lang === "bn"
                               ? (DIAGNOSIS_BN[p.id] ?? p.diagnosis)
                               : p.diagnosis}
@@ -978,21 +978,21 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
 
                         {/* Footer */}
                         <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
                             {Icon.clock}
                             {localizeVisit(p.lastVisit, lang)}
                           </span>
-                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
                             <span className="text-teal-400">{Icon.heart}</span>
                             {t.visit(p.visits)}
                           </span>
                         </div>
 
                         {/* Hover action */}
-                        <div className="mt-3 pt-3 border-t border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setActiveNav("patient-detail")}
-                            className="w-full text-xs font-semibold text-teal-600 hover:text-teal-800 flex items-center justify-center gap-1 transition-colors"
+                            className="w-full text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 flex items-center justify-center gap-1 transition-colors"
                           >
                             {t.openRecord}
                             {Icon.chevronRight}

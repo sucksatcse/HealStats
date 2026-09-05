@@ -216,7 +216,7 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 - **Status**: Implemented
 - **Features**: Desktop-first responsive layout, accessible typography, loading skeleton states, and explicit empty states.
-- **Dark Mode**: Fully integrated via `ThemeContext` for low-light environments and battery saving.
+- **Dark Mode**: Fully integrated via `ThemeContext` for low-light environments and battery saving. Class-based (`.dark` on `<html>`), persisted in `localStorage` (`hs-theme`), with a flash-of-incorrect-theme guard applied in `index.html` before first paint (Task 19). A centralized Ashen Nebula token system (`--an-*` custom properties in `index.css`) plus consistent `dark:` utility variants now cover the full application — landing/auth, worker dashboard and clinical forms (patient registration, vitals, patient detail, OCR/digitize, sync), admin views (records, staff, flagged, analytics, settings, resources, alerts), map, emergency/triage, and the AI chatbot. Clinical urgency/status colors and Emergency Mode visual hierarchy are preserved with dark-tuned tints (no neon), and light mode is unchanged.
 *(UI components strictly adhere to `docs/frontend-uiux.md`).*
 
 ---

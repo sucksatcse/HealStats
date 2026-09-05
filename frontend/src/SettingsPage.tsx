@@ -149,7 +149,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
       aria-checked={on}
       onClick={onChange}
       className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors ${
-        on ? "bg-teal-600" : "bg-slate-200"
+        on ? "bg-teal-600" : "bg-slate-200 dark:bg-slate-700"
       }`}
     >
       <span
@@ -174,14 +174,14 @@ function Card({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-      <div className="flex items-start gap-3 px-5 lg:px-6 py-4 border-b border-slate-100">
-        <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="flex items-start gap-3 px-5 lg:px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
         <div>
-          <h2 className="font-semibold text-slate-800 text-sm">{title}</h2>
-          <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{title}</h2>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{desc}</p>
         </div>
       </div>
       <div className="px-5 lg:px-6 py-5">{children}</div>
@@ -190,7 +190,7 @@ function Card({
 }
 
 const inputCls =
-  "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+  "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 const ROLE_ROWS = [
@@ -280,10 +280,10 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+          <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
             Facility Settings
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Configure clinic details, access, alerts, and data handling
           </p>
         </div>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
       >
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
               Facility Name
             </label>
             <input
@@ -314,7 +314,7 @@ export default function SettingsPage() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
               Address
             </label>
             <input
@@ -324,7 +324,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
               Contact Phone
             </label>
             <input
@@ -334,7 +334,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
               Contact Email
             </label>
             <input
@@ -344,17 +344,17 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
               Facility ID
             </label>
             <input
               value={facility.id}
               disabled
-              className={`${inputCls} !bg-slate-100 text-slate-400 cursor-not-allowed font-mono`}
+              className={`${inputCls} !bg-slate-100 dark:!bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed font-mono`}
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
               Timezone
             </label>
             <div className="relative">
@@ -372,7 +372,7 @@ export default function SettingsPage() {
                   <option key={t}>{t}</option>
                 ))}
               </select>
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
                 {Icon.chevronDown}
               </span>
             </div>
@@ -387,28 +387,28 @@ export default function SettingsPage() {
         desc="Control what each role can do in the system."
       >
         {/* Column headers */}
-        <div className="hidden sm:grid grid-cols-[1fr_80px_80px_80px] gap-2 px-1 pb-2 mb-1 border-b border-slate-100">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+        <div className="hidden sm:grid grid-cols-[1fr_80px_80px_80px] gap-2 px-1 pb-2 mb-1 border-b border-slate-100 dark:border-slate-800">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
             Role
           </span>
           {["Records", "Prescribe", "Admin"].map((h) => (
             <span
               key={h}
-              className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center"
+              className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center"
             >
               {h}
             </span>
           ))}
         </div>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {roles.map((r, i) => (
             <div
               key={r.role}
               className="grid sm:grid-cols-[1fr_80px_80px_80px] gap-y-3 gap-x-2 items-center py-3.5"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800">{r.role}</p>
-                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{r.role}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
                   {r.desc}
                 </p>
               </div>
@@ -417,7 +417,7 @@ export default function SettingsPage() {
                   key={perm}
                   className="flex items-center gap-2 sm:justify-center"
                 >
-                  <span className="text-[11px] font-medium text-slate-400 capitalize sm:hidden w-16">
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 capitalize sm:hidden w-16">
                     {perm}
                   </span>
                   <Toggle
@@ -437,15 +437,15 @@ export default function SettingsPage() {
         title="Notification Preferences"
         desc="Choose which alerts your team receives."
       >
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {notifs.map((n, i) => (
             <div
               key={n.key}
               className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-700">{n.label}</p>
-                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{n.label}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
                   {n.desc}
                 </p>
               </div>
@@ -462,13 +462,13 @@ export default function SettingsPage() {
         desc="Manage how patient data is backed up and exported."
       >
         {/* Toggles */}
-        <div className="divide-y divide-slate-100 mb-5">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800 mb-5">
           <div className="flex items-center justify-between gap-4 pb-3.5">
             <div>
-              <p className="text-sm font-medium text-slate-700">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Automatic cloud backup
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 Encrypt and push local records to central servers on a schedule
               </p>
             </div>
@@ -476,10 +476,10 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between gap-4 py-3.5 last:pb-0">
             <div>
-              <p className="text-sm font-medium text-slate-700">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Back up over Wi-Fi only
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 Avoid using mobile data for large backups in the field
               </p>
             </div>
@@ -488,15 +488,15 @@ export default function SettingsPage() {
         </div>
 
         {/* Status banner */}
-        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4">
-          <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+        <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl px-4 py-3 mb-4">
+          <span className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
             {Icon.cloud}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-emerald-900">
+            <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-300">
               Last backup completed
             </p>
-            <p className="text-xs text-emerald-700">
+            <p className="text-xs text-emerald-700 dark:text-emerald-400">
               Today at 04:00 · 12,847 records · encrypted
             </p>
           </div>
@@ -506,21 +506,21 @@ export default function SettingsPage() {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => flash("Export started — CSV will download shortly")}
-            className="flex items-center gap-2 text-sm font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-4 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 px-4 py-2.5 rounded-xl transition-colors"
           >
             {Icon.download}
             Export as CSV
           </button>
           <button
             onClick={() => flash("Export started — PDF will download shortly")}
-            className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 px-4 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-teal-700 dark:hover:text-teal-300 px-4 py-2.5 rounded-xl transition-colors"
           >
             {Icon.download}
             Export as PDF
           </button>
           <button
             onClick={() => flash("Manual backup queued")}
-            className="flex items-center gap-2 text-sm font-semibold text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-700 px-4 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-teal-700 dark:hover:text-teal-300 px-4 py-2.5 rounded-xl transition-colors"
           >
             {Icon.cloud}
             Back Up Now
@@ -528,7 +528,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Danger note */}
-        <p className="text-[11px] text-slate-400 mt-5 leading-relaxed">
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-5 leading-relaxed">
           Exports contain protected health information. Handle downloaded files
           according to your district data-protection policy.
         </p>
