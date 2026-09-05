@@ -24,3 +24,6 @@ blob-report/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# Supabase CLI local scratch
+supabase/.temp/
