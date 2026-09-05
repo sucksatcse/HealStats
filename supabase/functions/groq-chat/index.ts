@@ -9,7 +9,8 @@
 //   supabase functions deploy groq-chat
 // Set the secret (do NOT commit it):
 //   supabase secrets set GROQ_API_KEY=your_new_rotated_key
-//   # optional: supabase secrets set GROQ_MODEL=llama-3.3-70b-versatile
+//   # optional (model depends on your Groq account's catalog):
+//   supabase secrets set GROQ_MODEL=openai/gpt-oss-20b
 //
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically by the
 // Edge runtime. The service-role key stays server-side inside this function.
@@ -17,7 +18,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
