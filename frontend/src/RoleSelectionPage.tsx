@@ -16,72 +16,72 @@ const ROLES: {
   accent: string
   accentLight: string
 }[] = [
-  {
-    id: "clinical-officer",
-    label: "Clinical Officer",
-    tagline: "Full Clinical Access",
-    desc: "Full clinical access — diagnose, prescribe, edit records",
-    accent: "text-teal-700 dark:text-teal-300",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M12 4.5v15m7.5-7.5h-15" />
-      </svg>
-    ),
-  },
-  {
-    id: "nurse",
-    label: "Nurse",
-    tagline: "Vitals & Notes",
-    desc: "Record vitals, view histories, add visit notes",
-    accent: "text-teal-700 dark:text-teal-300",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M4.5 12.75l6 6 9-13.5" />
-      </svg>
-    ),
-  },
-  {
-    id: "community-health-worker",
-    label: "Community Health Worker",
-    tagline: "Field Registration",
-    desc: "Register patients, capture vitals in the field",
-    accent: "text-teal-700 dark:text-teal-300",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-      </svg>
-    ),
-  },
-  {
-    id: "district-admin",
-    label: "District Administrator",
-    tagline: "System Management",
-    desc: "Manage staff, facilities, and system configuration",
-    accent: "text-teal-700 dark:text-teal-300",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M10.5 6a7.5 7.5 0 100 15 7.5 7.5 0 000-15zm-2.25 7.5l1.5 1.5 3-3" />
-      </svg>
-    ),
-  },
-  {
-    id: "patient",
-    label: "Patient",
-    tagline: "Personal Health Records",
-    desc: "View your medical history, prescriptions, and upcoming appointments",
-    accent: "text-teal-700 dark:text-teal-300",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-      </svg>
-    ),
-  },
-]
+    {
+      id: "clinical-officer",
+      label: "Clinical Officer",
+      tagline: "Full Clinical Access",
+      desc: "Full clinical access — diagnose, prescribe, edit records",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      ),
+    },
+    {
+      id: "nurse",
+      label: "Nurse",
+      tagline: "Vitals & Notes",
+      desc: "Record vitals, view histories, add visit notes",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      ),
+    },
+    {
+      id: "community-health-worker",
+      label: "Community Health Worker",
+      tagline: "Field Registration",
+      desc: "Register patients, capture vitals in the field",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+      ),
+    },
+    {
+      id: "district-admin",
+      label: "District Administrator",
+      tagline: "System Management",
+      desc: "Manage staff, facilities, and system configuration",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M10.5 6a7.5 7.5 0 100 15 7.5 7.5 0 000-15zm-2.25 7.5l1.5 1.5 3-3" />
+        </svg>
+      ),
+    },
+    {
+      id: "patient",
+      label: "Patient",
+      tagline: "Personal Health Records",
+      desc: "View your medical history, prescriptions, and upcoming appointments",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+      ),
+    },
+  ]
 
 export default function RoleSelectionPage({ onSelect, onBack }: Props) {
   const [hovered, setHovered] = useState<Role | null>(null)
@@ -169,13 +169,12 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
                   onClick={() => handleSelect(id)}
                   onMouseEnter={() => setHovered(id)}
                   onMouseLeave={() => setHovered(null)}
-                  className={`group relative text-left bg-white dark:bg-slate-900 rounded-2xl border-2 p-7 flex flex-col gap-5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${
-                    isSelecting
+                  className={`group relative text-left bg-white dark:bg-slate-900 rounded-2xl border-2 p-7 flex flex-col gap-5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${isSelecting
                       ? "border-teal-600 shadow-xl shadow-teal-100 dark:shadow-teal-950/40 scale-[0.98]"
                       : isHovered
                         ? "border-teal-400 shadow-lg shadow-teal-100 dark:shadow-teal-950/40 -translate-y-1"
                         : "border-teal-100 dark:border-slate-800 shadow-sm hover:border-teal-300 dark:hover:border-teal-700"
-                  }`}
+                    }`}
                 >
                   {/* Icon */}
                   <div
@@ -199,11 +198,10 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
 
                   {/* CTA arrow */}
                   <div
-                    className={`flex items-center gap-2 text-sm font-semibold transition-colors ${
-                      isHovered || isSelecting
+                    className={`flex items-center gap-2 text-sm font-semibold transition-colors ${isHovered || isSelecting
                         ? "text-teal-700 dark:text-teal-300"
                         : "text-teal-400 dark:text-teal-500"
-                    }`}
+                      }`}
                   >
                     {isSelecting ? (
                       <>
@@ -234,9 +232,8 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
                           strokeWidth={2}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={`w-4 h-4 transition-transform ${
-                            isHovered ? "translate-x-1" : ""
-                          }`}
+                          className={`w-4 h-4 transition-transform ${isHovered ? "translate-x-1" : ""
+                            }`}
                         >
                           <path d="M3 8h10M9 4l4 4-4 4" />
                         </svg>
