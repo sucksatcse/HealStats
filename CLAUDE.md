@@ -1,4 +1,4 @@
-# HealthStats — Claude Code Instructions
+# HealStats — Claude Code Instructions
 
 ## 1. Required Reading
 Before doing any work, read the following files in this exact order to understand the project architecture, context, and current state:

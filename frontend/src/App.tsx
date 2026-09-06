@@ -16,6 +16,7 @@ import SuccessConfirmationPage from "./SuccessConfirmationPage"
 import SyncProgressPage from "./SyncProgressPage"
 import ClinicsMapSection from "./ClinicsMapSection"
 import ChatWidget from "./ChatWidget"
+import SignUpPage from "./SignUpPage"
 import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -28,7 +29,7 @@ const LANDING = {
       h1a: "Healthcare records",
       h1b: "that never stop",
       h1c: "working.",
-      body: "HealthStats is an offline-first electronic health record system built for rural clinics across Bangladesh. Capture visits, triage patients, and stay coordinated through floods and outages — online or off.",
+      body: "HealStats is an offline-first electronic health record system built for rural clinics across Bangladesh. Capture visits, triage patients, and stay coordinated through floods and outages — online or off.",
       ctaPrimary: "Get Started Free",
       ctaSecondary: "Log In to Your Clinic",
       trust: [
@@ -78,7 +79,7 @@ const LANDING = {
         {
           step: "01",
           title: "Install once, use anywhere",
-          body: "HealthStats installs as a Progressive Web App directly on your device. No native app store required. Works on any modern browser.",
+          body: "HealStats installs as a Progressive Web App directly on your device. No native app store required. Works on any modern browser.",
         },
         {
           step: "02",
@@ -88,7 +89,7 @@ const LANDING = {
         {
           step: "03",
           title: "Sync automatically on reconnect",
-          body: "The moment connectivity resumes, HealthStats pushes queued records to your central server with conflict resolution built in.",
+          body: "The moment connectivity resumes, HealStats pushes queued records to your central server with conflict resolution built in.",
         },
       ],
     },
@@ -98,7 +99,7 @@ const LANDING = {
       items: [
         {
           quote:
-            "During the last cyclone our network was gone for four days. HealthStats kept working — every patient we saw at the shelter was already in the system when the signal came back.",
+            "During the last cyclone our network was gone for four days. HealStats kept working — every patient we saw at the shelter was already in the system when the signal came back.",
           author: "Nasrin Akter",
           role: "Community Health Worker, Char Fasson, Bhola",
         },
@@ -123,7 +124,7 @@ const LANDING = {
       h1a: "স্বাস্থ্যসেবা রেকর্ড",
       h1b: "যা কখনো থামে না।",
       h1c: "",
-      body: "HealthStats বাংলাদেশের গ্রামীণ ক্লিনিকগুলোর জন্য তৈরি একটি অফলাইন-প্রথম ইলেকট্রনিক স্বাস্থ্য রেকর্ড সিস্টেম। বন্যা ও বিদ্যুৎ বিভ্রাটের মধ্যেও রোগী ভর্তি, ট্রায়াজ এবং সমন্বয় বজায় রাখুন।",
+      body: "HealStats বাংলাদেশের গ্রামীণ ক্লিনিকগুলোর জন্য তৈরি একটি অফলাইন-প্রথম ইলেকট্রনিক স্বাস্থ্য রেকর্ড সিস্টেম। বন্যা ও বিদ্যুৎ বিভ্রাটের মধ্যেও রোগী ভর্তি, ট্রায়াজ এবং সমন্বয় বজায় রাখুন।",
       ctaPrimary: "বিনামূল্যে শুরু করুন",
       ctaSecondary: "আপনার ক্লিনিকে লগ ইন করুন",
       trust: [
@@ -173,7 +174,7 @@ const LANDING = {
         {
           step: "০১",
           title: "একবার ইনস্টল, যেকোনো জায়গায় ব্যবহার",
-          body: "HealthStats সরাসরি আপনার ডিভাইসে প্রোগ্রেসিভ ওয়েব অ্যাপ হিসেবে ইনস্টল হয়। কোনো অ্যাপ স্টোর লাগে না। যেকোনো আধুনিক ব্রাউজারে কাজ করে।",
+          body: "HealStats সরাসরি আপনার ডিভাইসে প্রোগ্রেসিভ ওয়েব অ্যাপ হিসেবে ইনস্টল হয়। কোনো অ্যাপ স্টোর লাগে না। যেকোনো আধুনিক ব্রাউজারে কাজ করে।",
         },
         {
           step: "০২",
@@ -183,7 +184,7 @@ const LANDING = {
         {
           step: "০৩",
           title: "পুনরায় সংযুক্ত হলে স্বয়ংক্রিয়ভাবে সিঙ্ক করুন",
-          body: "সংযোগ ফিরে আসার সাথে সাথে HealthStats কিউ রেকর্ডগুলো কেন্দ্রীয় সার্ভারে পাঠায়, বিরোধ নিষ্পত্তি সহ।",
+          body: "সংযোগ ফিরে আসার সাথে সাথে HealStats কিউ রেকর্ডগুলো কেন্দ্রীয় সার্ভারে পাঠায়, বিরোধ নিষ্পত্তি সহ।",
         },
       ],
     },
@@ -193,7 +194,7 @@ const LANDING = {
       items: [
         {
           quote:
-            "শেষ ঘূর্ণিঝড়ে চার দিন নেটওয়ার্ক ছিল না। HealthStats চলতে থাকল — আশ্রয়কেন্দ্রে যে রোগী দেখলাম, সংকেত ফেরার পর সবাই সিস্টেমে ছিল।",
+            "শেষ ঘূর্ণিঝড়ে চার দিন নেটওয়ার্ক ছিল না। HealStats চলতে থাকল — আশ্রয়কেন্দ্রে যে রোগী দেখলাম, সংকেত ফেরার পর সবাই সিস্টেমে ছিল।",
           author: "নাসরিন আক্তার",
           role: "কমিউনিটি স্বাস্থ্যকর্মী, চর ফ্যাশন, ভোলা",
         },
@@ -265,14 +266,14 @@ const FEATURE_ICONS = [
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [page, setPage] =
-    useState<"landing" | "login" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
+    useState<"landing" | "login" | "signup" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
       "landing",
     )
 
   /* Global language from context — drives all landing page text */
   const { lang } = useLang()
   const t = LANDING[lang]
-  const { session, profile, loading } = useAuth()
+  const { session, profile, loading, profileResolved, signOut } = useAuth()
 
   useEffect(() => {
     if (loading) return
@@ -299,6 +300,7 @@ export default function App() {
       session &&
       profile &&
       (page === "login" ||
+        page === "signup" ||
         page === "admin-login" ||
         page === "role-selection" ||
         page === "landing")
@@ -307,32 +309,87 @@ export default function App() {
     }
   }, [page, session, profile, loading])
 
+  const authSpinner = (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "var(--an-bg)" }}
+    >
+      <svg
+        className="animate-spin w-8 h-8 text-teal-600"
+        viewBox="0 0 24 24"
+        fill="none"
+        role="status"
+        aria-label="Loading"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+        />
+      </svg>
+    </div>
+  )
 
   if (loading) {
+    return authSpinner
+  }
+
+  // Authenticated, but no staff profile is linked to this account. Without an
+  // explicit escape hatch the user would be stranded (valid session, no role).
+  if (session && profileResolved && !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--an-bg)'}}>
-        <svg
-          className="animate-spin w-8 h-8 text-teal-600"
-          viewBox="0 0 24 24"
-          fill="none"
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "var(--an-bg)" }}
+      >
+        <div
+          role="alert"
+          className="w-full max-w-md text-center rounded-2xl border p-8 shadow-sm"
+          style={{ background: "var(--an-surface-solid)", borderColor: "var(--an-border)" }}
         >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-          />
-        </svg>
+          <h1
+            className="font-display text-xl mb-2"
+            style={{ color: "var(--an-text-primary)" }}
+          >
+            Account not linked
+          </h1>
+          <p className="text-sm mb-6" style={{ color: "var(--an-text-secondary)" }}>
+            Your sign-in succeeded, but no staff profile is linked to this
+            account. Please contact your administrator to finish setup.
+          </p>
+          <button
+            onClick={() => {
+              void signOut()
+              setPage("landing")
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     )
   }
+
+  // Prevent a flash of protected content before the redirect effect resolves.
+  const isProtectedPage = [
+    "dashboard",
+    "admin-dashboard",
+    "patient-lookup",
+    "record-saved",
+    "sync-progress",
+  ].includes(page)
+  if (isProtectedPage && !session) return authSpinner
+  if (page === "admin-dashboard" && profile && profile.role !== "admin")
+    return authSpinner
 
   if (page === "navbar-demo")
     return <NavbarPreviewPage onBack={() => setPage("landing")} />
@@ -351,10 +408,21 @@ export default function App() {
   if (page === "patient-lookup")
     return <PatientLookupPage onBack={() => setPage("landing")} />
   if (page === "login")
-    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} />
+    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} onSignUp={() => setPage("signup")} />
+  if (page === "signup")
+    return <SignUpPage onBack={() => setPage("landing")} onGoToLogin={() => setPage("login")} />
   if (page === "admin-login")
     return (
       <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />
+    )
+  if (page === "role-selection")
+    return (
+      <RoleSelectionPage
+        onSelect={(role) => {
+          setPage(role === "district-admin" ? "admin-dashboard" : "dashboard")
+        }}
+        onBack={() => setPage("login")}
+      />
     )
   if (page === "dashboard")
     return (
@@ -393,14 +461,14 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-[1fr_1fr] gap-0 min-h-[calc(100vh-64px)]">
             {/* Left: copy */}
             <div className="flex flex-col justify-center py-16 lg:py-24 lg:pr-16 z-10">
-              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit">
+              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit animate-fade-up">
                 <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
                 <span className="text-xs font-semibold text-teal-700 dark:text-teal-300 tracking-wide uppercase">
                   {t.hero.badge}
                 </span>
               </div>
 
-              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6">
+              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6 animate-fade-up stagger-1">
                 {t.hero.h1a}
                 <br />
                 <em className="not-italic text-teal-600 dark:text-teal-400">
@@ -414,14 +482,14 @@ export default function App() {
                 )}
               </h1>
 
-              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10">
+              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10 animate-fade-up stagger-2">
                 {t.hero.body}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4">
-                <a
-                  href="#get-started"
-                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+              <div className="flex flex-wrap items-center gap-4 animate-fade-up stagger-3">
+                <button
+                  onClick={() => setPage("signup")}
+                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
                 >
                   {t.hero.ctaPrimary}
                   <svg
@@ -435,7 +503,7 @@ export default function App() {
                       clipRule="evenodd"
                     />
                   </svg>
-                </a>
+                </button>
                 <button
                   onClick={() => setPage("login")}
                   className="inline-flex items-center gap-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-100 border border-teal-200 dark:border-teal-700 hover:border-teal-400 dark:hover:border-teal-500 px-6 py-3.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
@@ -445,7 +513,7 @@ export default function App() {
               </div>
 
               {/* Trust signals */}
-              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60">
+              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60 animate-fade-up stagger-4">
                 {[
                   {
                     icon: (
@@ -485,7 +553,7 @@ export default function App() {
             </div>
 
             {/* Right: image panel */}
-            <div className="relative hidden lg:block">
+            <div className="relative hidden lg:block animate-fade-up stagger-2">
               <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #115e59 100%)'}} />
               <img
                 src="https://images.unsplash.com/photo-1621353880071-4752fa42cbc7?w=900&h=1000&fit=crop&auto=format"
@@ -741,12 +809,12 @@ export default function App() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4 flex-shrink-0 w-full sm:w-auto">
-              <a
-                href="#signup"
-                className="bg-white text-teal-800 hover:text-teal-900 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
+              <button
+                onClick={() => setPage("signup")}
+                className="bg-white text-teal-800 hover:text-teal-900 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800 cursor-pointer"
               >
                 {t.cta.primary}
-              </a>
+              </button>
               <a
                 href="#demo"
                 className="border border-teal-400 hover:border-white text-white font-semibold text-sm px-8 py-4 rounded-xl hover:bg-teal-700/60 transition-colors w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
@@ -778,7 +846,7 @@ export default function App() {
                   </svg>
                 </div>
                 <span className="font-display text-lg text-white">
-                  HealthStats
+                  HealStats
                 </span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
@@ -876,7 +944,7 @@ export default function App() {
 
           <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-12 pt-6 border-t border-teal-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400">
             <p className="text-xs text-slate-400">
-              © 2026 HealthStats. Open-source under the MPL 2.0 license.
+              © 2026 HealStats. Open-source under the MPL 2.0 license.
             </p>
             <p className="text-xs text-slate-400">
               Built for healthcare workers who keep going, no matter what.

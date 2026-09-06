@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-type Role = "health-worker" | "clinic-admin" | "district-coordinator"
+export type Role = "clinical-officer" | "nurse" | "community-health-worker" | "district-admin" | "patient"
 
 interface Props {
   onSelect: (role: Role) => void
@@ -16,70 +16,72 @@ const ROLES: {
   accent: string
   accentLight: string
 }[] = [
-  {
-    id: "health-worker",
-    label: "Health Worker",
-    tagline: "Field & clinic care",
-    desc: "Register patients, record vitals, run AI triage, and manage visit histories — works fully offline at the point of care.",
-    accent: "text-teal-700",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-7 h-7"
-      >
-        <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-      </svg>
-    ),
-  },
-  {
-    id: "clinic-admin",
-    label: "Clinic Admin",
-    tagline: "Facility management",
-    desc: "Oversee patient records, manage staff, monitor sync status, review high-risk flags, and configure facility settings.",
-    accent: "text-teal-700",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-7 h-7"
-      >
-        <path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-      </svg>
-    ),
-  },
-  {
-    id: "district-coordinator",
-    label: "District Coordinator",
-    tagline: "Regional oversight",
-    desc: "Track health outcomes across multiple facilities, review analytics and trends, coordinate emergency response across the district.",
-    accent: "text-teal-700",
-    accentLight: "bg-teal-50 group-hover:bg-teal-100",
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-7 h-7"
-      >
-        <path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6.75v6.75" />
-      </svg>
-    ),
-  },
-]
+    {
+      id: "clinical-officer",
+      label: "Clinical Officer",
+      tagline: "Full Clinical Access",
+      desc: "Full clinical access — diagnose, prescribe, edit records",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      ),
+    },
+    {
+      id: "nurse",
+      label: "Nurse",
+      tagline: "Vitals & Notes",
+      desc: "Record vitals, view histories, add visit notes",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      ),
+    },
+    {
+      id: "community-health-worker",
+      label: "Community Health Worker",
+      tagline: "Field Registration",
+      desc: "Register patients, capture vitals in the field",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+      ),
+    },
+    {
+      id: "district-admin",
+      label: "District Administrator",
+      tagline: "System Management",
+      desc: "Manage staff, facilities, and system configuration",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M10.5 6a7.5 7.5 0 100 15 7.5 7.5 0 000-15zm-2.25 7.5l1.5 1.5 3-3" />
+        </svg>
+      ),
+    },
+    {
+      id: "patient",
+      label: "Patient",
+      tagline: "Personal Health Records",
+      desc: "View your medical history, prescriptions, and upcoming appointments",
+      accent: "text-teal-700 dark:text-teal-300",
+      accentLight: "bg-teal-50 group-hover:bg-teal-100 dark:bg-teal-950/40 dark:group-hover:bg-teal-900/40",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+          <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+      ),
+    },
+  ]
 
 export default function RoleSelectionPage({ onSelect, onBack }: Props) {
   const [hovered, setHovered] = useState<Role | null>(null)
@@ -91,11 +93,11 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col">
       {/* Minimal header */}
       <header className="px-6 py-5 flex items-center justify-between max-w-5xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
-          {/* HealthStats logo mark */}
+          {/* HealStats logo mark */}
           <div className="w-8 h-8 rounded-lg bg-teal-700 flex items-center justify-center shadow-sm">
             <svg viewBox="0 0 20 20" fill="none" className="w-4.5 h-4.5">
               <path
@@ -107,14 +109,14 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
               />
             </svg>
           </div>
-          <span className="font-display text-teal-900 text-lg leading-none tracking-tight">
-            HealthStats
+          <span className="font-display text-teal-900 dark:text-white text-lg leading-none tracking-tight">
+            HealStats
           </span>
         </div>
 
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal-700 transition-colors group"
+          className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors group"
         >
           <svg
             viewBox="0 0 16 16"
@@ -135,7 +137,7 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Heading block */}
         <div className="text-center mb-12 max-w-lg">
-          <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider uppercase mb-5">
+          <div className="inline-flex items-center gap-2 bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider uppercase mb-5">
             <svg
               viewBox="0 0 12 12"
               fill="currentColor"
@@ -145,17 +147,17 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
             </svg>
             Logged in successfully
           </div>
-          <h1 className="font-display text-4xl text-teal-950 leading-tight mb-3">
-            How are you using HealthStats today?
+          <h1 className="font-display text-4xl text-teal-950 dark:text-white leading-tight mb-3">
+            How are you using HealStats today?
           </h1>
-          <p className="text-slate-500 text-base leading-relaxed">
+          <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed">
             Select your role to enter the right workspace. You can switch roles
             any time from your account settings.
           </p>
         </div>
 
         {/* Role cards */}
-        <div className="grid sm:grid-cols-3 gap-5 w-full max-w-3xl">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-6xl">
           {ROLES.map(
             ({ id, label, tagline, desc, icon, accentLight, accent }) => {
               const isHovered = hovered === id
@@ -167,13 +169,12 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
                   onClick={() => handleSelect(id)}
                   onMouseEnter={() => setHovered(id)}
                   onMouseLeave={() => setHovered(null)}
-                  className={`group relative text-left bg-white rounded-2xl border-2 p-7 flex flex-col gap-5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${
-                    isSelecting
-                      ? "border-teal-600 shadow-xl shadow-teal-100 scale-[0.98]"
+                  className={`group relative text-left bg-white dark:bg-slate-900 rounded-2xl border-2 p-7 flex flex-col gap-5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${isSelecting
+                      ? "border-teal-600 shadow-xl shadow-teal-100 dark:shadow-teal-950/40 scale-[0.98]"
                       : isHovered
-                        ? "border-teal-400 shadow-lg shadow-teal-100 -translate-y-1"
-                        : "border-teal-100 shadow-sm hover:border-teal-300"
-                  }`}
+                        ? "border-teal-400 shadow-lg shadow-teal-100 dark:shadow-teal-950/40 -translate-y-1"
+                        : "border-teal-100 dark:border-slate-800 shadow-sm hover:border-teal-300 dark:hover:border-teal-700"
+                    }`}
                 >
                   {/* Icon */}
                   <div
@@ -184,24 +185,23 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
 
                   {/* Text */}
                   <div className="flex-1">
-                    <p className="text-xs font-bold tracking-[0.12em] uppercase text-teal-500 mb-1.5">
+                    <p className="text-xs font-bold tracking-[0.12em] uppercase text-teal-500 dark:text-teal-400 mb-1.5">
                       {tagline}
                     </p>
-                    <h2 className="font-display text-xl text-teal-950 leading-snug mb-2.5">
+                    <h2 className="font-display text-xl text-teal-950 dark:text-white leading-snug mb-2.5">
                       {label}
                     </h2>
-                    <p className="text-sm text-slate-500 leading-relaxed">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                       {desc}
                     </p>
                   </div>
 
                   {/* CTA arrow */}
                   <div
-                    className={`flex items-center gap-2 text-sm font-semibold transition-colors ${
-                      isHovered || isSelecting
-                        ? "text-teal-700"
-                        : "text-teal-400"
-                    }`}
+                    className={`flex items-center gap-2 text-sm font-semibold transition-colors ${isHovered || isSelecting
+                        ? "text-teal-700 dark:text-teal-300"
+                        : "text-teal-400 dark:text-teal-500"
+                      }`}
                   >
                     {isSelecting ? (
                       <>
@@ -232,9 +232,8 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
                           strokeWidth={2}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={`w-4 h-4 transition-transform ${
-                            isHovered ? "translate-x-1" : ""
-                          }`}
+                          className={`w-4 h-4 transition-transform ${isHovered ? "translate-x-1" : ""
+                            }`}
                         >
                           <path d="M3 8h10M9 4l4 4-4 4" />
                         </svg>
@@ -253,9 +252,9 @@ export default function RoleSelectionPage({ onSelect, onBack }: Props) {
         </div>
 
         {/* Footer hint */}
-        <p className="mt-10 text-xs text-slate-400 text-center">
+        <p className="mt-10 text-xs text-slate-400 dark:text-slate-500 text-center">
           Your session is encrypted and stored locally.{" "}
-          <span className="text-teal-500 font-medium">Works offline.</span>
+          <span className="text-teal-500 dark:text-teal-400 font-medium">Works offline.</span>
         </p>
       </main>
 

@@ -157,7 +157,7 @@ const KINDS: {
     label: "Medical Staff",
     unit: "personnel",
     icon: Icon.staff,
-    accent: "text-teal-700",
+    accent: "text-teal-700 dark:text-teal-300",
     barFull: "bg-teal-500",
   },
   {
@@ -165,7 +165,7 @@ const KINDS: {
     label: "Supply Kits",
     unit: "kits",
     icon: Icon.supply,
-    accent: "text-violet-700",
+    accent: "text-violet-700 dark:text-violet-400",
     barFull: "bg-violet-500",
   },
   {
@@ -173,7 +173,7 @@ const KINDS: {
     label: "Ambulances",
     unit: "units",
     icon: Icon.ambulance,
-    accent: "text-sky-700",
+    accent: "text-sky-700 dark:text-sky-400",
     barFull: "bg-sky-500",
   },
 ]
@@ -239,17 +239,17 @@ const SEVERITY: Record<Zone["severity"], {
   dot: string
 }> = {
   Critical: {
-    chip: "bg-red-100 text-red-700 border-red-300",
+    chip: "bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50",
     edge: "border-l-red-500",
     dot: "bg-red-500",
   },
   Severe: {
-    chip: "bg-orange-100 text-orange-700 border-orange-300",
+    chip: "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50",
     edge: "border-l-orange-500",
     dot: "bg-orange-500",
   },
   Elevated: {
-    chip: "bg-amber-100 text-amber-700 border-amber-300",
+    chip: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50",
     edge: "border-l-amber-500",
     dot: "bg-amber-500",
   },
@@ -344,17 +344,17 @@ export default function ResourceAllocationPage() {
       </div>
 
       {/* ── Central reserve pool ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-bold text-slate-800">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
               Central Reserve Pool
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
               Kayes District Command · available for dispatch
             </p>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900/50 rounded-full px-2.5 py-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />{" "}
             Depot online
           </span>
@@ -366,37 +366,37 @@ export default function ResourceAllocationPage() {
             return (
               <div
                 key={k.key}
-                className="rounded-xl border border-slate-100 bg-slate-50/60 p-4"
+                className="rounded-xl border border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-800/40 p-4"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span
-                    className={`w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center ${k.accent}`}
+                    className={`w-8 h-8 rounded-lg bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center ${k.accent}`}
                   >
                     {k.icon}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-500 leading-tight">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
                     {k.label}
                   </span>
                 </div>
                 <p
                   className={`font-display text-3xl leading-none ${
-                    low ? "text-red-600" : "text-slate-800"
+                    low ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-100"
                   }`}
                 >
                   {reserve[k.key]}
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                   {k.unit} in reserve
                 </p>
-                <div className="mt-2.5 pt-2.5 border-t border-slate-200/70 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">Zone coverage</span>
+                <div className="mt-2.5 pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 dark:text-slate-500">Zone coverage</span>
                   <span
                     className={`font-bold ${
                       cov >= 90
-                        ? "text-emerald-600"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : cov >= 60
-                          ? "text-amber-600"
-                          : "text-red-600"
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-red-600 dark:text-red-400"
                     }`}
                   >
                     {cov}%
@@ -410,11 +410,11 @@ export default function ResourceAllocationPage() {
 
       {/* ── Zone list ── */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-red-600">{Icon.pin}</span>
-        <h2 className="font-semibold text-slate-800 text-base">
+        <span className="text-red-600 dark:text-red-400">{Icon.pin}</span>
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">
           Affected Zones
         </h2>
-        <span className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+        <span className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 dark:text-red-400 dark:bg-red-950/40 dark:border-red-900/50 px-2 py-0.5 rounded-full">
           {zones.length} under response
         </span>
       </div>
@@ -428,7 +428,7 @@ export default function ResourceAllocationPage() {
           return (
             <div
               key={z.id}
-              className={`bg-white rounded-2xl border border-slate-200 border-l-4 ${s.edge} overflow-hidden transition-shadow ${
+              className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 border-l-4 ${s.edge} overflow-hidden transition-shadow ${
                 isOpen ? "shadow-lg" : "hover:shadow-md"
               }`}
             >
@@ -436,7 +436,7 @@ export default function ResourceAllocationPage() {
               <div className="flex flex-wrap items-center gap-4 px-5 py-4">
                 <div className="min-w-[160px]">
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-800 text-sm">
+                    <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
                       {z.name}
                     </p>
                     <span
@@ -445,7 +445,7 @@ export default function ResourceAllocationPage() {
                       {z.severity}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                     {z.region} · {z.cause}
                   </p>
                 </div>
@@ -468,13 +468,13 @@ export default function ResourceAllocationPage() {
                           </span>
                           <span
                             className={`font-bold ${
-                              short ? "text-red-600" : "text-emerald-600"
+                              short ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
                             }`}
                           >
                             {have}/{need}
                           </span>
                         </div>
-                        <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="relative h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                           {/* need marker via full track; fill = have */}
                           <div
                             className={`h-full rounded-full ${
@@ -485,7 +485,7 @@ export default function ResourceAllocationPage() {
                         </div>
                         <p
                           className={`text-[10px] mt-1 font-medium ${
-                            short ? "text-red-500" : "text-emerald-500"
+                            short ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
                           }`}
                         >
                           {short ? `short ${need - have}` : "fully met"}
@@ -498,7 +498,7 @@ export default function ResourceAllocationPage() {
                 {/* Allocate button */}
                 <div className="flex-shrink-0">
                   {allocated ? (
-                    <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-4 py-2.5 rounded-xl">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900/50 px-4 py-2.5 rounded-xl">
                       {Icon.check} Dispatched
                     </span>
                   ) : (
@@ -509,9 +509,9 @@ export default function ResourceAllocationPage() {
                       disabled={fullyMet}
                       className={`flex items-center gap-1.5 text-sm font-semibold px-5 py-2.5 rounded-xl transition-all ${
                         fullyMet
-                          ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
                           : isOpen
-                            ? "bg-slate-800 text-white"
+                            ? "bg-slate-800 text-white dark:bg-slate-700"
                             : "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/25 hover:-translate-y-0.5"
                       }`}
                     >
@@ -529,8 +529,8 @@ export default function ResourceAllocationPage() {
 
               {/* ── Allocation drawer ── */}
               {isOpen && (
-                <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-5 animate-slide-up">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">
+                <div className="border-t border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-800/40 px-5 py-5 animate-slide-up">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">
                     Dispatch from reserve to {z.name}
                   </p>
                   <div className="grid sm:grid-cols-3 gap-4">
@@ -541,19 +541,19 @@ export default function ResourceAllocationPage() {
                       return (
                         <div
                           key={k.key}
-                          className="bg-white rounded-xl border border-slate-200 p-4"
+                          className="bg-white rounded-xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 p-4"
                         >
                           <div className="flex items-center gap-2 mb-3">
                             <span
-                              className={`w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center ${k.accent}`}
+                              className={`w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center ${k.accent}`}
                             >
                               {k.icon}
                             </span>
                             <div className="min-w-0">
-                              <p className="text-xs font-semibold text-slate-700 leading-tight">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight">
                                 {k.label}
                               </p>
-                              <p className="text-[10px] text-slate-400">
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500">
                                 {reserve[k.key]} in reserve
                               </p>
                             </div>
@@ -561,29 +561,29 @@ export default function ResourceAllocationPage() {
                           <div className="flex items-center justify-between">
                             <button
                               onClick={() => adjust(k.key, -1, z)}
-                              className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center disabled:opacity-40"
+                              className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 flex items-center justify-center disabled:opacity-40"
                               disabled={draft[k.key] <= 0}
                             >
                               {Icon.minus}
                             </button>
                             <div className="text-center">
-                              <p className="font-display text-2xl text-slate-800 leading-none">
+                              <p className="font-display text-2xl text-slate-800 dark:text-slate-100 leading-none">
                                 +{draft[k.key]}
                               </p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                                 of {gap} needed
                               </p>
                             </div>
                             <button
                               onClick={() => adjust(k.key, 1, z)}
-                              className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center disabled:opacity-40"
+                              className="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 flex items-center justify-center disabled:opacity-40"
                               disabled={draft[k.key] >= max}
                             >
                               {Icon.plus}
                             </button>
                           </div>
                           {capped && (
-                            <p className="text-[10px] text-red-500 font-medium mt-2 text-center">
+                            <p className="text-[10px] text-red-500 dark:text-red-400 font-medium mt-2 text-center">
                               Reserve limits this dispatch
                             </p>
                           )}
@@ -593,18 +593,18 @@ export default function ResourceAllocationPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3 mt-5">
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Dispatching{" "}
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
                         {draft.staff}
                       </span>{" "}
                       staff ·
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
                         {" "}
                         {draft.supplies}
                       </span>{" "}
                       kits ·
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
                         {" "}
                         {draft.ambulances}
                       </span>{" "}
@@ -613,7 +613,7 @@ export default function ResourceAllocationPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setActiveZone(null)}
-                        className="text-sm font-semibold text-slate-500 hover:text-slate-700 px-4 py-2.5 rounded-xl transition-colors"
+                        className="text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 px-4 py-2.5 rounded-xl transition-colors"
                       >
                         Cancel
                       </button>

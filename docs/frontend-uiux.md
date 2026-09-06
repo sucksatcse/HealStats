@@ -1,9 +1,9 @@
-# HealthStats — Frontend Engineering & Design Skill Guide
+# HealStats — Frontend Engineering & Design Skill Guide
 
-*This document serves as the permanent frontend design and UX rulebook for HealthStats. All developers and AI agents must read and adhere to this document before making significant UI or architectural changes.*
+*This document serves as the permanent frontend design and UX rulebook for HealStats. All developers and AI agents must read and adhere to this document before making significant UI or architectural changes.*
 
 ## 1. PROJECT GOAL
-HealthStats is an offline-first healthcare management system designed for rural clinics in Bangladesh, especially environments where internet connectivity may be unreliable and disasters such as floods and cyclones can disrupt operations.
+HealStats is an offline-first healthcare management system designed for rural clinics in Bangladesh, especially environments where internet connectivity may be unreliable and disasters such as floods and cyclones can disrupt operations.
 
 **The core product experience is:**
 ```
@@ -17,7 +17,7 @@ Health Worker -> Login -> Register Patient -> Record Visit / Vitals / Symptoms
 **Product Principles:**
 Offline-first • Reliable • Fast • Simple • Accessible • Secure • Mobile-friendly • Healthcare-focused • Emergency-ready • Data-driven • Professional • Easy to demonstrate
 
-## 2. HEALTHSTATS DESIGN PHILOSOPHY
+## 2. HealStats DESIGN PHILOSOPHY
 This is a healthcare and emergency-response application, not a generic SaaS dashboard.
 - **Tone:** Trustworthy, Calm, Professional, Modern, Clean, Fast, Operational, Human.
 - **Avoid:** Neon colors, excessive gradients, cyberpunk aesthetics, huge decorative elements, generic AI appearances, 3D effects, and excessive rounded cards.
@@ -25,7 +25,7 @@ This is a healthcare and emergency-response application, not a generic SaaS dash
 ## 3. DESIGN SYSTEM & COLORS
 
 ### Ashen Nebula Theme (Active Visual Language)
-HealthStats uses the "Ashen Nebula" visual theme as its design foundation. This is a CSS custom-property design system defined in `index.css`.
+HealStats uses the "Ashen Nebula" visual theme as its design foundation. This is a CSS custom-property design system defined in `index.css`.
 
 **Key design tokens (all in `index.css` `:root` and `.dark`):**
 - `--an-bg` / `--an-bg-dark` — Page background (#faf8f2 light, #100e0b dark)
@@ -90,7 +90,7 @@ When activated, Emergency Mode shifts the UI to an operational state:
 - **Accessibility:** Ensure semantic HTML, proper form labels, keyboard navigation, visible focus states, sufficient contrast, and reduced-motion support.
 
 ## 9. PERFORMANCE & ANIMATION
-- **Performance:** HealthStats must feel fast. Avoid huge UI libraries, duplicate CSS, repeated API calls, and blocking initializations. Prefer lazy loading and efficient queries.
+- **Performance:** HealStats must feel fast. Avoid huge UI libraries, duplicate CSS, repeated API calls, and blocking initializations. Prefer lazy loading and efficient queries.
 - **Animation:** Use subtle, professional motion for button feedback, modal transitions, and sync states. Avoid long transitions and distracting motion.
 
 ## 10. SUPABASE DATA ACCESS & PRIVACY

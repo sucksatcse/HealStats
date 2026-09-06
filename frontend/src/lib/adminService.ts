@@ -22,6 +22,9 @@ import {
   type OutbreakAnalysisResult,
   type TriageBand,
   type EmergencyTriagePatient,
+  type ClinicActivity,
+  type ClinicMapEntry,
+  type ClinicMapData,
 } from './types';
 
 // Re-export types that consumers import from this module
@@ -34,6 +37,9 @@ export type {
   OutbreakAnalysisResult,
   TriageBand,
   EmergencyTriagePatient,
+  ClinicActivity,
+  ClinicMapEntry,
+  ClinicMapData,
 } from './types';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1256,6 +1262,140 @@ export async function fetchEmergencyTriageQueue(clinicId?: string | null): Promi
     console.error('[adminService] fetchEmergencyTriageQueue error:', err);
     return { data: null, error: 'Failed to load emergency triage queue.' };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TASK 16 — CLINIC MAP / GEOGRAPHIC COVERAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetches every clinic together with real, aggregated operational metrics for the
+ * Ops Map: patient counts, recent visit activity, pending-sync backlog and recent
+ * high-risk cases. Uses only columns that exist in the schema — no invented
+ * coordinates or device status. Individual query failures are tolerated.
+ */
+export async function fetchClinicMapData(): Promise<ClinicMapData> {
+  const now = Date.now();
+  const day7 = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [clinicsRes, patientsRes, recentVisitsRes, pendingRes] = await Promise.allSettled([
+    supabase.from('clinics').select('id, name, zone, address').order('name'),
+    supabase.from('patients').select('id, clinic_id'),
+    // Visits in the last 7 days, joined to their patient's clinic
+    supabase
+      .from('visits')
+      .select('created_at, synced_at, urgency_score, patients!inner(clinic_id)')
+      .gte('created_at', day7),
+    // All-time pending-sync visits (synced_at IS NULL)
+    supabase
+      .from('visits')
+      .select('id, patients!inner(clinic_id)')
+      .is('synced_at', null),
+  ]);
+
+  if (clinicsRes.status !== 'fulfilled' || clinicsRes.value.error || !clinicsRes.value.data) {
+    return {
+      clinics: [],
+      totals: { clinics: 0, patients: 0, visitsLast7d: 0, pendingSync: 0 },
+      error: 'Failed to load clinics from the database.',
+    };
+  }
+
+  const clinics = clinicsRes.value.data as ClinicRow[];
+
+  // ── Patient counts per clinic ──
+  const patientCounts = new Map<string, number>();
+  if (patientsRes.status === 'fulfilled' && patientsRes.value.data) {
+    for (const p of patientsRes.value.data as Array<{ clinic_id: string | null }>) {
+      if (!p.clinic_id) continue;
+      patientCounts.set(p.clinic_id, (patientCounts.get(p.clinic_id) ?? 0) + 1);
+    }
+  }
+
+  // ── Recent visit activity per clinic (last 7 days) ──
+  const day1Ms = now - 24 * 60 * 60 * 1000;
+  const agg = new Map<
+    string,
+    { last24h: number; last7d: number; highRisk: number; lastVisitAt: number | null }
+  >();
+  const ensure = (id: string) => {
+    let e = agg.get(id);
+    if (!e) {
+      e = { last24h: 0, last7d: 0, highRisk: 0, lastVisitAt: null };
+      agg.set(id, e);
+    }
+    return e;
+  };
+
+  let totalVisits7d = 0;
+  if (recentVisitsRes.status === 'fulfilled' && recentVisitsRes.value.data) {
+    type Row = {
+      created_at: string;
+      synced_at: string | null;
+      urgency_score: number | null;
+      patients: { clinic_id: string | null } | { clinic_id: string | null }[] | null;
+    };
+    for (const v of recentVisitsRes.value.data as Row[]) {
+      const patient = Array.isArray(v.patients) ? v.patients[0] : v.patients;
+      const clinicId = patient?.clinic_id;
+      if (!clinicId) continue;
+      const e = ensure(clinicId);
+      const ts = new Date(v.created_at).getTime();
+      e.last7d += 1;
+      totalVisits7d += 1;
+      if (ts >= day1Ms) e.last24h += 1;
+      if ((v.urgency_score ?? 0) >= 4) e.highRisk += 1;
+      if (e.lastVisitAt === null || ts > e.lastVisitAt) e.lastVisitAt = ts;
+    }
+  }
+
+  // ── Pending-sync counts per clinic (all time) ──
+  const pendingCounts = new Map<string, number>();
+  let totalPending = 0;
+  if (pendingRes.status === 'fulfilled' && pendingRes.value.data) {
+    type Row = { patients: { clinic_id: string | null } | { clinic_id: string | null }[] | null };
+    for (const v of pendingRes.value.data as Row[]) {
+      const patient = Array.isArray(v.patients) ? v.patients[0] : v.patients;
+      const clinicId = patient?.clinic_id;
+      if (!clinicId) continue;
+      pendingCounts.set(clinicId, (pendingCounts.get(clinicId) ?? 0) + 1);
+      totalPending += 1;
+    }
+  }
+
+  const entries: ClinicMapEntry[] = clinics.map((c) => {
+    const a = agg.get(c.id);
+    const last24h = a?.last24h ?? 0;
+    const last7d = a?.last7d ?? 0;
+    const activity: ClinicActivity = last24h > 0 ? 'active' : last7d > 0 ? 'recent' : 'quiet';
+    return {
+      id: c.id,
+      name: c.name,
+      zone: c.zone,
+      address: c.address,
+      patientCount: patientCounts.get(c.id) ?? 0,
+      visitsLast24h: last24h,
+      visitsLast7d: last7d,
+      pendingSync: pendingCounts.get(c.id) ?? 0,
+      highRisk: a?.highRisk ?? 0,
+      lastVisitAt: a?.lastVisitAt ? new Date(a.lastVisitAt).toISOString() : null,
+      activity,
+    };
+  });
+
+  let totalPatients = 0;
+  for (const n of patientCounts.values()) totalPatients += n;
+
+  return {
+    clinics: entries,
+    totals: {
+      clinics: entries.length,
+      patients: totalPatients,
+      visitsLast7d: totalVisits7d,
+      pendingSync: totalPending,
+    },
+    error: null,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

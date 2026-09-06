@@ -143,24 +143,24 @@ const SEVERITY_LEVELS = [
     label: "Critical",
     desc: "Mass casualties, lives at immediate risk",
     dot: "bg-red-600",
-    ring: "peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:ring-red-500/20",
-    text: "peer-checked:text-red-800",
+    ring: "peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:ring-red-500/20 dark:peer-checked:bg-red-950/40",
+    text: "peer-checked:text-red-800 dark:peer-checked:text-red-300",
   },
   {
     id: "severe",
     label: "Severe",
     desc: "Multiple serious injuries, urgent care needed",
     dot: "bg-orange-500",
-    ring: "peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:ring-orange-500/20",
-    text: "peer-checked:text-orange-800",
+    ring: "peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:ring-orange-500/20 dark:peer-checked:bg-orange-950/40",
+    text: "peer-checked:text-orange-800 dark:peer-checked:text-orange-300",
   },
   {
     id: "moderate",
     label: "Moderate",
     desc: "Injuries present, situation contained",
     dot: "bg-amber-400",
-    ring: "peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:ring-amber-400/20",
-    text: "peer-checked:text-amber-800",
+    ring: "peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:ring-amber-400/20 dark:peer-checked:bg-amber-950/40",
+    text: "peer-checked:text-amber-800 dark:peer-checked:text-amber-300",
   },
 ]
 
@@ -202,7 +202,7 @@ export default function EmergencyReportPage() {
     const pinLabel = MAP_PINS.find((p) => p.id === location)?.label ?? "Unknown"
     return (
       <div className="max-w-2xl mx-auto py-6">
-        <div className="bg-white rounded-3xl border border-red-100 shadow-xl shadow-red-900/5 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-red-100 dark:border-red-900/50 shadow-xl shadow-red-900/5 overflow-hidden">
           <div className="bg-gradient-to-br from-red-600 to-orange-600 px-8 py-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-white mx-auto mb-4">
               {Icon.check}
@@ -229,10 +229,10 @@ export default function EmergencyReportPage() {
             ].map(([k, v]) => (
               <div
                 key={k}
-                className="flex items-center justify-between text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0"
+                className="flex items-center justify-between text-sm border-b border-slate-100 dark:border-slate-800 pb-3 last:border-0 last:pb-0"
               >
-                <span className="text-slate-400 font-medium">{k}</span>
-                <span className="text-slate-800 font-semibold text-right">
+                <span className="text-slate-400 dark:text-slate-500 font-medium">{k}</span>
+                <span className="text-slate-800 dark:text-slate-100 font-semibold text-right">
                   {v}
                 </span>
               </div>
@@ -249,7 +249,7 @@ export default function EmergencyReportPage() {
                 setNotes("")
                 setPhotos([])
               }}
-              className="w-full py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors"
+              className="w-full py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-semibold text-sm transition-colors"
             >
               File another report
             </button>
@@ -289,9 +289,9 @@ export default function EmergencyReportPage() {
         </div>
       </div>
 
-      <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
         Report a mass-casualty or emergency event. Fields marked{" "}
-        <span className="text-red-600 font-semibold">*</span> are required to
+        <span className="text-red-600 dark:text-red-400 font-semibold">*</span> are required to
         dispatch. Reports are stored offline and broadcast the moment any signal
         returns.
       </p>
@@ -303,10 +303,10 @@ export default function EmergencyReportPage() {
             <select
               value={incidentType}
               onChange={(e) => setIncidentType(e.target.value)}
-              className={`w-full appearance-none rounded-xl border bg-white pl-4 pr-10 py-3.5 text-sm font-medium transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400 ${
+              className={`w-full appearance-none rounded-xl border bg-white dark:bg-slate-900 pl-4 pr-10 py-3.5 text-sm font-medium transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400 ${
                 incidentType
-                  ? "border-slate-300 text-slate-800"
-                  : "border-slate-200 text-slate-400"
+                  ? "border-slate-300 text-slate-800 dark:border-slate-700 dark:text-slate-100"
+                  : "border-slate-200 text-slate-400 dark:border-slate-800 dark:text-slate-500"
               }`}
             >
               <option value="" disabled>
@@ -318,7 +318,7 @@ export default function EmergencyReportPage() {
                 </option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
               {Icon.chevron}
             </span>
           </div>
@@ -326,7 +326,7 @@ export default function EmergencyReportPage() {
 
         {/* Location map pin selector */}
         <Field label="Location" required icon={Icon.pin}>
-          <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-800/40">
             <div className="relative aspect-[16/9] bg-gradient-to-br from-sky-50 to-teal-50">
               <svg
                 viewBox="0 0 100 56"
@@ -399,14 +399,14 @@ export default function EmergencyReportPage() {
                 )
               })}
             </div>
-            <div className="px-4 py-3 bg-white border-t border-slate-100 flex items-center gap-2 text-xs">
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs">
               {location ? (
-                <span className="flex items-center gap-1.5 text-red-700 font-semibold">
+                <span className="flex items-center gap-1.5 text-red-700 dark:text-red-400 font-semibold">
                   <span className="text-red-500">{Icon.pin}</span>
                   {MAP_PINS.find((p) => p.id === location)?.label} selected
                 </span>
               ) : (
-                <span className="text-slate-400">
+                <span className="text-slate-400 dark:text-slate-500">
                   Tap a pin to mark the incident location
                 </span>
               )}
@@ -424,7 +424,7 @@ export default function EmergencyReportPage() {
               value={affected}
               onChange={(e) => setAffected(e.target.value)}
               placeholder="e.g. 45"
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-medium text-slate-800 placeholder:text-slate-300 transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400"
+              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3.5 text-sm font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400"
             />
             <div className="flex flex-wrap gap-2 mt-2">
               {["1–5", "6–20", "21–50", "50+"].map((r, i) => (
@@ -432,7 +432,7 @@ export default function EmergencyReportPage() {
                   key={r}
                   type="button"
                   onClick={() => setAffected(["3", "12", "35", "60"][i])}
-                  className="text-[11px] font-semibold text-slate-500 bg-slate-100 hover:bg-red-50 hover:text-red-600 rounded-full px-2.5 py-1 transition-colors"
+                  className="text-[11px] font-semibold text-slate-500 bg-slate-100 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:bg-slate-800 dark:hover:bg-red-950/40 dark:hover:text-red-400 rounded-full px-2.5 py-1 transition-colors"
                 >
                   {r}
                 </button>
@@ -452,18 +452,18 @@ export default function EmergencyReportPage() {
                     onChange={() => setSeverity(s.id)}
                   />
                   <div
-                    className={`flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-all peer-focus-visible:ring-4 ${s.ring}`}
+                    className={`flex items-center gap-3 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3.5 py-2.5 transition-all peer-focus-visible:ring-4 ${s.ring}`}
                   >
                     <span
                       className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`}
                     />
                     <div className="min-w-0">
                       <p
-                        className={`text-sm font-semibold text-slate-700 ${s.text}`}
+                        className={`text-sm font-semibold text-slate-700 dark:text-slate-200 ${s.text}`}
                       >
                         {s.label}
                       </p>
-                      <p className="text-[11px] text-slate-400 leading-tight">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">
                         {s.desc}
                       </p>
                     </div>
@@ -476,14 +476,14 @@ export default function EmergencyReportPage() {
 
         {/* Photo upload */}
         <Field label="Photo Evidence" icon={Icon.camera}>
-          <label className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-red-300 hover:bg-red-50/40 transition-colors py-8 cursor-pointer text-center">
-            <span className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-red-500">
+          <label className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-red-300 hover:bg-red-50/40 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-red-800 dark:hover:bg-red-950/20 transition-colors py-8 cursor-pointer text-center">
+            <span className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-red-500">
               {Icon.camera}
             </span>
-            <span className="text-sm font-semibold text-slate-600">
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               Tap to add photos
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               Compressed and stored offline · up to 6 images
             </span>
             <input
@@ -500,10 +500,10 @@ export default function EmergencyReportPage() {
               {photos.map((name, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg pl-2.5 pr-1.5 py-1.5"
+                  className="flex items-center gap-2 bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-lg pl-2.5 pr-1.5 py-1.5"
                 >
                   <span className="text-red-500">{Icon.camera}</span>
-                  <span className="text-xs font-medium text-slate-600 max-w-[120px] truncate">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300 max-w-[120px] truncate">
                     {name}
                   </span>
                   <button
@@ -511,7 +511,7 @@ export default function EmergencyReportPage() {
                     onClick={() =>
                       setPhotos((prev) => prev.filter((_, idx) => idx !== i))
                     }
-                    className="text-slate-300 hover:text-red-500 transition-colors p-0.5"
+                    className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors p-0.5"
                     aria-label="Remove photo"
                   >
                     {Icon.x}
@@ -529,7 +529,7 @@ export default function EmergencyReportPage() {
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Access routes, resources needed, hazards on site…"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-300 resize-none transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400"
+            className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 resize-none transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400"
           />
         </Field>
 
@@ -541,14 +541,14 @@ export default function EmergencyReportPage() {
             className={`w-full flex items-center justify-center gap-3 rounded-2xl py-5 text-base font-bold uppercase tracking-wide transition-all ${
               canSubmit
                 ? "bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-xl shadow-red-600/30 hover:shadow-2xl hover:shadow-red-600/40 hover:-translate-y-0.5 active:translate-y-0"
-                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
             }`}
           >
             {Icon.send}
             Submit Emergency Report
           </button>
           {!canSubmit && (
-            <p className="text-center text-xs text-slate-400 mt-2.5">
+            <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2.5">
               Complete incident type, location, and people affected to dispatch.
             </p>
           )}
@@ -572,10 +572,10 @@ function Field({
 }) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 mb-2">
+      <label className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
         <span className="text-red-500">{icon}</span>
         {label}
-        {required && <span className="text-red-600">*</span>}
+        {required && <span className="text-red-600 dark:text-red-400">*</span>}
       </label>
       {children}
     </div>

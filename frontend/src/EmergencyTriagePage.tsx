@@ -386,7 +386,7 @@ export default function EmergencyTriagePage({
 
       {/* ── Error Banner ── */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 p-4 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
+        <div role="alert" className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 p-4 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
           <span>Failed to load triage queue: {error}</span>
           <button
             type="button"

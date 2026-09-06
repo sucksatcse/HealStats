@@ -4,7 +4,7 @@ import { useTheme } from "./ThemeContext"
 import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HealthStats — single unified navbar used by every page.
+   HealStats — single unified navbar used by every page.
 
    variant="landing"  (default)
      · Logo + marketing anchor links + optional CTA buttons on the right
@@ -37,6 +37,7 @@ interface AppNavbarProps {
 
   /* app-header props */
   onSidebarOpen?: () => void
+  onProfile?: () => void
   searchValue?: string
   onSearchChange?: (value: string) => void
   searchPlaceholder?: string
@@ -149,6 +150,7 @@ export default function AppNavbar({
   onAdminLogin,
   onLogin,
   onSidebarOpen,
+  onProfile,
   searchValue = "",
   onSearchChange,
   searchPlaceholder = "Search…",
@@ -303,6 +305,30 @@ export default function AppNavbar({
                 </p>
               </div>
             )}
+            {onProfile && (
+              <button
+                onClick={() => {
+                  setUserMenuOpen(false)
+                  onProfile()
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors flex items-center gap-2"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 10a3 3 0 100-6 3 3 0 000 6zm-6 8a6 6 0 1112 0H4z"
+                  />
+                </svg>
+                My Profile
+              </button>
+            )}
             <button
               onClick={() => {
                 setUserMenuOpen(false)
@@ -350,7 +376,7 @@ export default function AppNavbar({
         </svg>
       </div>
       <span className="font-display text-xl tracking-tight text-teal-900 dark:text-white leading-none select-none">
-        Health<span className="text-teal-600 dark:text-teal-400">Stats</span>
+        Heal<span className="text-teal-600 dark:text-teal-400">Stats</span>
       </span>
     </a>
   )

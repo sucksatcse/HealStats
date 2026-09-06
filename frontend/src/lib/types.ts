@@ -183,5 +183,41 @@ export interface EmergencyTriagePatient {
   createdAt: string;
 }
 
+// ── Clinic Map / Geographic Coverage Types (Task 16) ──────────────────────────
+/**
+ * Honest activity status derived from real visit recency (NOT device network state,
+ * which the schema does not track):
+ *   active = at least one visit in the last 24h
+ *   recent = at least one visit in the last 7 days
+ *   quiet  = no visits recorded in the last 7 days
+ */
+export type ClinicActivity = 'active' | 'recent' | 'quiet';
+
+/** A clinic augmented with real aggregated operational metrics for the Ops Map. */
+export interface ClinicMapEntry {
+  id: string;
+  name: string;
+  zone: string | null;
+  address: string | null;
+  patientCount: number;
+  visitsLast24h: number;
+  visitsLast7d: number;
+  pendingSync: number;
+  highRisk: number;        // recent visits with urgency_score >= 4
+  lastVisitAt: string | null;
+  activity: ClinicActivity;
+}
+
+export interface ClinicMapData {
+  clinics: ClinicMapEntry[];
+  totals: {
+    clinics: number;
+    patients: number;
+    visitsLast7d: number;
+    pendingSync: number;
+  };
+  error: string | null;
+}
+
 
 

@@ -1,45 +1,14 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { useTheme } from "./ThemeContext"
+import { useAuth } from "./AuthContext"
+import { answerQuery, type ChatContext } from "./lib/chatbotService"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Message {
   id: number
   role: "user" | "assistant"
   text: string
-}
-
-// ── Initial greeting ───────────────────────────────────────────────────────
-const GREETING: Message = {
-  id: 0,
-  role: "assistant",
-  text: "Hi! I'm the HealthStats Assistant. I can help with patient records, clinic sync status, or guide you through the platform. How can I help?",
-}
-
-const QUICK_REPLIES = [
-  "How does offline sync work?",
-  "Find a patient record",
-  "Clinic status",
-]
-
-// ── Simulated response map ─────────────────────────────────────────────────
-function getResponse(input: string): string {
-  const q = input.toLowerCase()
-  if (q.includes("sync") || q.includes("offline") || q.includes("connect"))
-    return "Visit records sync automatically when connectivity is restored — no data is ever lost. The app queues all changes locally and uploads them the moment you're back online. You can monitor sync status under Admin → Sync Status."
-  if (q.includes("patient") || q.includes("record") || q.includes("find"))
-    return "Search for any patient by name, phone number, or patient ID from the Dashboard search bar. Full visit history, vitals, and triage assessments are accessible for each record."
-  if (
-    q.includes("clinic") ||
-    q.includes("status") ||
-    q.includes("ops") ||
-    q.includes("map")
-  )
-    return "The Ops Map shows real-time connection status for all 18 clinics. Green = synced, amber = sync delay (30 min+), red = offline. Enable Emergency Mode to highlight affected zones for rapid dispatch."
-  if (q.includes("triage") || q.includes("imci") || q.includes("assess"))
-    return "The triage module follows IMCI protocols and works fully offline. Field workers enter assessments on any device; results sync to the dashboard as soon as connectivity is available."
-  if (q.includes("emergency") || q.includes("alert") || q.includes("urgent"))
-    return "Activate Emergency Mode from the Ops Map to instantly highlight all offline clinics in red with pulsing zone indicators. Use Broadcast Alert to notify all connected clinics simultaneously."
-  return "Thanks for your question! I can help with visit records, clinic connectivity, triage workflows, and patient data. What would you like to know more about?"
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────
@@ -92,31 +61,195 @@ const IconHeart = () => (
 )
 
 // ── Component ───────────────────────────────────────────────────────────────
+function renderInline(text: string, keyBase: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  const regex = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g
+  let last = 0
+  let i = 0
+  let m: RegExpExecArray | null
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index))
+    if (m[2] !== undefined) nodes.push(<strong key={`${keyBase}-b${i}`}>{m[2]}</strong>)
+    else if (m[3] !== undefined) nodes.push(<em key={`${keyBase}-i${i}`}>{m[3]}</em>)
+    else if (m[4] !== undefined)
+      nodes.push(
+        <code key={`${keyBase}-c${i}`} className="px-1 py-0.5 rounded bg-black/10 dark:bg-white/10 text-[12px]">
+          {m[4]}
+        </code>,
+      )
+    last = m.index + m[0].length
+    i++
+  }
+  if (last < text.length) nodes.push(text.slice(last))
+  return nodes
+}
+
+const rowCells = (r: string): string[] => {
+  const cells = r.split("|").map((c) => c.trim())
+  if (cells.length && cells[0] === "") cells.shift()
+  if (cells.length && cells[cells.length - 1] === "") cells.pop()
+  return cells
+}
+const isTableSeparator = (r: string): boolean =>
+  r.includes("|") && r.includes("-") && r.replace(/[\s|:-]/g, "") === ""
+
+/** Minimal, XSS-safe markdown renderer (bold/italic/code, lists, tables). */
+function MarkdownText({ text }: { text: string }) {
+  const lines = text.split("\n")
+  const blocks: ReactNode[] = []
+  let i = 0
+  let key = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    if (line.includes("|") && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const heads = rowCells(line)
+      i += 2
+      const rows: string[][] = []
+      while (i < lines.length && lines[i].includes("|")) {
+        rows.push(rowCells(lines[i]))
+        i++
+      }
+      blocks.push(
+        <div key={`t${key++}`} className="overflow-x-auto">
+          <table className="text-[12px] my-1 border-collapse">
+            <thead>
+              <tr>
+                {heads.map((h, hi) => (
+                  <th key={hi} className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left font-semibold">
+                    {renderInline(h, `h${hi}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={ri}>
+                  {r.map((c, ci) => (
+                    <td key={ci} className="border border-slate-300 dark:border-slate-600 px-2 py-1">
+                      {renderInline(c, `c${ri}-${ci}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      )
+      continue
+    }
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*]\s+/, ""))
+        i++
+      }
+      blocks.push(
+        <ul key={`u${key++}`} className="list-disc pl-4 space-y-0.5">
+          {items.map((it, ii) => (
+            <li key={ii}>{renderInline(it, `u${key}-${ii}`)}</li>
+          ))}
+        </ul>,
+      )
+      continue
+    }
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ""))
+        i++
+      }
+      blocks.push(
+        <ol key={`o${key++}`} className="list-decimal pl-4 space-y-0.5">
+          {items.map((it, ii) => (
+            <li key={ii}>{renderInline(it, `o${key}-${ii}`)}</li>
+          ))}
+        </ol>,
+      )
+      continue
+    }
+    if (line.trim() === "") {
+      i++
+      continue
+    }
+    const para: string[] = [line]
+    i++
+    while (
+      i < lines.length &&
+      lines[i].trim() !== "" &&
+      !/^\s*[-*]\s+/.test(lines[i]) &&
+      !/^\s*\d+\.\s+/.test(lines[i]) &&
+      !lines[i].includes("|")
+    ) {
+      para.push(lines[i])
+      i++
+    }
+    blocks.push(
+      <p key={`p${key++}`} className="leading-relaxed">
+        {para.map((l, li) => (
+          <span key={li}>
+            {renderInline(l, `p${key}-${li}`)}
+            {li < para.length - 1 ? <br /> : null}
+          </span>
+        ))}
+      </p>,
+    )
+  }
+  return <div className="text-sm space-y-1.5">{blocks}</div>
+}
+
 export default function ChatWidget() {
   const { dark } = useTheme()
+  const { profile } = useAuth()
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([GREETING])
+  const [messages, setMessages] = useState<Message[]>(() => [
+    { id: 0, role: "assistant", text: i18n.t("chatbot:greeting") },
+  ])
   const [input, setInput] = useState("")
   const [typing, setTyping] = useState(false)
   const [unread, setUnread] = useState(1)
   const msgEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const authenticated = !!profile
+  const ctx: ChatContext = {
+    authenticated,
+    role: profile?.role ?? null,
+    clinicId: profile?.clinic_id ?? null,
+  }
+  const quickReplies = authenticated
+    ? [
+      t("chatbot:quickAuthed1"),
+      t("chatbot:quickAuthed2"),
+      t("chatbot:quickAuthed3"),
+      t("chatbot:quickAuthed4"),
+    ]
+    : [t("chatbot:quickPublic1"), t("chatbot:quickPublic2"), t("chatbot:quickPublic3")]
+
   // Scroll to latest message
   useEffect(() => {
     msgEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, typing])
 
+  // Keep the greeting in the active language while it is still the only message.
+  useEffect(() => {
+    setMessages((m) =>
+      m.length === 1 && m[0].role === "assistant"
+        ? [{ id: 0, role: "assistant", text: i18n.t("chatbot:greeting") }]
+        : m,
+    )
+  }, [i18n.language])
+
   // Clear unread + focus input when opened
   useEffect(() => {
     if (open) {
       setUnread(0)
-      const t = setTimeout(() => inputRef.current?.focus(), 280)
-      return () => clearTimeout(t)
+      const focusTimer = setTimeout(() => inputRef.current?.focus(), 280)
+      return () => clearTimeout(focusTimer)
     }
   }, [open])
 
-  function send(text = input) {
+  async function send(text = input) {
     const trimmed = text.trim()
     if (!trimmed || typing) return
 
@@ -125,17 +258,16 @@ export default function ChatWidget() {
     setInput("")
     setTyping(true)
 
-    const delay = 850 + Math.random() * 550
-    setTimeout(() => {
-      setTyping(false)
-      const reply: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        text: getResponse(trimmed),
-      }
-      setMessages((m) => [...m, reply])
-      if (!open) setUnread((u) => u + 1)
-    }, delay)
+    const answer = await answerQuery(trimmed, ctx)
+
+    setTyping(false)
+    const reply: Message = {
+      id: Date.now() + 1,
+      role: "assistant",
+      text: answer.text,
+    }
+    setMessages((m) => [...m, reply])
+    if (!open) setUnread((u) => u + 1)
   }
 
   function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -152,21 +284,19 @@ export default function ChatWidget() {
       {/* ──────────── Chat window ──────────── */}
       <div
         role="dialog"
-        aria-label="HealthStats Assistant chat"
+        aria-label={t("chatbot:title")}
         aria-hidden={!open}
-        className={`w-[360px] rounded-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 ease-out origin-bottom-right ${
-          open
+        className={`w-[360px] rounded-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 ease-out origin-bottom-right ${open
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-3 pointer-events-none"
-        }`}
+          }`}
         style={{
           height: 488,
           boxShadow: dark
             ? "0 32px 72px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)"
             : "0 32px 72px rgba(13,148,136,0.13), 0 8px 24px rgba(0,0,0,0.09)",
-          border: `1px solid ${
-            dark ? "rgba(51,65,85,0.8)" : "rgba(204,239,233,0.9)"
-          }`,
+          border: `1px solid ${dark ? "rgba(51,65,85,0.8)" : "rgba(204,239,233,0.9)"
+            }`,
           background: dark ? "#0f172a" : "#ffffff",
         }}
       >
@@ -179,12 +309,12 @@ export default function ChatWidget() {
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white tracking-tight leading-none">
-              HealthStats Assistant
+              {t("chatbot:title")}
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
               <span className="text-[11px] text-teal-100 font-medium">
-                Online · typically replies instantly
+                {authenticated ? t("chatbot:statusAuthed") : t("chatbot:statusPublic")}
               </span>
             </div>
           </div>
@@ -193,7 +323,7 @@ export default function ChatWidget() {
           <button
             onClick={() => setOpen(false)}
             className="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center text-teal-100 hover:text-white transition-all active:scale-90"
-            aria-label="Minimize chat"
+            aria-label={t("chatbot:minimizeAria")}
           >
             <IconMinus />
           </button>
@@ -203,9 +333,12 @@ export default function ChatWidget() {
         <div
           className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0"
           style={{ scrollbarWidth: "none" }}
+          role="log"
+          aria-live="polite"
+          aria-atomic="false"
         >
           {messages.map((msg, idx) => (
-            <div key={msg.id}>
+            <div key={msg.id} className="animate-slide-up">
               {msg.role === "user" ? (
                 /* User: right-aligned teal bubble */
                 <div className="flex justify-end">
@@ -213,7 +346,7 @@ export default function ChatWidget() {
                     className="max-w-[78%] bg-teal-600 text-white px-4 py-2.5 shadow-sm"
                     style={{ borderRadius: "18px 4px 18px 18px" }}
                   >
-                    <p className="text-sm leading-relaxed">{msg.text}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
                   </div>
                 </div>
               ) : (
@@ -223,14 +356,15 @@ export default function ChatWidget() {
                     <IconHeart />
                   </div>
                   <div
-                    className={`max-w-[78%] px-4 py-2.5 shadow-sm ${
-                      dark
+                    className={`max-w-[78%] px-4 py-2.5 shadow-sm ${dark
                         ? "bg-slate-800 text-slate-100"
                         : "bg-slate-100 text-slate-800"
-                    }`}
+                      }`}
                     style={{ borderRadius: "4px 18px 18px 18px" }}
                   >
-                    <p className="text-sm leading-relaxed">{msg.text}</p>
+                    <div className="text-sm leading-relaxed">
+                      <MarkdownText text={msg.text} />
+                    </div>
                   </div>
                 </div>
               )}
@@ -238,15 +372,14 @@ export default function ChatWidget() {
               {/* Quick reply chips — only shown after the greeting */}
               {msg.role === "assistant" && idx === 0 && showQuickReplies && (
                 <div className="flex flex-wrap gap-1.5 mt-3 pl-8">
-                  {QUICK_REPLIES.map((q) => (
+                  {quickReplies.map((q) => (
                     <button
                       key={q}
                       onClick={() => send(q)}
-                      className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-all hover:scale-[1.02] active:scale-95 ${
-                        dark
+                      className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-all hover:scale-[1.02] active:scale-95 ${dark
                           ? "border-teal-700 text-teal-400 hover:bg-teal-900/40 hover:border-teal-500"
                           : "border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300"
-                      }`}
+                        }`}
                     >
                       {q}
                     </button>
@@ -263,18 +396,16 @@ export default function ChatWidget() {
                 <IconHeart />
               </div>
               <div
-                className={`px-4 py-3 shadow-sm ${
-                  dark ? "bg-slate-800" : "bg-slate-100"
-                }`}
+                className={`px-4 py-3 shadow-sm ${dark ? "bg-slate-800" : "bg-slate-100"
+                  }`}
                 style={{ borderRadius: "4px 18px 18px 18px" }}
               >
                 <div className="flex items-center gap-1.5">
                   {[0, 150, 300].map((delay) => (
                     <span
                       key={delay}
-                      className={`w-1.5 h-1.5 rounded-full animate-bounce ${
-                        dark ? "bg-slate-500" : "bg-slate-400"
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full animate-bounce ${dark ? "bg-slate-500" : "bg-slate-400"
+                        }`}
                       style={{
                         animationDelay: `${delay}ms`,
                         animationDuration: "900ms",
@@ -293,17 +424,15 @@ export default function ChatWidget() {
         <div
           className="flex-shrink-0 px-3 pb-3 pt-2"
           style={{
-            borderTop: `1px solid ${
-              dark ? "rgba(51,65,85,0.6)" : "rgba(226,232,240,0.8)"
-            }`,
+            borderTop: `1px solid ${dark ? "rgba(51,65,85,0.6)" : "rgba(226,232,240,0.8)"
+              }`,
           }}
         >
           <div
-            className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${
-              dark
+            className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${dark
                 ? "bg-slate-800 border border-slate-700 focus-within:border-teal-600"
                 : "bg-slate-50 border border-slate-200 focus-within:border-teal-400 focus-within:bg-white"
-            }`}
+              }`}
           >
             <input
               ref={inputRef}
@@ -311,29 +440,27 @@ export default function ChatWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKey}
-              placeholder="Ask a question…"
+              placeholder={t("chatbot:placeholder")}
               disabled={!open}
-              className={`flex-1 bg-transparent text-sm outline-none ${
-                dark
+              className={`flex-1 bg-transparent text-sm outline-none ${dark
                   ? "text-slate-100 placeholder-slate-500"
                   : "text-slate-800 placeholder-slate-400"
-              }`}
+                }`}
             />
             <button
               onClick={() => send()}
               disabled={!input.trim() || typing}
-              aria-label="Send message"
+              aria-label={t("chatbot:sendAria")}
               className="w-7 h-7 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
             >
               <IconSend />
             </button>
           </div>
           <p
-            className={`text-center text-[10px] mt-1.5 ${
-              dark ? "text-slate-700" : "text-slate-300"
-            }`}
+            className={`text-center text-[10px] mt-1.5 ${dark ? "text-slate-700" : "text-slate-300"
+              }`}
           >
-            HealthStats AI · Not a substitute for medical advice
+            {t("chatbot:disclaimer")}
           </p>
         </div>
       </div>
@@ -341,13 +468,12 @@ export default function ChatWidget() {
       {/* ──────────── Toggle button ──────────── */}
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Close chat assistant" : "Open chat assistant"}
+        aria-label={open ? t("chatbot:closeAria") : t("chatbot:openAria")}
         aria-expanded={open}
-        className={`pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
-          open
+        className={`pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${open
             ? "bg-slate-600 dark:bg-slate-700 hover:bg-slate-500 dark:hover:bg-slate-600 shadow-slate-600/30 scale-100"
             : "bg-teal-600 hover:bg-teal-500 shadow-teal-600/45 hover:scale-110 hover:shadow-teal-600/55 hover:shadow-2xl"
-        } active:scale-90`}
+          } active:scale-90`}
       >
         {/* Chat icon (visible when closed) */}
         <span

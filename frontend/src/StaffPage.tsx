@@ -283,7 +283,7 @@ function AddStaffModal({
 
         <form onSubmit={submit} noValidate className="px-6 py-5 space-y-4">
           {error && (
-            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-sm rounded-xl px-3.5 py-2.5">
+            <div role="alert" className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-sm rounded-xl px-3.5 py-2.5">
               {error}
             </div>
           )}
@@ -469,7 +469,7 @@ function EditStaffModal({
 
         <form onSubmit={submit} noValidate className="px-6 py-5 space-y-4">
           {error && (
-            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-sm rounded-xl px-3.5 py-2.5">
+            <div role="alert" className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-sm rounded-xl px-3.5 py-2.5">
               {error}
             </div>
           )}

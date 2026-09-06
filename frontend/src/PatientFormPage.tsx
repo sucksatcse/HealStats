@@ -152,10 +152,10 @@ function Field({
 }) {
   return (
     <div className={className}>
-      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
         {label}
         {hint && (
-          <span className="ml-1.5 font-medium normal-case tracking-normal text-slate-300">
+          <span className="ml-1.5 font-medium normal-case tracking-normal text-slate-300 dark:text-slate-600">
             {hint}
           </span>
         )}
@@ -166,7 +166,7 @@ function Field({
 }
 
 const inputCls =
-  "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white transition-all"
+  "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
 
 function TextField({
   value,
@@ -210,7 +210,7 @@ function SelectField({
           <option key={o}>{o}</option>
         ))}
       </select>
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
         {Icon.chevronDown}
       </span>
     </div>
@@ -232,12 +232,12 @@ function Section({
   return (
     <div className="grid lg:grid-cols-[240px_1fr] gap-6 py-7">
       <div className="flex gap-3">
-        <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
         <div>
-          <h3 className="font-semibold text-slate-800 text-sm">{title}</h3>
-          <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+          <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{title}</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
             {desc}
           </p>
         </div>
@@ -301,7 +301,7 @@ export default function PatientFormPage({
         <button
           type="button"
           onClick={onCancel}
-          className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 transition-colors group mb-3"
+          className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors group mb-3"
         >
           <span className="transition-transform group-hover:-translate-x-0.5">
             {Icon.back}
@@ -310,10 +310,10 @@ export default function PatientFormPage({
         </button>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-display text-2xl lg:text-3xl text-teal-950">
+            <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
               {isEdit ? "Edit Patient Record" : "Add Patient Record"}
             </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               {isEdit
                 ? `Updating ${patient?.name}`
                 : "Manually create a new patient record"}{" "}
@@ -321,7 +321,7 @@ export default function PatientFormPage({
             </p>
           </div>
           {isEdit && (
-            <span className="text-[11px] font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-full">
+            <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 px-3 py-1.5 rounded-full">
               Editing existing record
             </span>
           )}
@@ -329,11 +329,11 @@ export default function PatientFormPage({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+        <div role="alert" className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3">
           <svg
             viewBox="0 0 16 16"
             fill="currentColor"
-            className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400"
+            className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400 dark:text-red-500"
           >
             <path
               fillRule="evenodd"
@@ -346,7 +346,7 @@ export default function PatientFormPage({
       )}
 
       {/* Form card with divided sections */}
-      <div className="bg-white rounded-2xl border border-slate-100 px-5 lg:px-8 divide-y divide-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 px-5 lg:px-8 divide-y divide-slate-100 dark:divide-slate-800">
         {/* Personal Info */}
         <Section
           icon={Icon.person}
@@ -493,7 +493,7 @@ export default function PatientFormPage({
 
       {/* Actions */}
       <div className="flex items-center justify-between flex-wrap gap-3 pb-2">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           Records are stored locally and sync automatically when connectivity
           returns.
         </p>
@@ -501,7 +501,7 @@ export default function PatientFormPage({
           <button
             type="button"
             onClick={onCancel}
-            className="text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 px-5 py-2.5 rounded-xl transition-colors"
+            className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 px-5 py-2.5 rounded-xl transition-colors"
           >
             Cancel
           </button>

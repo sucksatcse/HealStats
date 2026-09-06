@@ -271,6 +271,30 @@ body {
 }
 .animate-fade-in { animation: fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* Larger entrance — hero / section reveals */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Subtle scale — modals / dialogs / popovers */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Stagger helpers — apply alongside an entrance animation on siblings */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.40s; }
+
 /* Success states */
 @keyframes success-pop {
   0%   { transform: scale(0.4); opacity: 0; }
@@ -351,6 +375,22 @@ body {
   .skeleton::after { animation: none; }
   .skeleton { animation: skeleton-pulse 1.8s ease-in-out infinite; }
   @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION — global guard (Task 20)
+   Users who request reduced motion get near-instant transitions and no looping
+   or entrance animation. Placed last so it wins over the utilities above.
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

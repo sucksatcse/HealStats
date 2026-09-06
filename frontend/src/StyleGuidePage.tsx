@@ -130,7 +130,7 @@ export default function StyleGuidePage({ onBack }: { onBack?: () => void }) {
             </div>
             <div>
               <p className="font-display text-lg text-teal-900 leading-none">
-                HealthStats
+                HealStats
               </p>
               <p className="text-[10px] text-slate-400 mt-0.5">Design System</p>
             </div>
@@ -186,7 +186,7 @@ export default function StyleGuidePage({ onBack }: { onBack?: () => void }) {
               Design System
             </p>
             <h1 className="font-display text-4xl lg:text-5xl text-teal-950 leading-tight mb-3">
-              The HealthStats look & feel
+              The HealStats look & feel
             </h1>
             <p className="text-lg text-slate-500 max-w-2xl leading-relaxed">
               A calm, high-clarity system built for rural clinics: a trustworthy
@@ -414,7 +414,7 @@ export default function StyleGuidePage({ onBack }: { onBack?: () => void }) {
           </Section>
 
           <p className="text-center text-xs text-slate-400 pt-4 pb-8">
-            HealthStats Design System · teal core · built for the field
+            HealStats Design System · teal core · built for the field
           </p>
         </main>
       </div>
