@@ -1,6 +1,6 @@
 <div align="center">
   
-# HealthStats
+# HealStates
 
 ### Healthcare records that never stop working.
 
@@ -11,7 +11,7 @@
 ---
 
 ## Quick Summary
-HealthStats is an electronic health record (EHR) platform built specifically for rural clinics in Bangladesh. It is designed around an offline-first architectural goal. In environments where internet connectivity is intermittent and rolling power outages are frequent, the project aims to ensure community health workers can continue registering patients and logging visits regardless of network status. While the online patient registration flow is currently implemented, the core offline caching and automatic background synchronization systems are actively in development. 
+HealStates is an electronic health record (EHR) platform built specifically for rural clinics in Bangladesh. It is designed around an offline-first architectural goal. In environments where internet connectivity is intermittent and rolling power outages are frequent, the project aims to ensure community health workers can continue registering patients and logging visits regardless of network status. While the online patient registration flow is currently implemented, the core offline caching and automatic background synchronization systems are actively in development. 
 
 ## Table of Contents
 - [The Problem](#the-problem)
@@ -46,7 +46,7 @@ Healthcare delivery in rural Bangladesh is hindered by severe infrastructure cha
 ---
 
 ## The Solution
-HealthStats solves these problems through a resilient, offline-first workflow:
+HealStates solves these problems through a resilient, offline-first workflow:
 
 ```mermaid
 flowchart TD
@@ -158,7 +158,7 @@ erDiagram
 ## Project Structure
 
 ```text
-HealthStats/
+HealStates/
 ├── frontend/
 │   ├── src/
 │   │   ├── lib/                  # Supabase client config
@@ -373,7 +373,7 @@ Automated tests are not yet configured. Before submitting a PR, perform the foll
 
 ## Exhibition Demo
 
-To demonstrate the core value of HealthStats:
+To demonstrate the core value of HealStates:
 
 1. **Worker Login:** Enter `worker@clinic.org` / `password123` to bypass authentication and inject a test session.
 2. **Accessibility:** Highlight the instant English-to-Bangla translation and Dark Mode toggle.
