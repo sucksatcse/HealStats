@@ -1,6 +1,6 @@
 <div align="center">
-
-# HealStats
+  
+# HealStates
 
 ### Healthcare records that never stop working.
 
@@ -11,12 +11,7 @@ An **offline-first** electronic health record (EHR) and disaster-response platfo
 ---
 
 ## Quick Summary
-
-HealStats is an EHR built for clinics that face **intermittent connectivity and frequent power outages**. Health workers register patients and record visits whether they are online or off — records are saved locally and **synchronized automatically when connectivity returns**. On top of the record system, HealStats adds admin analytics, disaster/Emergency operations, a symptom-cluster early-warning surveillance view, a triage queue, a clinic operations map, and a data-grounded AI assistant. The interface is fully bilingual (English/Bangla) with light and dark themes.
-
-> **Honesty note:** This is a hackathon/MVP build. It is functional end-to-end for the flows described below, but it is **not production-hardened** — most importantly, database Row Level Security is intentionally disabled in the MVP schema (see [Security](#security)). Known gaps are tracked openly in [LIMITATIONS.md](LIMITATIONS.md).
-
----
+HealStates is an electronic health record (EHR) platform built specifically for rural clinics in Bangladesh. It is designed around an offline-first architectural goal. In environments where internet connectivity is intermittent and rolling power outages are frequent, the project aims to ensure community health workers can continue registering patients and logging visits regardless of network status. While the online patient registration flow is currently implemented, the core offline caching and automatic background synchronization systems are actively in development. 
 
 ## Table of Contents
 - [The Problem](#the-problem)
@@ -54,8 +49,7 @@ Healthcare delivery in rural Bangladesh faces severe infrastructure challenges:
 ---
 
 ## The Solution
-
-A resilient, offline-first workflow with a central coordination layer:
+HealStates solves these problems through a resilient, offline-first workflow:
 
 ```mermaid
 flowchart TD
@@ -155,11 +149,28 @@ The Digitize page runs **on-device OCR (Tesseract.js)** on a photo of a paper re
 
 ## Emergency Intelligence
 
-- **Emergency Mode:** a crisis console driven by live data (`clinics`, recent `visits`, `patients`, `staff`) — active zones by severity, a 1–5 triage queue, deployed responders, an SOS broadcast modal, and situation-report CSV export.
-- **Outbreak detection:** a **threshold-based symptom-cluster** engine that groups recent visits by syndrome and clinic zone and raises early-warning banners. It surfaces **potential outbreak clusters** for human review — it does **not** medically confirm outbreaks.
-- **Triage queue:** authoritative 1–5 urgency scale with Red/Yellow/Green bands, interactive clinical status workflow, and patient drill-down; sorted by urgency then recency.
-
-Urgency scale (unchanged everywhere): **5 Critical · 4 High · 3 Moderate · 2 Low · 1/null Stable.**
+```text
+HealStates/
+├── frontend/
+│   ├── src/
+│   │   ├── lib/                  # Supabase client config
+│   │   ├── App.tsx               # Main router
+│   │   ├── AuthContext.tsx       # Session management
+│   │   ├── NewPatientPage.tsx    # Registration workflow
+│   │   └── ...                   # Additional components
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.ts
+├── supabase/
+│   └── migrations/
+│       └── 20260831000000_initial_schema.sql  # Database schema
+├── docs/
+│   └── frontend-uiux.md          # UI and accessibility rules
+├── FEATURES.md                   # Detailed feature specifications
+├── PROGRESS.md                   # Development progress tracker
+├── .env.example                  # Environment variable template
+└── README.md                     # Project documentation
+```
 
 ---
 
@@ -310,7 +321,9 @@ HealStats/
 
 ---
 
-## Roadmap & Status
+## Exhibition Demo
+
+To demonstrate the core value of HealStates:
 
 - **Phase 0 — Foundation:** React/Vite/Tailwind, Supabase schema & auth. ✅
 - **Phase 1 — Patient & Visit Records:** registration, records, detail, vitals. ✅
@@ -325,7 +338,7 @@ HealStats/
 
 - **Md. Tanjimul Islam** — Frontend + Backend
 - **Enid Hasan** — Frontend
-- **Tanjim Islam Turjo** — Frontend + Backend
+- **Tanjim Islam Turja** — Frontend + Backend
 
 ---
 
