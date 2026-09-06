@@ -389,7 +389,7 @@ To demonstrate the core value of HealStates:
 
 - **Md. Tanjimul Islam** — Frontend + Backend
 - **Enid Hasan** — Frontend
-- **Tanjim Islam Turjo** — Frontend + Backend
+- **Tanjim Islam Turja** — Frontend + Backend
 
 ---
 
