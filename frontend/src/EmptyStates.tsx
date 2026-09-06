@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   Reusable empty / error state components for HealthStats.
+   Reusable empty / error state components for HealStats.
    Each is self-contained, illustrated with hand-crafted SVG, teal-themed.
    Drop any of them into a page body — they fill their container and center.
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -430,7 +430,7 @@ export default function EmptyStatesShowcase({
             </div>
             <div>
               <p className="font-display text-lg text-teal-900 dark:text-white leading-none">
-                HealthStats
+                HealStats
               </p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">System States</p>
             </div>

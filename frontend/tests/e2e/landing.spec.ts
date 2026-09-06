@@ -6,7 +6,7 @@ test.describe('Landing page', () => {
     await page.goto('/')
 
     // Brand wordmark in the navbar.
-    await expect(page.getByText('HealthStats').first()).toBeVisible()
+    await expect(page.getByText('HealStats').first()).toBeVisible()
 
     // Hero headline copy (English default).
     await expect(page.getByText('Healthcare records', { exact: false }).first()).toBeVisible()

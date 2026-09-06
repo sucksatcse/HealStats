@@ -126,7 +126,7 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
               </svg>
             </div>
             <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1">
-              Health<span className="text-teal-600">Stats</span>
+              Heal<span className="text-teal-600">Stats</span>
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Healthcare Worker Portal</p>
           </div>
@@ -398,7 +398,7 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
               <span>Works offline</span>
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              New to HealthStats?{" "}
+              New to HealStats?{" "}
               {onSignUp ? (
                 <button
                   type="button"

@@ -219,11 +219,11 @@ export default function ChatWidget() {
   }
   const quickReplies = authenticated
     ? [
-        t("chatbot:quickAuthed1"),
-        t("chatbot:quickAuthed2"),
-        t("chatbot:quickAuthed3"),
-        t("chatbot:quickAuthed4"),
-      ]
+      t("chatbot:quickAuthed1"),
+      t("chatbot:quickAuthed2"),
+      t("chatbot:quickAuthed3"),
+      t("chatbot:quickAuthed4"),
+    ]
     : [t("chatbot:quickPublic1"), t("chatbot:quickPublic2"), t("chatbot:quickPublic3")]
 
   // Scroll to latest message
@@ -286,19 +286,17 @@ export default function ChatWidget() {
         role="dialog"
         aria-label={t("chatbot:title")}
         aria-hidden={!open}
-        className={`w-[360px] rounded-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 ease-out origin-bottom-right ${
-          open
+        className={`w-[360px] rounded-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 ease-out origin-bottom-right ${open
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-3 pointer-events-none"
-        }`}
+          }`}
         style={{
           height: 488,
           boxShadow: dark
             ? "0 32px 72px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)"
             : "0 32px 72px rgba(13,148,136,0.13), 0 8px 24px rgba(0,0,0,0.09)",
-          border: `1px solid ${
-            dark ? "rgba(51,65,85,0.8)" : "rgba(204,239,233,0.9)"
-          }`,
+          border: `1px solid ${dark ? "rgba(51,65,85,0.8)" : "rgba(204,239,233,0.9)"
+            }`,
           background: dark ? "#0f172a" : "#ffffff",
         }}
       >
@@ -358,11 +356,10 @@ export default function ChatWidget() {
                     <IconHeart />
                   </div>
                   <div
-                    className={`max-w-[78%] px-4 py-2.5 shadow-sm ${
-                      dark
+                    className={`max-w-[78%] px-4 py-2.5 shadow-sm ${dark
                         ? "bg-slate-800 text-slate-100"
                         : "bg-slate-100 text-slate-800"
-                    }`}
+                      }`}
                     style={{ borderRadius: "4px 18px 18px 18px" }}
                   >
                     <div className="text-sm leading-relaxed">
@@ -379,11 +376,10 @@ export default function ChatWidget() {
                     <button
                       key={q}
                       onClick={() => send(q)}
-                      className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-all hover:scale-[1.02] active:scale-95 ${
-                        dark
+                      className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-all hover:scale-[1.02] active:scale-95 ${dark
                           ? "border-teal-700 text-teal-400 hover:bg-teal-900/40 hover:border-teal-500"
                           : "border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300"
-                      }`}
+                        }`}
                     >
                       {q}
                     </button>
@@ -400,18 +396,16 @@ export default function ChatWidget() {
                 <IconHeart />
               </div>
               <div
-                className={`px-4 py-3 shadow-sm ${
-                  dark ? "bg-slate-800" : "bg-slate-100"
-                }`}
+                className={`px-4 py-3 shadow-sm ${dark ? "bg-slate-800" : "bg-slate-100"
+                  }`}
                 style={{ borderRadius: "4px 18px 18px 18px" }}
               >
                 <div className="flex items-center gap-1.5">
                   {[0, 150, 300].map((delay) => (
                     <span
                       key={delay}
-                      className={`w-1.5 h-1.5 rounded-full animate-bounce ${
-                        dark ? "bg-slate-500" : "bg-slate-400"
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full animate-bounce ${dark ? "bg-slate-500" : "bg-slate-400"
+                        }`}
                       style={{
                         animationDelay: `${delay}ms`,
                         animationDuration: "900ms",
@@ -430,17 +424,15 @@ export default function ChatWidget() {
         <div
           className="flex-shrink-0 px-3 pb-3 pt-2"
           style={{
-            borderTop: `1px solid ${
-              dark ? "rgba(51,65,85,0.6)" : "rgba(226,232,240,0.8)"
-            }`,
+            borderTop: `1px solid ${dark ? "rgba(51,65,85,0.6)" : "rgba(226,232,240,0.8)"
+              }`,
           }}
         >
           <div
-            className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${
-              dark
+            className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all ${dark
                 ? "bg-slate-800 border border-slate-700 focus-within:border-teal-600"
                 : "bg-slate-50 border border-slate-200 focus-within:border-teal-400 focus-within:bg-white"
-            }`}
+              }`}
           >
             <input
               ref={inputRef}
@@ -450,11 +442,10 @@ export default function ChatWidget() {
               onKeyDown={onKey}
               placeholder={t("chatbot:placeholder")}
               disabled={!open}
-              className={`flex-1 bg-transparent text-sm outline-none ${
-                dark
+              className={`flex-1 bg-transparent text-sm outline-none ${dark
                   ? "text-slate-100 placeholder-slate-500"
                   : "text-slate-800 placeholder-slate-400"
-              }`}
+                }`}
             />
             <button
               onClick={() => send()}
@@ -466,9 +457,8 @@ export default function ChatWidget() {
             </button>
           </div>
           <p
-            className={`text-center text-[10px] mt-1.5 ${
-              dark ? "text-slate-700" : "text-slate-300"
-            }`}
+            className={`text-center text-[10px] mt-1.5 ${dark ? "text-slate-700" : "text-slate-300"
+              }`}
           >
             {t("chatbot:disclaimer")}
           </p>
@@ -480,11 +470,10 @@ export default function ChatWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? t("chatbot:closeAria") : t("chatbot:openAria")}
         aria-expanded={open}
-        className={`pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
-          open
+        className={`pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${open
             ? "bg-slate-600 dark:bg-slate-700 hover:bg-slate-500 dark:hover:bg-slate-600 shadow-slate-600/30 scale-100"
             : "bg-teal-600 hover:bg-teal-500 shadow-teal-600/45 hover:scale-110 hover:shadow-teal-600/55 hover:shadow-2xl"
-        } active:scale-90`}
+          } active:scale-90`}
       >
         {/* Chat icon (visible when closed) */}
         <span

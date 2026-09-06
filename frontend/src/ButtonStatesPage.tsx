@@ -207,7 +207,7 @@ export default function ButtonStatesPage({ onBack }: { onBack?: () => void }) {
           Button states, annotated
         </h1>
         <p className="text-lg text-slate-500 max-w-2xl leading-relaxed mb-10">
-          Every button in HealthStats moves through the same five states.
+          Every button in HealStats moves through the same five states.
           Consistent, legible feedback matters most when a health worker is
           tapping quickly between patients.
         </p>

@@ -282,7 +282,7 @@ export default function EmergencyTriagePage({
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.setAttribute("download", `healthstats_emergency_triage_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute("download", `healstats_emergency_triage_${new Date().toISOString().slice(0, 10)}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

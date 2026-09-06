@@ -1,6 +1,6 @@
 <div align="center">
 
-# HealthStats
+# HealStats
 
 ### Healthcare records that never stop working.
 
@@ -12,7 +12,7 @@ An **offline-first** electronic health record (EHR) and disaster-response platfo
 
 ## Quick Summary
 
-HealthStats is an EHR built for clinics that face **intermittent connectivity and frequent power outages**. Health workers register patients and record visits whether they are online or off — records are saved locally and **synchronized automatically when connectivity returns**. On top of the record system, HealthStats adds admin analytics, disaster/Emergency operations, a symptom-cluster early-warning surveillance view, a triage queue, a clinic operations map, and a data-grounded AI assistant. The interface is fully bilingual (English/Bangla) with light and dark themes.
+HealStats is an EHR built for clinics that face **intermittent connectivity and frequent power outages**. Health workers register patients and record visits whether they are online or off — records are saved locally and **synchronized automatically when connectivity returns**. On top of the record system, HealStats adds admin analytics, disaster/Emergency operations, a symptom-cluster early-warning surveillance view, a triage queue, a clinic operations map, and a data-grounded AI assistant. The interface is fully bilingual (English/Bangla) with light and dark themes.
 
 > **Honesty note:** This is a hackathon/MVP build. It is functional end-to-end for the flows described below, but it is **not production-hardened** — most importantly, database Row Level Security is intentionally disabled in the MVP schema (see [Security](#security)). Known gaps are tracked openly in [LIMITATIONS.md](LIMITATIONS.md).
 
@@ -280,7 +280,7 @@ npm run test:e2e     # Playwright E2E suite
 ## Project Structure
 
 ```text
-HealthStats/
+HealStats/
 ├── frontend/
 │   ├── src/
 │   │   ├── lib/                 # supabase client, adminService, chatbotService, offlineDb, syncService, ocrParser, types

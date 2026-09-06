@@ -1,4 +1,4 @@
-# HealthStats — Project Details & Engineering Context
+# HealStats — Project Details & Engineering Context
 
 > **MANDATORY for every AI agent (Copilot, Claude, Antigravity, etc.) and every human:**
 >
@@ -12,7 +12,7 @@ Current phase: Product polish & QA (MVP feature-complete; production hardening p
 ---
 
 ## 1. Project Overview
-HealthStats is an electronic health record (EHR) system engineered for rural clinics in Bangladesh. It addresses the severe infrastructure challenges of intermittent connectivity and power outages by employing an offline-first architecture. 
+HealStats is an electronic health record (EHR) system engineered for rural clinics in Bangladesh. It addresses the severe infrastructure challenges of intermittent connectivity and power outages by employing an offline-first architecture. 
 
 ## 2. Product Goals
 - Ensure community health workers can continue registering patients and logging visits regardless of network status.
@@ -104,7 +104,7 @@ Defined in `supabase/migrations/20260831000000_initial_schema.sql`.
 
 ## 13. Repository Structure
 ```
-HealthStats/
+HealStats/
 ├── frontend/
 │   ├── public/
 │   ├── src/

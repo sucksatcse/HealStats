@@ -1,7 +1,7 @@
-# HealthStats — AI Agent Instructions
+# HealStats — AI Agent Instructions
 
 ## 1. Purpose
-This file defines mandatory development rules and governance for all AI coding agents (Antigravity, Claude Code, Copilot, etc.) working on the HealthStats project. Strict adherence to these instructions ensures the codebase remains secure, the architecture remains consistent, and the documentation accurately reflects reality.
+This file defines mandatory development rules and governance for all AI coding agents (Antigravity, Claude Code, Copilot, etc.) working on the HealStats project. Strict adherence to these instructions ensures the codebase remains secure, the architecture remains consistent, and the documentation accurately reflects reality.
 
 ## 2. Mandatory Documentation Review
 Before modifying any code, the agent **MUST** read the following documentation to understand the project context, rules, and current state:

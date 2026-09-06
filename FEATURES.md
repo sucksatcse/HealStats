@@ -1,6 +1,6 @@
-# HealthStats — Features
+# HealStats — Features
 
-HealthStats is an offline-first healthcare record and disaster-response platform designed for rural clinics in Bangladesh.
+HealStats is an offline-first healthcare record and disaster-response platform designed for rural clinics in Bangladesh.
 
 ---
 
@@ -47,7 +47,7 @@ HealthStats is an offline-first healthcare record and disaster-response platform
 
 ## 1. Product Vision
 
-HealthStats is designed around:
+HealStats is designed around:
 1. **Offline-first healthcare records:** The app must never block the user waiting for a network request.
 2. **Simple workflows for health workers:** Streamlined, large-tap-target interfaces.
 3. **Secure role-based access:** Strict boundaries between clinics and administrative staff.
@@ -147,7 +147,7 @@ A prepared migration `20260905000000_enable_rls.sql` defines the clinic-scoped p
 
 ## 5. Offline-First Capability
 
-*This is the core architectural pillar of HealthStats. Local queueing and background sync are **implemented** (Tasks 7–8); multi-device conflict resolution and a Service Worker for offline asset caching remain planned.*
+*This is the core architectural pillar of HealStats. Local queueing and background sync are **implemented** (Tasks 7–8); multi-device conflict resolution and a Service Worker for offline asset caching remain planned.*
 
 ### Online Mode
 When internet is available, data mutations save directly to Supabase (visits set `synced_at` immediately).
@@ -190,7 +190,7 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 ## 8.5 AI Assistant (Chatbot)
 
 - **Status**: Implemented
-- **Purpose**: A conversational assistant (`ChatWidget.tsx`) that helps authorized users retrieve real information from HealthStats and explains how the platform works.
+- **Purpose**: A conversational assistant (`ChatWidget.tsx`) that helps authorized users retrieve real information from HealStats and explains how the platform works.
 - **Capabilities**: An intent engine (`chatbotService.ts`) maps free-text questions to **real Supabase queries** reused from `adminService` — total patients, records today, pending syncs, high-risk patients (count and named list), outbreak/cluster status, clinic activity, and patient look-up by name. Data-backed answers require an authenticated session and are scoped by the user's role/clinic (workers see only their clinic). On the public landing page the assistant answers only platform how-to questions (offline sync, OCR, triage, emergency mode, language, dark mode). Every figure comes from a live query; empty results, zero counts and database errors are reported honestly.
 - **Grounding & limitations**: The assistant **never fabricates** patient, clinic, outbreak or medical data — it has no generative model and no external API; it only relays real query results or fixed platform facts. It is not a medical-advice tool (disclaimer shown). Because MVP RLS is disabled, data access is gated at the application layer via the auth context. Language is English-only.
 - **Optional LLM mode (Groq)**: A secure Supabase Edge Function (`supabase/functions/groq-chat`) can power natural-language answers via Groq. The API key is stored **server-side** as a Supabase secret (never in the frontend bundle); the function fetches grounded, clinic-scoped Supabase context and instructs the model to answer only from it. If the function is not deployed or the device is offline, the assistant **falls back to the local grounded intent engine**, so behaviour never breaks. Enabling it sends clinic-scoped context to Groq (a third party) — a deployment/privacy choice for the operator.

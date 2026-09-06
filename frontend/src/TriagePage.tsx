@@ -651,7 +651,7 @@ export default function TriagePage() {
       {/* ── Model info strip ── */}
       <div className="flex flex-wrap items-center gap-4 px-1">
         {[
-          { label: "Model", value: "HealthStats Triage v2.1" },
+          { label: "Model", value: "HealStats Triage v2.1" },
           {
             label: "Data sources",
             value: "WHO ICD-11 + MSF clinical protocols",

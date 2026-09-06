@@ -23,7 +23,7 @@ export const supabase: SupabaseClient = supabaseConfigured
 
 if (!supabaseConfigured) {
   console.warn(
-    '[HealthStats] Supabase credentials are not configured. ' +
+    '[HealStats] Supabase credentials are not configured. ' +
       'Update VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env ' +
       'with your real Supabase project credentials.',
   );

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react"
+import { syncService } from "./lib/syncService"
+import type { SyncConflict } from "./lib/offlineDb"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type SyncStatus = "queued" | "syncing" | "synced" | "failed"
@@ -335,6 +337,8 @@ export default function SyncPage() {
   const [lastSynced, setLastSynced] = useState("Today, 07:30")
   const [filter, setFilter] = useState<"all" | SyncStatus>("all")
   const syncRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [conflicts, setConflicts] = useState<SyncConflict[]>([])
+  const [conflictsExpanded, setConflictsExpanded] = useState(false)
 
   useEffect(() => {
     const on = () => setIsOnline(true)
@@ -345,6 +349,11 @@ export default function SyncPage() {
       window.removeEventListener("online", on)
       window.removeEventListener("offline", off)
     }
+  }, [])
+
+  // Load conflict resolution log from Dexie on mount
+  useEffect(() => {
+    syncService.getConflicts().then(setConflicts).catch(() => {})
   }, [])
 
   const pending = records.filter(
@@ -582,6 +591,83 @@ export default function SyncPage() {
           color={failed.length > 0 ? "text-red-600" : "text-slate-400"}
         />
       </div>
+
+      {/* ── Conflict Resolution Log ── */}
+      {conflicts.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-900/50 shadow-sm overflow-hidden">
+          <button
+            onClick={() => setConflictsExpanded((v) => !v)}
+            className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-colors"
+            aria-expanded={conflictsExpanded}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4 text-amber-600 dark:text-amber-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 2L1.5 13.5h13L8 2z" />
+                  <path strokeLinecap="round" d="M8 7v3m0 1.5v.5" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">
+                  Resolved Conflicts
+                  <span className="ml-2 text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                    {conflicts.length}
+                  </span>
+                </p>
+                <p className="text-xs text-amber-700/70 dark:text-amber-400/70 mt-0.5">
+                  Auto-resolved via Last-Write-Wins — click to inspect
+                </p>
+              </div>
+            </div>
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              className={`w-4 h-4 text-amber-500 transition-transform ${conflictsExpanded ? "rotate-180" : ""}`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l5 5 5-5" />
+            </svg>
+          </button>
+
+          {conflictsExpanded && (
+            <div className="border-t border-amber-100 dark:border-amber-900/50 divide-y divide-amber-50 dark:divide-amber-900/30">
+              {conflicts.map((c, i) => (
+                <div key={c.id ?? i} className="px-5 py-3.5 flex flex-wrap items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                        {c.record_type} · {c.record_id}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          c.resolution_strategy === "lww_local_wins"
+                            ? "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800"
+                            : c.resolution_strategy === "lww_remote_wins"
+                              ? "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800"
+                              : "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800"
+                        }`}
+                      >
+                        {c.resolution_strategy === "lww_local_wins"
+                          ? "LWW: Local Wins"
+                          : c.resolution_strategy === "lww_remote_wins"
+                            ? "LWW: Remote Wins"
+                            : "Upsert Duplicate"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Resolved{" "}
+                      <span className="font-medium text-slate-700 dark:text-slate-200">
+                        {new Date(c.resolved_at).toLocaleString()}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Records table card ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
@@ -872,7 +958,7 @@ export default function SyncPage() {
               },
               {
                 step: "2",
-                text: "When connectivity is detected, HealthStats syncs in the background automatically.",
+                text: "When connectivity is detected, HealStats syncs in the background automatically.",
               },
               {
                 step: "3",

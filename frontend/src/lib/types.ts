@@ -1,4 +1,4 @@
-// ── Shared TypeScript types derived from the actual HealthStats database schema ──
+// ── Shared TypeScript types derived from the actual HealStats database schema ──
 // Source: supabase/migrations/20260831000000_initial_schema.sql
 // Do NOT invent columns that don't exist in this schema.
 

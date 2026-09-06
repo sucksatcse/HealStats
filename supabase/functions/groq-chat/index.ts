@@ -3,7 +3,7 @@
 // are valid at deploy time. Skips false-positive errors from the workspace TS server.
 // Supabase Edge Function: groq-chat
 // ---------------------------------------------------------------------------
-// Server-side proxy for the HealthStats AI assistant. Holds the Groq API key as
+// Server-side proxy for the HealStats AI assistant. Holds the Groq API key as
 // a Supabase secret (NEVER shipped to the browser), fetches grounded, clinic-
 // scoped context from Supabase (the same data the frontend reads), and asks Groq
 // to answer strictly from that context.
@@ -64,12 +64,12 @@ Deno.serve(async (req: Request) => {
     const context = await buildContext(supabase, scopedClinicId);
 
     const system =
-      "You are the HealthStats assistant for a rural-clinic electronic health record system in Bangladesh. " +
+      "You are the HealStats assistant for a rural-clinic electronic health record system in Bangladesh. " +
       "Be helpful, conversational and intelligent: interpret the user's intent even when phrasing is casual, indirect, or contains typos. " +
       "There are two kinds of questions:\n" +
       "1) DATA questions (patients, counts, high-risk cases, visits, clinics, outbreaks): answer ONLY from the DATA JSON below. " +
       "Never invent or estimate patients, names, counts, clinics or medical facts. If the DATA lacks the answer, say so plainly and suggest what you can report instead.\n" +
-      "2) HOW-TO / platform questions: answer from the PLATFORM FACTS below to explain how to use HealthStats.\n" +
+      "2) HOW-TO / platform questions: answer from the PLATFORM FACTS below to explain how to use HealStats.\n" +
       "Keep answers concise and professional. You may use short markdown (bold, bullet lists, small tables) for clarity. " +
       "Do NOT provide medical diagnosis or treatment advice. " +
       "Urgency scale: 5=Critical, 4=High, 3=Moderate, 2=Low, 1/none=Stable. " +

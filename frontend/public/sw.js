@@ -1,5 +1,5 @@
 /*
- * HealthStats service worker — minimal offline app-shell support.
+ * HealStats service worker — minimal offline app-shell support.
  *
  * Strategy: network-first with a cache fallback. Online behaviour is identical
  * to having no service worker (every request hits the network first), so it does

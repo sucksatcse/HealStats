@@ -1,4 +1,4 @@
-# HealthStats — Known Limitations & Follow-Ups
+# HealStats — Known Limitations & Follow-Ups
 
 > A single tracking list of known limitations, deferred work, and honest gaps
 > across the project. Nothing here is "broken" unless stated — these are items

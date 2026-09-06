@@ -1,7 +1,8 @@
+/// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright E2E config for HealthStats (Task 22).
+ * Playwright E2E config for HealStats (Task 22).
  * Runs against a production `vite preview` server on a dedicated port (separate
  * from the dev server on 8443) so tests are fast, deterministic and unaffected
  * by HMR/on-demand compilation.

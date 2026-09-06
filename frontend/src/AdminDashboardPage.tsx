@@ -547,7 +547,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             </svg>
           </div>
           <div>
-            <p className="font-display text-base text-white leading-none">HealthStats</p>
+            <p className="font-display text-base text-white leading-none">HealStats</p>
             <p className="text-[10px] text-teal-400 mt-0.5">Admin Console</p>
           </div>
         </div>
@@ -705,7 +705,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             />
           )}
           {activeNav === "resources" && <ResourceAllocationPage />}
-          {activeNav === "alerts" && <AlertsCenterPage />}
+          {activeNav === "alerts" && <AlertsCenterPage onNavigate={(target) => setActiveNav(target)} />}
           {activeNav === "settings" && <SettingsPage />}
           {activeNav === "profile" && <StaffProfilePage />}
           {activeNav === "emergency-triage" && (
@@ -832,7 +832,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
               type="button"
               onClick={() => {
                 const reportData = [
-                  ["HealthStats Emergency Situation Report", today],
+                  ["HealStats Emergency Situation Report", today],
                   ["District", "Kayes Health District"],
                   ["Emergency Mode Status", emergency ? "ACTIVE EMERGENCY" : "STANDARD SURVEILLANCE"],
                   ["Generated At", new Date().toISOString()],
@@ -847,7 +847,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.setAttribute("download", `healthstats_situation_report_${new Date().toISOString().slice(0, 10)}.csv`);
+                link.setAttribute("download", `healstats_situation_report_${new Date().toISOString().slice(0, 10)}.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

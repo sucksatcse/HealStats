@@ -20,26 +20,21 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [clinicId, setClinicId] = useState("")
+  const [role, setRole] = useState<
+    "clinical_officer" | "nurse" | "community_health_worker" | "district_admin" | "patient"
+  >("patient")
   const [showPassword, setShowPassword] = useState(false)
 
-  const [clinics, setClinics] = useState<ClinicRow[]>([])
-  const [clinicsError, setClinicsError] = useState(false)
+
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [done, setDone] = useState<null | { needsConfirmation: boolean }>(null)
+  const [done, setDone] = useState<null | {
+    needsConfirmation: boolean
+    role: "clinical_officer" | "nurse" | "community_health_worker" | "district_admin" | "patient"
+  }>(null)
 
-  useEffect(() => {
-    let active = true
-    fetchClinicsList().then((res) => {
-      if (!active) return
-      if (res.error) setClinicsError(true)
-      else setClinics(res.data)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,12 +72,15 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
       return
     }
 
-    // 2. Create the linked staff profile (role always 'worker').
+    // Map UI sub-role to database StaffRole enum ('admin' or 'worker')
+    const dbRole = role === "district_admin" ? "admin" : "worker"
+
+    // 2. Create the linked profile (assuming staff table for now).
     const { error: staffError } = await supabase.from("staff").insert({
       name: name.trim(),
       email: email.trim(),
-      role: "worker",
-      clinic_id: clinicId || null,
+      role: dbRole,
+      clinic_id: null,
       auth_user_id: userId,
     })
     if (staffError) {
@@ -97,7 +95,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
     if (data.session) await supabase.auth.signOut()
 
     setLoading(false)
-    setDone({ needsConfirmation })
+    setDone({ needsConfirmation, role })
   }
 
   // ── Success screen ──
@@ -115,8 +113,8 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
             <h1 className="font-display text-2xl text-teal-950 dark:text-white mb-2">Account created</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-7 leading-relaxed">
               {done.needsConfirmation
-                ? "Please check your email and confirm your address, then sign in to your worker account."
-                : "Your worker account is ready. You can now sign in."}
+                ? `Please check your email and confirm your address, then sign in to your account.`
+                : `Your account is ready. You can now sign in.`}
             </p>
             <button
               onClick={onGoToLogin}
@@ -162,16 +160,16 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                 </svg>
               </div>
               <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1">
-                Health<span className="text-teal-600">Stats</span>
+                Heal<span className="text-teal-600">Stats</span>
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Create your health worker account</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Create your clinic account</p>
             </div>
 
             {/* Card */}
             <div className="rounded-3xl p-8" style={{ background: "var(--an-glass-bg)", backdropFilter: "blur(24px)", border: "1px solid var(--an-border)", boxShadow: "var(--an-glass-shadow-lg)" }}>
               <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">Sign up</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                Register as a health worker. Admin accounts are created by your coordinator.
+                Register as a health worker or doctor. Admin accounts are created by your coordinator.
               </p>
 
               {error && (
@@ -210,21 +208,98 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                   </div>
                 </div>
 
-                {/* Clinic */}
+                {/* Role selection */}
                 <div>
-                  <label htmlFor="su-clinic" className={labelCls}>Clinic (optional)</label>
-                  <select
-                    id="su-clinic"
-                    value={clinicId}
-                    onChange={(e) => setClinicId(e.target.value)}
-                    className="w-full px-3.5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
-                  >
-                    <option value="">{clinicsError ? "Could not load clinics — assign later" : "Select your clinic (or assign later)"}</option>
-                    {clinics.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}{c.zone ? ` — ${c.zone}` : ""}</option>
-                    ))}
-                  </select>
+                  <label className={labelCls}>Select Your Role</label>
+                  <div className="space-y-2.5">
+                    {([
+                      {
+                        value: "patient",
+                        label: "Patient",
+                        desc: "View your medical history and appointments",
+                        icon: (
+                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        value: "clinical_officer",
+                        label: "Clinical Officer",
+                        desc: "Full clinical access — diagnose, prescribe, edit records",
+                        icon: (
+                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 3.75v12.5m6.25-6.25H3.75" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        value: "nurse",
+                        label: "Nurse",
+                        desc: "Record vitals, view histories, add visit notes",
+                        icon: (
+                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L8 14l7.5-7.5" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        value: "community_health_worker",
+                        label: "Community Health Worker",
+                        desc: "Register patients, capture vitals in the field",
+                        icon: (
+                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        value: "district_admin",
+                        label: "District Administrator",
+                        desc: "Manage staff, facilities, and system configuration",
+                        icon: (
+                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 2.5a7.5 7.5 0 100 15 7.5 7.5 0 000-15zm-2.25 7.5l1.5 1.5 3-3" />
+                          </svg>
+                        ),
+                      },
+                    ] as const).map(({ value, label, desc, icon }) => {
+                      const isSelected = role === value
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setRole(value)}
+                          className={`w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-start gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+                            isSelected
+                              ? "border-teal-500 bg-teal-50/70 dark:bg-teal-950/40 shadow-sm"
+                              : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/60 hover:border-teal-300 dark:hover:border-teal-700"
+                          }`}
+                          aria-pressed={isSelected}
+                        >
+                          <div className={`mt-0.5 p-1.5 rounded-lg ${isSelected ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"}`}>
+                            {icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm font-semibold ${isSelected ? "text-teal-950 dark:text-teal-200" : "text-slate-800 dark:text-slate-200"}`}>
+                                {label}
+                              </span>
+                              {isSelected && (
+                                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                              {desc}
+                            </p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
+
+
 
                 {/* Password */}
                 <div>

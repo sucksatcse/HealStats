@@ -214,7 +214,7 @@ export default function SkeletonStatesPage({
               Never a blank screen
             </h1>
             <p className="text-lg text-slate-500 max-w-xl leading-relaxed">
-              While records sync over a slow rural connection, HealthStats shows
+              While records sync over a slow rural connection, HealStats shows
               the shape of what's coming — a teal-tinted shimmer instead of an
               empty page.
             </p>

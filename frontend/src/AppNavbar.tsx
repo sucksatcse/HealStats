@@ -4,7 +4,7 @@ import { useTheme } from "./ThemeContext"
 import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HealthStats — single unified navbar used by every page.
+   HealStats — single unified navbar used by every page.
 
    variant="landing"  (default)
      · Logo + marketing anchor links + optional CTA buttons on the right
@@ -376,7 +376,7 @@ export default function AppNavbar({
         </svg>
       </div>
       <span className="font-display text-xl tracking-tight text-teal-900 dark:text-white leading-none select-none">
-        Health<span className="text-teal-600 dark:text-teal-400">Stats</span>
+        Heal<span className="text-teal-600 dark:text-teal-400">Stats</span>
       </span>
     </a>
   )

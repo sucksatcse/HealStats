@@ -217,7 +217,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
               </svg>
             </div>
             <span className="font-display text-xl text-teal-900 dark:text-white">
-              Health<span className="text-teal-600 dark:text-teal-400">Stats</span>
+              Heal<span className="text-teal-600 dark:text-teal-400">Stats</span>
             </span>
           </div>
           <button

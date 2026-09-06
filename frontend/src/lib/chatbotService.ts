@@ -1,6 +1,6 @@
 /**
  * chatbotService.ts
- * Grounded intent engine for the HealthStats Assistant (Task 17), localized via
+ * Grounded intent engine for the HealStats Assistant (Task 17), localized via
  * i18next (Task 18).
  *
  * Every factual answer about patients, clinics, outbreaks or sync status is derived

@@ -1,6 +1,6 @@
 {
-  "name": "HealthStats — Offline-First EHR",
-  "short_name": "HealthStats",
+  "name": "HealStats — Offline-First EHR",
+  "short_name": "HealStats",
   "description": "Offline-first electronic health records and disaster response for rural clinics.",
   "start_url": "/",
   "scope": "/",

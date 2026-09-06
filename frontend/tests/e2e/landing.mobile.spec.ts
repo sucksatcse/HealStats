@@ -6,7 +6,7 @@ test.describe('Mobile landing', () => {
     await page.goto('/')
 
     // Brand wordmark visible.
-    await expect(page.getByText('HealthStats').first()).toBeVisible()
+    await expect(page.getByText('HealStats').first()).toBeVisible()
 
     // Mobile menu toggle is available and opens the menu.
     const menuToggle = page.getByRole('button', { name: 'Toggle menu' })

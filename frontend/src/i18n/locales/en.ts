@@ -1,11 +1,11 @@
-// English translations (fallback language) for HealthStats.
+// English translations (fallback language) for HealStats.
 // Organized by namespace. Keep keys semantic; keep interpolation placeholders
 // identical across languages. Do NOT translate canonical database values here —
 // these are DISPLAY labels only.
 const en = {
   common: {
-    appName: 'HealthStats',
-    assistant: 'HealthStats Assistant',
+    appName: 'HealStats',
+    assistant: 'HealStats Assistant',
     save: 'Save',
     cancel: 'Cancel',
     close: 'Close',
@@ -80,17 +80,17 @@ const en = {
     timeDays: '{{count}}d ago',
   },
   chatbot: {
-    title: 'HealthStats Assistant',
+    title: 'HealStats Assistant',
     statusAuthed: 'Grounded in your live clinic data',
-    statusPublic: 'Ask how HealthStats works',
+    statusPublic: 'Ask how HealStats works',
     greeting:
-      "Hi! I'm the HealthStats Assistant. When you're signed in I answer from your live clinic data — try patient counts, high-risk cases, outbreak status or clinic activity. I can also explain how the platform works.",
+      "Hi! I'm the HealStats Assistant. When you're signed in I answer from your live clinic data — try patient counts, high-risk cases, outbreak status or clinic activity. I can also explain how the platform works.",
     placeholder: 'Ask a question…',
     sendAria: 'Send message',
     minimizeAria: 'Minimize chat',
     openAria: 'Open chat assistant',
     closeAria: 'Close chat assistant',
-    disclaimer: 'HealthStats Assistant · answers from live data · not a substitute for medical advice',
+    disclaimer: 'HealStats Assistant · answers from live data · not a substitute for medical advice',
     quickAuthed1: 'How many patients are registered?',
     quickAuthed2: 'Any high-risk patients?',
     quickAuthed3: 'Outbreak status',
@@ -100,14 +100,14 @@ const en = {
     quickPublic3: 'How does triage work?',
     // ── Grounded service replies ──
     loginRequired:
-      'You need to be signed in to a clinic to see live patient and clinic data. I can still explain how HealthStats works — try asking about offline sync, OCR digitization, or how triage works.',
+      'You need to be signed in to a clinic to see live patient and clinic data. I can still explain how HealStats works — try asking about offline sync, OCR digitization, or how triage works.',
     dbError: "I couldn't reach the database just now, so I won't guess. Please try again in a moment.",
     capabilitiesPublic:
-      'I can help you understand HealthStats — ask me about offline sync, OCR digitization, triage, or emergency mode.',
+      'I can help you understand HealStats — ask me about offline sync, OCR digitization, triage, or emergency mode.',
     capabilitiesAuthed:
-      'I can help you understand HealthStats — ask me about offline sync, OCR digitization, triage, or emergency mode. Because you are signed in, I can also report live figures: total patients, records today, pending syncs, high-risk patients, outbreak status, clinic activity, or I can look up a patient by name (e.g. "find patient Rahim").',
+      'I can help you understand HealStats — ask me about offline sync, OCR digitization, triage, or emergency mode. Because you are signed in, I can also report live figures: total patients, records today, pending syncs, high-risk patients, outbreak status, clinic activity, or I can look up a patient by name (e.g. "find patient Rahim").',
     howtoOfflineSync:
-      'HealthStats is offline-first. Patient registrations and visits are saved to a local queue (IndexedDB via Dexie) when you have no connection, and the background sync service uploads them to Supabase automatically once you are back online. You can watch the queue and force a sync under Admin → Sync Status.',
+      'HealStats is offline-first. Patient registrations and visits are saved to a local queue (IndexedDB via Dexie) when you have no connection, and the background sync service uploads them to Supabase automatically once you are back online. You can watch the queue and force a sync under Admin → Sync Status.',
     howtoOcr:
       'The Digitize page uses on-device OCR (Tesseract.js) to read a photo of a paper record and extract fields like name, age and diagnosis for you to review before saving. Nothing is auto-submitted — you always confirm the values first.',
     howtoTriage:
@@ -115,7 +115,7 @@ const en = {
     howtoEmergency:
       'Emergency Mode (Admin dashboard) switches to a crisis view with zone severity, a live triage queue, deployed responders and situation-report export. It is built for flood and cyclone response and works from the same live clinical data.',
     howtoLanguage:
-      'HealthStats supports English and Bangla — use the language toggle in the top navigation to switch instantly.',
+      'HealStats supports English and Bangla — use the language toggle in the top navigation to switch instantly.',
     howtoDarkMode:
       'You can switch between light and dark mode from the theme toggle in the navigation — dark mode helps in low-light shifts and saves battery.',
     findNeedName:

@@ -7,7 +7,7 @@ test.describe('AI chatbot', () => {
 
     // Open the assistant.
     await page.getByRole('button', { name: 'Open chat assistant' }).click()
-    const dialog = page.getByRole('dialog', { name: /HealthStats Assistant/i })
+    const dialog = page.getByRole('dialog', { name: /HealStats Assistant/i })
     await expect(dialog).toBeVisible()
 
     // Ask a public how-to starter question (scoped to the chat dialog).

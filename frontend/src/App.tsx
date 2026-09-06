@@ -29,7 +29,7 @@ const LANDING = {
       h1a: "Healthcare records",
       h1b: "that never stop",
       h1c: "working.",
-      body: "HealthStats is an offline-first electronic health record system built for rural clinics across Bangladesh. Capture visits, triage patients, and stay coordinated through floods and outages — online or off.",
+      body: "HealStats is an offline-first electronic health record system built for rural clinics across Bangladesh. Capture visits, triage patients, and stay coordinated through floods and outages — online or off.",
       ctaPrimary: "Get Started Free",
       ctaSecondary: "Log In to Your Clinic",
       trust: [
@@ -79,7 +79,7 @@ const LANDING = {
         {
           step: "01",
           title: "Install once, use anywhere",
-          body: "HealthStats installs as a Progressive Web App directly on your device. No native app store required. Works on any modern browser.",
+          body: "HealStats installs as a Progressive Web App directly on your device. No native app store required. Works on any modern browser.",
         },
         {
           step: "02",
@@ -89,7 +89,7 @@ const LANDING = {
         {
           step: "03",
           title: "Sync automatically on reconnect",
-          body: "The moment connectivity resumes, HealthStats pushes queued records to your central server with conflict resolution built in.",
+          body: "The moment connectivity resumes, HealStats pushes queued records to your central server with conflict resolution built in.",
         },
       ],
     },
@@ -99,7 +99,7 @@ const LANDING = {
       items: [
         {
           quote:
-            "During the last cyclone our network was gone for four days. HealthStats kept working — every patient we saw at the shelter was already in the system when the signal came back.",
+            "During the last cyclone our network was gone for four days. HealStats kept working — every patient we saw at the shelter was already in the system when the signal came back.",
           author: "Nasrin Akter",
           role: "Community Health Worker, Char Fasson, Bhola",
         },
@@ -124,7 +124,7 @@ const LANDING = {
       h1a: "স্বাস্থ্যসেবা রেকর্ড",
       h1b: "যা কখনো থামে না।",
       h1c: "",
-      body: "HealthStats বাংলাদেশের গ্রামীণ ক্লিনিকগুলোর জন্য তৈরি একটি অফলাইন-প্রথম ইলেকট্রনিক স্বাস্থ্য রেকর্ড সিস্টেম। বন্যা ও বিদ্যুৎ বিভ্রাটের মধ্যেও রোগী ভর্তি, ট্রায়াজ এবং সমন্বয় বজায় রাখুন।",
+      body: "HealStats বাংলাদেশের গ্রামীণ ক্লিনিকগুলোর জন্য তৈরি একটি অফলাইন-প্রথম ইলেকট্রনিক স্বাস্থ্য রেকর্ড সিস্টেম। বন্যা ও বিদ্যুৎ বিভ্রাটের মধ্যেও রোগী ভর্তি, ট্রায়াজ এবং সমন্বয় বজায় রাখুন।",
       ctaPrimary: "বিনামূল্যে শুরু করুন",
       ctaSecondary: "আপনার ক্লিনিকে লগ ইন করুন",
       trust: [
@@ -174,7 +174,7 @@ const LANDING = {
         {
           step: "০১",
           title: "একবার ইনস্টল, যেকোনো জায়গায় ব্যবহার",
-          body: "HealthStats সরাসরি আপনার ডিভাইসে প্রোগ্রেসিভ ওয়েব অ্যাপ হিসেবে ইনস্টল হয়। কোনো অ্যাপ স্টোর লাগে না। যেকোনো আধুনিক ব্রাউজারে কাজ করে।",
+          body: "HealStats সরাসরি আপনার ডিভাইসে প্রোগ্রেসিভ ওয়েব অ্যাপ হিসেবে ইনস্টল হয়। কোনো অ্যাপ স্টোর লাগে না। যেকোনো আধুনিক ব্রাউজারে কাজ করে।",
         },
         {
           step: "০২",
@@ -184,7 +184,7 @@ const LANDING = {
         {
           step: "০৩",
           title: "পুনরায় সংযুক্ত হলে স্বয়ংক্রিয়ভাবে সিঙ্ক করুন",
-          body: "সংযোগ ফিরে আসার সাথে সাথে HealthStats কিউ রেকর্ডগুলো কেন্দ্রীয় সার্ভারে পাঠায়, বিরোধ নিষ্পত্তি সহ।",
+          body: "সংযোগ ফিরে আসার সাথে সাথে HealStats কিউ রেকর্ডগুলো কেন্দ্রীয় সার্ভারে পাঠায়, বিরোধ নিষ্পত্তি সহ।",
         },
       ],
     },
@@ -194,7 +194,7 @@ const LANDING = {
       items: [
         {
           quote:
-            "শেষ ঘূর্ণিঝড়ে চার দিন নেটওয়ার্ক ছিল না। HealthStats চলতে থাকল — আশ্রয়কেন্দ্রে যে রোগী দেখলাম, সংকেত ফেরার পর সবাই সিস্টেমে ছিল।",
+            "শেষ ঘূর্ণিঝড়ে চার দিন নেটওয়ার্ক ছিল না। HealStats চলতে থাকল — আশ্রয়কেন্দ্রে যে রোগী দেখলাম, সংকেত ফেরার পর সবাই সিস্টেমে ছিল।",
           author: "নাসরিন আক্তার",
           role: "কমিউনিটি স্বাস্থ্যকর্মী, চর ফ্যাশন, ভোলা",
         },
@@ -415,6 +415,15 @@ export default function App() {
     return (
       <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />
     )
+  if (page === "role-selection")
+    return (
+      <RoleSelectionPage
+        onSelect={(role) => {
+          setPage(role === "district-admin" ? "admin-dashboard" : "dashboard")
+        }}
+        onBack={() => setPage("login")}
+      />
+    )
   if (page === "dashboard")
     return (
       <>
@@ -478,9 +487,9 @@ export default function App() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 animate-fade-up stagger-3">
-                <a
-                  href="#get-started"
-                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                <button
+                  onClick={() => setPage("signup")}
+                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
                 >
                   {t.hero.ctaPrimary}
                   <svg
@@ -494,7 +503,7 @@ export default function App() {
                       clipRule="evenodd"
                     />
                   </svg>
-                </a>
+                </button>
                 <button
                   onClick={() => setPage("login")}
                   className="inline-flex items-center gap-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-100 border border-teal-200 dark:border-teal-700 hover:border-teal-400 dark:hover:border-teal-500 px-6 py-3.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
@@ -800,12 +809,12 @@ export default function App() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4 flex-shrink-0 w-full sm:w-auto">
-              <a
-                href="#signup"
-                className="bg-white text-teal-800 hover:text-teal-900 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
+              <button
+                onClick={() => setPage("signup")}
+                className="bg-white text-teal-800 hover:text-teal-900 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800 cursor-pointer"
               >
                 {t.cta.primary}
-              </a>
+              </button>
               <a
                 href="#demo"
                 className="border border-teal-400 hover:border-white text-white font-semibold text-sm px-8 py-4 rounded-xl hover:bg-teal-700/60 transition-colors w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
@@ -837,7 +846,7 @@ export default function App() {
                   </svg>
                 </div>
                 <span className="font-display text-lg text-white">
-                  HealthStats
+                  HealStats
                 </span>
               </div>
               <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
@@ -935,7 +944,7 @@ export default function App() {
 
           <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-12 pt-6 border-t border-teal-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400">
             <p className="text-xs text-slate-400">
-              © 2026 HealthStats. Open-source under the MPL 2.0 license.
+              © 2026 HealStats. Open-source under the MPL 2.0 license.
             </p>
             <p className="text-xs text-slate-400">
               Built for healthcare workers who keep going, no matter what.

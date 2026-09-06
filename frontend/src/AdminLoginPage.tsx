@@ -372,7 +372,7 @@ export default function AdminLoginPage({
           </div>
           <div>
             <span className="font-display text-xl text-white leading-none">
-              Health<span className="text-teal-300">Stats</span>
+              Heal<span className="text-teal-300">Stats</span>
             </span>
             <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-teal-300 align-middle">
               Admin
@@ -394,7 +394,7 @@ export default function AdminLoginPage({
               from one dashboard.
             </h1>
             <p className="text-sm text-teal-200 leading-relaxed max-w-sm">
-              The HealthStats admin portal gives district health officers a
+              The HealStats admin portal gives district health officers a
               real-time view of sync status, patient volumes, and clinical
               activity — online or offline.
             </p>
@@ -731,7 +731,7 @@ export default function AdminLoginPage({
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            © 2026 HealthStats · Admin Portal v3.2.1
+            © 2026 HealStats · Admin Portal v3.2.1
           </p>
           <div className="flex items-center gap-3">
             {["Privacy", "Terms", "Support"].map((link) => (

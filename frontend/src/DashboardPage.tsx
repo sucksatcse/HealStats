@@ -573,7 +573,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           </div>
           <div>
             <p className="font-display text-base text-white leading-none">
-              HealthStats
+              HealStats
             </p>
             <p className="text-[10px] text-teal-400 mt-0.5">{t.portal}</p>
           </div>
