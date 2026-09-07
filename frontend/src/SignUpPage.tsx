@@ -164,11 +164,20 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
               </p>
 
               {error && (
-                <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5" role="alert">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                  </svg>
-                  {error}
+                <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5" role="alert">
+                  <div className="flex items-start gap-2.5">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="font-semibold capitalize">{error}</p>
+                      {error.toLowerCase().includes("rate limit") && (
+                        <p className="mt-1.5 text-xs text-red-600 dark:text-red-300 leading-relaxed">
+                          Supabase's default email service has a limit of 3 emails/hour. To bypass this for development, open your Supabase Dashboard &rarr; <strong>Authentication</strong> &rarr; <strong>Providers</strong> &rarr; <strong>Email</strong> and turn off <strong>Confirm email</strong>.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
