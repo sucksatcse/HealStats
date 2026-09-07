@@ -274,9 +274,17 @@ export default function AdminLoginPage({
         return
       }
 
-      // Enforce admin-only access at this entry point: a valid non-admin login
-      // must not be granted admin routing. Reject and sign back out.
       const userId = authData.user?.id
+      const metaDesignation = authData.user?.user_metadata?.designation
+
+      // Explicitly disallow Nurse and Clinical Officer from Admin panel
+      if (metaDesignation === "nurse" || metaDesignation === "clinical_officer") {
+        await supabase.auth.signOut()
+        setError("Access denied: Nurse and Clinical Officer accounts cannot access the Admin panel. Please sign in via the healthcare worker portal.")
+        setLoading(false)
+        return
+      }
+
       const { data: staff } = await supabase
         .from("staff")
         .select("role")

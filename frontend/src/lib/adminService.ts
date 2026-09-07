@@ -1413,3 +1413,57 @@ function resolveLatestVisit(rows: RawPatientWithVisits[]): PatientWithLatestVisi
     return { ...p, latest_visit: sorted[0] ?? null };
   });
 }
+
+function getUrgencyLabel(score: number): string {
+  switch (score) {
+    case 5: return "Critical";
+    case 4: return "High";
+    case 3: return "Moderate";
+    case 2: return "Low";
+    case 1:
+    default: return "Stable";
+  }
+}
+
+/**
+ * Updates a patient's clinical urgency level.
+ * Persists a new triage visit entry in the `visits` table timestamped now
+ * with the nurse/staff author, so it immediately resolves as the latest visit
+ * across all Admin & Clinical views, while preserving full audit history.
+ */
+export async function updatePatientUrgency(opts: {
+  patientId: string;
+  staffId: string | null;
+  urgencyScore: number;
+  note?: string;
+}): Promise<{ success: boolean; error: string | null; visitId?: string }> {
+  const { patientId, staffId, urgencyScore, note } = opts;
+  try {
+    const newVisitId = crypto.randomUUID();
+    const nowISO = new Date().toISOString();
+    const urgencyName = getUrgencyLabel(urgencyScore);
+    const symptoms = note?.trim()
+      ? `[Urgency Assessment] ${note.trim()}`
+      : `Urgency level updated to ${urgencyName}`;
+
+    const { error } = await supabase.from('visits').insert([
+      {
+        id: newVisitId,
+        patient_id: patientId,
+        staff_id: staffId,
+        urgency_score: urgencyScore,
+        symptoms,
+        symptom_category: 'triage',
+        diagnosis: `Triage: ${urgencyName} Priority`,
+        created_at: nowISO,
+        synced_at: nowISO,
+      },
+    ]);
+
+    if (error) throw error;
+    return { success: true, error: null, visitId: newVisitId };
+  } catch (err: any) {
+    console.error('[adminService] updatePatientUrgency:', err);
+    return { success: false, error: err.message || 'Failed to update patient urgency.' };
+  }
+}

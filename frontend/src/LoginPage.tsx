@@ -3,19 +3,39 @@ import { supabase } from "./lib/supabase"
 
 interface LoginPageProps {
   onBack: () => void
-  onLogin: () => void
+  onLogin: (targetPage?: string) => void
   onSignUp?: () => void
+  initialEmail?: string
+  initialStation?: LoginStation
+  initialMessage?: string
 }
 
-export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps) {
-  const [email, setEmail] = useState("")
+export type LoginStation = "auto" | "nurse" | "clinical_officer"
+
+export default function LoginPage({
+  onBack,
+  onLogin,
+  onSignUp,
+  initialEmail = "",
+  initialStation = "auto",
+  initialMessage,
+}: LoginPageProps) {
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedStation, setSelectedStation] = useState<LoginStation>(initialStation)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [successMessage, setSuccessMessage] = useState<string | null>(initialMessage || null)
   const [resending, setResending] = useState(false)
   const [resendStatus, setResendStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (initialEmail) setEmail(initialEmail)
+    if (initialStation) setSelectedStation(initialStation)
+    if (initialMessage) setSuccessMessage(initialMessage)
+  }, [initialEmail, initialStation, initialMessage])
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true)
@@ -35,20 +55,73 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
       return
     }
     setError("")
+    setSuccessMessage(null)
     setLoading(true)
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       })
 
       if (authError) {
         setError(authError.message)
         setLoading(false)
-      } else {
-        onLogin() // will trigger redirect in App.tsx
+        return
       }
+
+      // Determine target destination based on workstation selection and account designation
+      let targetPage = "dashboard"
+
+      // 1. Fetch staff record to get both role and designation
+      const { data: staffRec } = await supabase
+        .from("staff")
+        .select("id, role, designation")
+        .eq("auth_user_id", authData.user?.id)
+        .limit(1)
+        .maybeSingle()
+
+      const userMetaDes = authData.user?.user_metadata?.designation as string | undefined
+
+      if (selectedStation === "nurse") {
+        await supabase.auth.updateUser({ data: { designation: "nurse" } })
+        if (staffRec?.id) {
+          await supabase.from("staff").update({ designation: "nurse" }).eq("id", staffRec.id)
+        }
+        targetPage = "nurse"
+      } else if (selectedStation === "clinical_officer") {
+        await supabase.auth.updateUser({ data: { designation: "clinical_officer" } })
+        if (staffRec?.id) {
+          await supabase.from("staff").update({ designation: "clinical_officer" }).eq("id", staffRec.id)
+        }
+        targetPage = "clinical-officer"
+      } else {
+        // Auto-detect: check both staff.designation and user_metadata.designation
+        const effectiveDesignation = 
+          staffRec?.designation === "nurse" || userMetaDes === "nurse"
+            ? "nurse"
+            : staffRec?.designation === "clinical_officer" || userMetaDes === "clinical_officer"
+            ? "clinical_officer"
+            : staffRec?.designation || userMetaDes
+
+        if (effectiveDesignation === "nurse") {
+          if (staffRec?.id && staffRec.designation !== "nurse") {
+            await supabase.from("staff").update({ designation: "nurse" }).eq("id", staffRec.id)
+          }
+          targetPage = "nurse"
+        } else if (effectiveDesignation === "clinical_officer") {
+          if (staffRec?.id && staffRec.designation !== "clinical_officer") {
+            await supabase.from("staff").update({ designation: "clinical_officer" }).eq("id", staffRec.id)
+          }
+          targetPage = "clinical-officer"
+        } else if (staffRec?.role === "admin" && effectiveDesignation !== "community_health_worker") {
+          targetPage = "admin-dashboard"
+        } else {
+          targetPage = "dashboard"
+        }
+      }
+
+      onLogin(targetPage)
     } catch {
       setError("Unable to reach the server. Check your connection and try again.")
       setLoading(false)
@@ -81,7 +154,7 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
       <div className="px-8 pt-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-300 font-medium transition-colors group"
+          className="inline-flex items-center gap-1.5 text-sm text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-200 font-medium transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-lg px-2 py-1 -ml-2"
         >
           <svg
             viewBox="0 0 20 20"
@@ -103,24 +176,31 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
         <div className="w-full max-w-[420px]">
           {/* Logo + brand */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 shadow-lg shadow-teal-600/25 mb-4">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth={2}
-                className="w-7 h-7"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                />
-              </svg>
-            </div>
-            <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1">
-              Heal<span className="text-teal-600">Stats</span>
-            </h1>
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex flex-col items-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-2xl p-1"
+              aria-label="Back to home"
+            >
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 shadow-lg shadow-teal-600/25 mb-4 group-hover:bg-teal-700 transition-colors">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth={2}
+                  className="w-7 h-7"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                  />
+                </svg>
+              </div>
+              <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">
+                Heal<span className="text-teal-600">Stats</span>
+              </h1>
+            </button>
             <p className="text-sm text-slate-500 dark:text-slate-400">Healthcare Worker Portal</p>
           </div>
 
@@ -134,6 +214,18 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
                 ? "Enter your credentials to access the portal."
                 : "You're offline. Your local records are still accessible."}
             </p>
+
+            {/* Success Notification */}
+            {successMessage && !error && (
+              <div role="status" className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-sm rounded-xl px-4 py-3 mb-5 flex items-start gap-2.5">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="font-semibold">{successMessage}</p>
+                </div>
+              </div>
+            )}
 
             {/* Error */}
             {error && (
@@ -195,6 +287,48 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
             )}
 
             <form onSubmit={handleSubmit} noValidate className="space-y-5">
+              {/* Workstation selection */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5">
+                  Workstation / কার্যক্ষেত্র
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStation("auto")}
+                    className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      selectedStation === "auto"
+                        ? "bg-teal-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Auto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStation("nurse")}
+                    className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      selectedStation === "nurse"
+                        ? "bg-teal-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Nurse Station
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStation("clinical_officer")}
+                    className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      selectedStation === "clinical_officer"
+                        ? "bg-teal-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Clinical Officer
+                  </button>
+                </div>
+              </div>
+
               {/* Worker ID / Email */}
               <div>
                 <label

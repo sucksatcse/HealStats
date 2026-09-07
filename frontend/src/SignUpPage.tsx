@@ -3,7 +3,7 @@ import { supabase } from "./lib/supabase"
 
 interface SignUpPageProps {
   onBack: () => void
-  onGoToLogin: () => void
+  onGoToLogin: (registeredEmail?: string, registeredDesignation?: StaffDesignation) => void
 }
 
 /**
@@ -43,6 +43,13 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
     const { data, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: {
+        data: {
+          role: "worker",
+          designation,
+          name: name.trim(),
+        },
+      },
     })
     if (authError) {
       setError(authError.message)
@@ -64,20 +71,35 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
       return
     }
 
-    // 2. Create the linked staff profile.
-    // SECURITY: Public registration is strictly restricted to 'worker'.
-    // Admin accounts must be provisioned by an administrator.
-    const { error: staffError } = await supabase.from("staff").insert({
-      name: name.trim(),
-      email: email.trim(),
-      role: "worker",
-      clinic_id: null,
-      auth_user_id: userId,
-    })
-    if (staffError) {
-      setError(`Account created, but profile setup failed: ${staffError.message}. Contact your clinic admin.`)
-      setLoading(false)
-      return
+    // 2. Create or update the linked staff profile with EXACT designation.
+    // Check if staff row was created by trigger or exists by email / auth_user_id
+    const { data: existingStaff } = await supabase
+      .from("staff")
+      .select("id")
+      .or(`auth_user_id.eq.${userId},email.eq.${email.trim()}`)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingStaff?.id) {
+      await supabase
+        .from("staff")
+        .update({
+          name: name.trim(),
+          email: email.trim(),
+          role: "worker",
+          designation: designation,
+          auth_user_id: userId,
+        })
+        .eq("id", existingStaff.id)
+    } else {
+      await supabase.from("staff").insert({
+        name: name.trim(),
+        email: email.trim(),
+        role: "worker",
+        designation: designation,
+        clinic_id: null,
+        auth_user_id: userId,
+      })
     }
 
     // 3. If a session was returned (email confirmation disabled), sign out so the
@@ -86,10 +108,20 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
     if (data.session) await supabase.auth.signOut()
 
     setLoading(false)
-    setDone({ needsConfirmation })
+
+    // If no email confirmation is needed, navigate straight to the sign-in page!
+    if (!needsConfirmation) {
+      if (typeof window !== "undefined") {
+        window.history.pushState(null, "", "/login")
+      }
+      onGoToLogin(email.trim(), designation)
+      return
+    }
+
+    setDone({ needsConfirmation: true })
   }
 
-  // ── Success screen ──
+  // ── Success screen (only if email confirmation is required) ──
   if (done) {
     return (
       <>
@@ -103,13 +135,16 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
             </div>
             <h1 className="font-display text-2xl text-teal-950 dark:text-white mb-2">Account created</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-7 leading-relaxed">
-              {done.needsConfirmation
-                ? `Please check your email and confirm your address, then sign in to your account.`
-                : `Your account is ready. You can now sign in.`}
+              Please check your email and confirm your address, then sign in to your account.
             </p>
             <button
-              onClick={onGoToLogin}
-              className="w-full max-w-xs mx-auto bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.history.pushState(null, "", "/login")
+                }
+                onGoToLogin(email.trim(), designation)
+              }}
+              className="w-full max-w-xs mx-auto bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               Continue to sign in
             </button>
@@ -131,7 +166,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
         <div className="px-8 pt-6">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-300 font-medium transition-colors group"
+            className="inline-flex items-center gap-1.5 text-sm text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-200 font-medium transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-lg px-2 py-1 -ml-2"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5">
               <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
@@ -145,14 +180,21 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
           <div className="w-full max-w-[440px]">
             {/* Logo + brand */}
             <div className="text-center mb-7">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 shadow-lg shadow-teal-600/25 mb-4">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-7 h-7">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </svg>
-              </div>
-              <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1">
-                Heal<span className="text-teal-600">Stats</span>
-              </h1>
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex flex-col items-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-2xl p-1"
+                aria-label="Back to home"
+              >
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 shadow-lg shadow-teal-600/25 mb-4 group-hover:bg-teal-700 transition-colors">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-7 h-7">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                  </svg>
+                </div>
+                <h1 className="font-display text-3xl text-teal-950 dark:text-white mb-1 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors">
+                  Heal<span className="text-teal-600">Stats</span>
+                </h1>
+              </button>
               <p className="text-sm text-slate-500 dark:text-slate-400">Create your clinic account</p>
             </div>
 
@@ -336,7 +378,15 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
             {/* Footer */}
             <p className="mt-6 text-center text-[13px] text-slate-500 dark:text-slate-400">
               Already have an account?{" "}
-              <button onClick={onGoToLogin} className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-semibold transition-colors">
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.history.pushState(null, "", "/login")
+                  }
+                  onGoToLogin()
+                }}
+                className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-semibold transition-colors cursor-pointer"
+              >
                 Sign in
               </button>
             </p>

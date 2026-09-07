@@ -2,11 +2,18 @@ import React, { createContext, useContext, useEffect, useState } from "react"
 import { Session, User } from "@supabase/supabase-js"
 import { supabase } from "./lib/supabase"
 
-interface AuthProfile {
+export type ClinicalDesignation =
+  | "community_health_worker"
+  | "nurse"
+  | "clinical_officer"
+  | "administrator"
+
+export interface AuthProfile {
   id: string
   name: string
   role: "worker" | "admin"
   clinic_id: string | null
+  designation?: ClinicalDesignation | string
 }
 
 interface AuthContextType {
@@ -16,6 +23,7 @@ interface AuthContextType {
   loading: boolean
   profileResolved: boolean
   signOut: () => Promise<void>
+  setDesignation: (designation: ClinicalDesignation) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   profileResolved: false,
   signOut: async () => {},
+  setDesignation: async () => {},
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -40,23 +49,100 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true
 
-    async function fetchProfile(userId: string) {
+    async function fetchProfile(userId: string, currentUser?: User | null) {
       if (mounted) setProfileResolved(false)
       try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from("staff")
-          .select("id, name, role, clinic_id")
+          .select("id, name, role, clinic_id, designation")
           .eq("auth_user_id", userId)
           .limit(1)
           .maybeSingle()
 
-        if (error) {
+        const u = currentUser ?? user
+
+        // Fallback 1: If not found by auth_user_id, search by matching email
+        if (!data && u?.email) {
+          const { data: emailMatch } = await supabase
+            .from("staff")
+            .select("id, name, role, clinic_id, designation")
+            .eq("email", u.email.trim())
+            .limit(1)
+            .maybeSingle()
+
+          if (emailMatch) {
+            data = emailMatch
+            // Automatically link auth_user_id for future queries
+            void supabase.from("staff").update({ auth_user_id: userId }).eq("id", emailMatch.id)
+          }
+        }
+
+        // Fallback 2: Auto-provision staff row from user_metadata if completely absent
+        if (!data && u) {
+          const metaRole = u.user_metadata?.role === "admin" ? "admin" : "worker"
+          const metaDes = (u.user_metadata?.designation as ClinicalDesignation) || "nurse"
+          const metaName = u.user_metadata?.name || u.email?.split("@")[0] || "Staff Member"
+
+          const { data: createdStaff, error: createErr } = await supabase
+            .from("staff")
+            .insert({
+              name: metaName,
+              email: u.email,
+              auth_user_id: userId,
+              role: metaRole,
+              designation: metaDes,
+              clinic_id: null,
+            })
+            .select("id, name, role, clinic_id, designation")
+            .maybeSingle()
+
+          if (!createErr && createdStaff) {
+            data = createdStaff
+          }
+        }
+
+        if (error && !data) {
           console.error("Error fetching staff profile:", error)
           if (mounted) setProfile(null)
         } else if (data && mounted) {
-          setProfile(data as AuthProfile)
+          const staffRec = data as { id: string; name: string; role: "worker" | "admin"; clinic_id: string | null; designation?: string }
+          const metaDesignation = u?.user_metadata?.designation as ClinicalDesignation | undefined
+
+          // Priority resolution:
+          // 1. If staff table has an explicit designation (other than default community_health_worker if metadata is nurse or clinical officer)
+          let designation: ClinicalDesignation
+          if (staffRec.designation && staffRec.designation !== "community_health_worker") {
+            designation = staffRec.designation as ClinicalDesignation
+          } else if (metaDesignation && (metaDesignation === "nurse" || metaDesignation === "clinical_officer")) {
+            designation = metaDesignation
+            // Self-heal the database record in the background
+            void supabase.from("staff").update({ designation: metaDesignation }).eq("id", staffRec.id)
+          } else {
+            designation = (staffRec.designation as ClinicalDesignation) || metaDesignation || (staffRec.role === "admin" ? "administrator" : "community_health_worker")
+          }
+
+          setProfile({
+            id: staffRec.id,
+            name: staffRec.name,
+            role: staffRec.role,
+            clinic_id: staffRec.clinic_id,
+            designation,
+          })
         } else if (mounted) {
-          setProfile(null)
+          // If still no staff record, build a temporary profile from authenticated user metadata
+          if (u) {
+            const metaRole = u.user_metadata?.role === "admin" ? "admin" : "worker"
+            const metaDes = (u.user_metadata?.designation as ClinicalDesignation) || "nurse"
+            setProfile({
+              id: userId,
+              name: u.user_metadata?.name || u.email?.split("@")[0] || "Staff Member",
+              role: metaRole,
+              clinic_id: null,
+              designation: metaDes,
+            })
+          } else {
+            setProfile(null)
+          }
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
@@ -72,7 +158,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(currentSession)
         setUser(currentSession?.user ?? null)
         if (currentSession?.user) {
-          fetchProfile(currentSession.user.id).finally(() => {
+          fetchProfile(currentSession.user.id, currentSession.user).finally(() => {
             if (mounted) setLoading(false)
           })
         } else {
@@ -90,7 +176,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(currentSession)
       setUser(currentSession?.user ?? null)
       if (currentSession?.user) {
-        fetchProfile(currentSession.user.id)
+        fetchProfile(currentSession.user.id, currentSession.user)
       } else {
         setProfile(null)
         setProfileResolved(true)
@@ -102,6 +188,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe()
     }
   }, [])
+
+  const setDesignation = async (newDesignation: ClinicalDesignation) => {
+    try {
+      await supabase.auth.updateUser({
+        data: { designation: newDesignation },
+      })
+      if (profile?.id) {
+        void supabase.from("staff").update({ designation: newDesignation }).eq("id", profile.id)
+      }
+      setProfile((prev) => (prev ? { ...prev, designation: newDesignation } : null))
+    } catch (err) {
+      console.error("Failed to update user designation:", err)
+    }
+  }
 
   const signOut = async () => {
     try {
@@ -118,7 +218,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, profileResolved, signOut }}
+      value={{ session, user, profile, loading, profileResolved, signOut, setDesignation }}
     >
       {children}
     </AuthContext.Provider>

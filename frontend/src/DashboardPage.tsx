@@ -644,7 +644,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
             </div>
             <button
               onClick={onLogout}
-              className="text-teal-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              className="text-teal-400 hover:text-red-400 transition-colors opacity-80 hover:opacity-100 p-1 rounded-lg hover:bg-teal-900/40 cursor-pointer"
               title="Log out"
             >
               {Icon.logout}
@@ -670,6 +670,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           userInitials={workerInitials}
           userColor="teal"
           onProfile={() => setActiveNav("profile")}
+          onLogout={onLogout}
         />
 
         {/* ── Scrollable content ── */}

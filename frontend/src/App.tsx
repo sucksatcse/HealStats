@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import AppNavbar from "./AppNavbar"
 import { useLang } from "./LanguageContext"
-import LoginPage from "./LoginPage"
+import LoginPage, { type LoginStation } from "./LoginPage"
 import DashboardPage from "./DashboardPage"
 import AdminLoginPage from "./AdminLoginPage"
 import AdminDashboardPage from "./AdminDashboardPage"
@@ -16,6 +16,8 @@ import SyncProgressPage from "./SyncProgressPage"
 import ClinicsMapSection from "./ClinicsMapSection"
 import ChatWidget from "./ChatWidget"
 import SignUpPage from "./SignUpPage"
+import NurseDashboardPage from "./NurseDashboardPage"
+import ClinicalOfficerPage from "./ClinicalOfficerPage"
 import { useAuth } from "./AuthContext"
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -267,6 +269,8 @@ type AppPage =
   | "admin-login"
   | "dashboard"
   | "admin-dashboard"
+  | "nurse"
+  | "clinical-officer"
   | "patient-lookup"
   | "system-states"
   | "design-system"
@@ -276,12 +280,54 @@ type AppPage =
   | "record-saved"
   | "sync-progress"
 
+function pageToPath(p: AppPage): string {
+  switch (p) {
+    case "landing":
+      return "/"
+    case "login":
+      return "/login"
+    case "signup":
+      return "/signup"
+    case "admin-login":
+    case "admin-dashboard":
+      return "/admin"
+    case "dashboard":
+      return "/dashboard"
+    case "nurse":
+      return "/nurse"
+    case "clinical-officer":
+      return "/clinical-officer"
+    case "patient-lookup":
+      return "/patient-lookup"
+    case "system-states":
+      return "/system-states"
+    case "design-system":
+      return "/design-system"
+    case "navbar-demo":
+      return "/navbar-demo"
+    default:
+      return "/"
+  }
+}
+
+function pathToPage(path: string): AppPage {
+  const clean = path.replace(/\/+$/, "")
+  if (clean === "/admin") return "admin-login"
+  if (clean === "/login") return "login"
+  if (clean === "/signup") return "signup"
+  if (clean === "/nurse") return "nurse"
+  if (clean === "/clinical-officer") return "clinical-officer"
+  if (clean === "/patient-lookup") return "patient-lookup"
+  if (clean === "/dashboard") return "dashboard"
+  if (clean === "/system-states") return "system-states"
+  if (clean === "/design-system") return "design-system"
+  if (clean === "/navbar-demo") return "navbar-demo"
+  return "landing"
+}
+
 function getInitialPage(): AppPage {
   if (typeof window !== "undefined") {
-    const path = window.location.pathname.replace(/\/+$/, "")
-    if (path === "/admin") {
-      return "admin-login"
-    }
+    return pathToPage(window.location.pathname)
   }
   return "landing"
 }
@@ -291,16 +337,17 @@ function getInitialPage(): AppPage {
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [page, setPage] = useState<AppPage>(getInitialPage)
+  const [loginPrefill, setLoginPrefill] = useState<{
+    email?: string
+    station?: LoginStation
+    message?: string
+  }>({})
 
-  /* Synchronize browser history and URL navigation for /admin */
+  /* Synchronize browser history and URL navigation */
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname.replace(/\/+$/, "")
-      if (path === "/admin") {
-        setPage((prev) => (prev === "admin-dashboard" ? prev : "admin-login"))
-      } else if (path === "" || path === "/") {
-        setPage((prev) => (prev === "admin-login" ? "landing" : prev))
-      }
+      const pageFromUrl = pathToPage(window.location.pathname)
+      setPage(pageFromUrl)
     }
     window.addEventListener("popstate", handlePopState)
     return () => window.removeEventListener("popstate", handlePopState)
@@ -308,18 +355,17 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    const path = window.location.pathname.replace(/\/+$/, "")
-    if (page === "admin-login" && path !== "/admin") {
-      window.history.pushState(null, "", "/admin")
-    } else if (page === "landing" && path === "/admin") {
-      window.history.pushState(null, "", "/")
+    const targetPath = pageToPath(page)
+    const currentPath = window.location.pathname.replace(/\/+$/, "") || "/"
+    if (currentPath !== targetPath) {
+      window.history.pushState(null, "", targetPath)
     }
   }, [page])
 
   /* Global language from context — drives all landing page text */
   const { lang } = useLang()
   const t = LANDING[lang]
-  const { session, profile, loading, profileResolved, signOut } = useAuth()
+  const { session, user, profile, loading, profileResolved, signOut } = useAuth()
 
   useEffect(() => {
     if (loading) return
@@ -327,6 +373,8 @@ export default function App() {
     const isProtectedRoute = [
       "dashboard",
       "admin-dashboard",
+      "nurse",
+      "clinical-officer",
       "patient-lookup",
       "record-saved",
       "sync-progress",
@@ -337,30 +385,65 @@ export default function App() {
       setPage(page === "admin-dashboard" ? "admin-login" : "login")
     }
 
-    // Worker somehow on admin-dashboard → redirect to worker dashboard
-    if (page === "admin-dashboard" && session && profile && profile.role !== "admin") {
-      setPage("dashboard")
+    // Strict Role Boundaries:
+    const effectiveDesignation = profile?.designation || (user?.user_metadata?.designation as string | undefined)
+    const isNurse = effectiveDesignation === "nurse"
+    const isClinicalOfficer = effectiveDesignation === "clinical_officer"
+    const isAdmin = profile?.role === "admin" && !isNurse && !isClinicalOfficer
+
+    if (session && (profile || user)) {
+      // 1. Nurse: completely forbidden from admin panel and clinical officer station
+      if (isNurse) {
+        if (page === "admin-dashboard" || page === "admin-login" || page === "clinical-officer") {
+          setPage("nurse")
+          return
+        }
+      }
+      // 2. Clinical Officer: completely forbidden from admin panel and nurse station
+      else if (isClinicalOfficer) {
+        if (page === "admin-dashboard" || page === "admin-login" || page === "nurse") {
+          setPage("clinical-officer")
+          return
+        }
+      }
+      // 3. Other worker / CHW: forbidden from admin panel
+      else if (!isAdmin) {
+        if (page === "admin-dashboard" || page === "admin-login") {
+          setPage("dashboard")
+          return
+        }
+      }
     }
 
     if (
       session &&
-      profile &&
+      (profile || user) &&
       (page === "login" ||
-        page === "signup" ||
         page === "admin-login" ||
         page === "landing")
     ) {
       if (page === "admin-login") {
-        if (profile.role === "admin") {
+        if (isAdmin) {
           setPage("admin-dashboard")
+        } else if (isNurse) {
+          setPage("nurse")
+        } else if (isClinicalOfficer) {
+          setPage("clinical-officer")
         }
-        // If a non-admin is on admin-login, do not auto-route to worker dashboard;
-        // let AdminLoginPage enforce the admin boundary and display rejection.
       } else {
-        setPage(profile.role === "admin" ? "admin-dashboard" : "dashboard")
+        // Nurse and Clinical Officer MUST go to their respective stations, NOT admin or dashboard!
+        if (isNurse) {
+          setPage("nurse")
+        } else if (isClinicalOfficer) {
+          setPage("clinical-officer")
+        } else if (isAdmin) {
+          setPage("admin-dashboard")
+        } else {
+          setPage("dashboard")
+        }
       }
     }
-  }, [page, session, profile, loading])
+  }, [page, session, user, profile, loading])
 
   const authSpinner = (
     <div
@@ -436,13 +519,27 @@ export default function App() {
   const isProtectedPage = [
     "dashboard",
     "admin-dashboard",
+    "nurse",
+    "clinical-officer",
     "patient-lookup",
     "record-saved",
     "sync-progress",
   ].includes(page)
   if (isProtectedPage && !session) return authSpinner
-  if (page === "admin-dashboard" && profile && profile.role !== "admin")
-    return authSpinner
+
+  const effectiveUserDesignation = profile?.designation || (user?.user_metadata?.designation as string | undefined)
+  const isNurseUser = effectiveUserDesignation === "nurse"
+  const isClinicalOfficerUser = effectiveUserDesignation === "clinical_officer"
+  const isAdminUser = profile?.role === "admin" && !isNurseUser && !isClinicalOfficerUser
+
+  // Nurse & Clinical Officer are completely blocked from admin dashboard
+  if (page === "admin-dashboard" && (profile || user) && !isAdminUser) return authSpinner
+
+  // Nurse is blocked from clinical officer page
+  if (page === "clinical-officer" && (profile || user) && isNurseUser) return authSpinner
+
+  // Clinical Officer is blocked from nurse page
+  if (page === "nurse" && (profile || user) && isClinicalOfficerUser) return authSpinner
 
   if (page === "navbar-demo")
     return <NavbarPreviewPage onBack={() => setPage("landing")} />
@@ -461,9 +558,46 @@ export default function App() {
   if (page === "patient-lookup")
     return <PatientLookupPage onBack={() => setPage("landing")} />
   if (page === "login")
-    return <LoginPage onBack={() => setPage("landing")} onLogin={() => {}} onSignUp={() => setPage("signup")} />
+    return (
+      <LoginPage
+        onBack={() => setPage("landing")}
+        initialEmail={loginPrefill.email}
+        initialStation={loginPrefill.station}
+        initialMessage={loginPrefill.message}
+        onLogin={(target) => {
+          if (target === "nurse") {
+            setPage("nurse")
+          } else if (target === "clinical-officer") {
+            setPage("clinical-officer")
+          } else if (target === "admin-dashboard") {
+            setPage("admin-dashboard")
+          } else if (target === "dashboard") {
+            setPage("dashboard")
+          }
+        }}
+        onSignUp={() => setPage("signup")}
+      />
+    )
   if (page === "signup")
-    return <SignUpPage onBack={() => setPage("landing")} onGoToLogin={() => setPage("login")} />
+    return (
+      <SignUpPage
+        onBack={() => {
+          setPage("landing")
+          if (typeof window !== "undefined") window.history.pushState(null, "", "/")
+        }}
+        onGoToLogin={(registeredEmail, registeredDesignation) => {
+          setLoginPrefill({
+            email: registeredEmail,
+            station: registeredDesignation === "nurse" ? "nurse" : registeredDesignation === "clinical_officer" ? "clinical_officer" : "auto",
+            message: registeredEmail
+              ? `Account created successfully! Please sign in to access the ${registeredDesignation === "nurse" ? "Nurse Station" : registeredDesignation === "clinical_officer" ? "Clinical Station" : "portal"}.`
+              : undefined,
+          })
+          setPage("login")
+          if (typeof window !== "undefined") window.history.pushState(null, "", "/login")
+        }}
+      />
+    )
   if (page === "admin-login")
     return (
       <AdminLoginPage
@@ -476,24 +610,45 @@ export default function App() {
         onLogin={() => setPage("admin-dashboard")}
       />
     )
+  const handleLogout = async () => {
+    await signOut()
+    setPage("landing")
+    if (typeof window !== "undefined" && window.location.pathname === "/admin") {
+      window.history.pushState(null, "", "/")
+    }
+  }
+
+  if (page === "nurse")
+    return (
+      <>
+        <NurseDashboardPage
+          onLogout={handleLogout}
+          onNavigate={(targetPage) => setPage(targetPage as AppPage)}
+        />
+        <ChatWidget />
+      </>
+    )
+  if (page === "clinical-officer")
+    return (
+      <>
+        <ClinicalOfficerPage
+          onLogout={handleLogout}
+          onNavigate={(targetPage) => setPage(targetPage as AppPage)}
+        />
+        <ChatWidget />
+      </>
+    )
   if (page === "dashboard")
     return (
       <>
-        <DashboardPage onLogout={() => setPage("landing")} />
+        <DashboardPage onLogout={handleLogout} />
         <ChatWidget />
       </>
     )
   if (page === "admin-dashboard")
     return (
       <>
-        <AdminDashboardPage
-          onLogout={() => {
-            setPage("landing")
-            if (typeof window !== "undefined" && window.location.pathname === "/admin") {
-              window.history.pushState(null, "", "/")
-            }
-          }}
-        />
+        <AdminDashboardPage onLogout={handleLogout} />
         <ChatWidget />
       </>
     )
@@ -511,7 +666,21 @@ export default function App() {
         {/* ─── Navbar ─── */}
         <AppNavbar
           onPatientLookup={() => setPage("patient-lookup")}
-          onGetStarted={() => setPage("login")}
+          onGetStarted={() => setPage("signup")}
+          onLogin={() => setPage("login")}
+          onSignUp={() => setPage("signup")}
+          onDashboard={() => {
+            if (profile?.designation === "nurse") {
+              setPage("nurse")
+            } else if (profile?.designation === "clinical_officer") {
+              setPage("clinical-officer")
+            } else if (profile?.role === "admin") {
+              setPage("admin-dashboard")
+            } else {
+              setPage("dashboard")
+            }
+          }}
+          onLogout={handleLogout}
         />
 
         {/* ─── Hero ─── */}
