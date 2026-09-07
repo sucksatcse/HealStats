@@ -15,13 +15,13 @@
 - 🟡 **Row Level Security (RLS) is DISABLED** in the active MVP database
   (`supabase/migrations/20260831000000_initial_schema.sql`). Everything in application
   code is hardened and ready to turn it on:
-  - `20260905000000_enable_rls.sql` defines clinic-scoped policies (admin = all
+  - `20260905000001_enable_rls.sql` defines clinic-scoped policies (admin = all
     clinics, worker = own clinic; self-signup INSERT guarded to `role='worker'`).
   - Hardcoded demo authentication bypasses have been completely removed in Task 25.1.
     All logins use real `supabase.auth.signInWithPassword` and look up actual `staff` profiles.
   Remaining to fully enable (requires database authorization / deployment):
   (1) seed confirmed Auth users (`worker@clinic.org`, `admin@healstats.org`) with matching
-  `staff` rows; (2) apply `20260905000000_enable_rls.sql` to the Supabase database;
+  `staff` rows; (2) apply `20260905000001_enable_rls.sql` to the Supabase database;
   (3) re-test all flows against active RLS. Until applied, security is enforced at the application layer.
 - ⬜ **Self-signup inserts the `staff` row from the client** (`SignUpPage.tsx`),
   which only works because RLS is disabled. Under production RLS, this will be protected
