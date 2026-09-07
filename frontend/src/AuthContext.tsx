@@ -48,8 +48,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let mounted = true
+    let profileRequest = 0
 
     async function fetchProfile(userId: string, currentUser?: User | null) {
+      const request = ++profileRequest
       if (mounted) setProfileResolved(false)
       try {
         let { data, error } = await supabase
@@ -77,29 +79,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        // Fallback 2: Auto-provision staff row from user_metadata if completely absent
-        if (!data && u) {
-          const metaRole = u.user_metadata?.role === "admin" ? "admin" : "worker"
-          const metaDes = (u.user_metadata?.designation as ClinicalDesignation) || "nurse"
-          const metaName = u.user_metadata?.name || u.email?.split("@")[0] || "Staff Member"
-
-          const { data: createdStaff, error: createErr } = await supabase
-            .from("staff")
-            .insert({
-              name: metaName,
-              email: u.email,
-              auth_user_id: userId,
-              role: metaRole,
-              designation: metaDes,
-              clinic_id: null,
-            })
-            .select("id, name, role, clinic_id, designation")
-            .maybeSingle()
-
-          if (!createErr && createdStaff) {
-            data = createdStaff
-          }
-        }
+        // Ignore lookups superseded by sign-out or a newer session.
+        if (!mounted || request !== profileRequest) return
 
         if (error && !data) {
           console.error("Error fetching staff profile:", error)
@@ -129,26 +110,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             designation,
           })
         } else if (mounted) {
-          // If still no staff record, build a temporary profile from authenticated user metadata
-          if (u) {
-            const metaRole = u.user_metadata?.role === "admin" ? "admin" : "worker"
-            const metaDes = (u.user_metadata?.designation as ClinicalDesignation) || "nurse"
-            setProfile({
-              id: userId,
-              name: u.user_metadata?.name || u.email?.split("@")[0] || "Staff Member",
-              role: metaRole,
-              clinic_id: null,
-              designation: metaDes,
-            })
-          } else {
-            setProfile(null)
-          }
+          setProfile(null)
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
-        if (mounted) setProfile(null)
+        if (mounted && request === profileRequest) setProfile(null)
       } finally {
-        if (mounted) setProfileResolved(true)
+        if (mounted && request === profileRequest) setProfileResolved(true)
       }
     }
 
@@ -178,6 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (currentSession?.user) {
         fetchProfile(currentSession.user.id, currentSession.user)
       } else {
+        ++profileRequest
         setProfile(null)
         setProfileResolved(true)
       }

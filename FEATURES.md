@@ -76,6 +76,8 @@ HealStats is designed around:
   dead-end); no flash of protected/admin content before authorization resolves; sign-in
   network/unexpected failures surface a plain-language error.
 - **Demo Bypass Removal (Task 25.1)**: All hardcoded demo credentials, synthetic sessions, and application-level auth bypasses have been completely removed. Both worker (`LoginPage.tsx`) and admin (`AdminLoginPage.tsx`) authenticate against Supabase Auth (`signInWithPassword`) and resolve real staff profiles. For deterministic testing, mock responses are strictly isolated to Playwright network route interception (`tests/e2e/helpers.ts`) and never present in production application code.
+- **QA regression fixes (2026-09-08)**: Login no longer creates missing staff rows or fabricates a profile from user metadata. If staff lookup (including the existing email fallback) cannot find a record, protected content remains inaccessible and Account not linked is shown. Routing waits for profile resolution and admin-login authorization before navigating; rejected admin sign-ins stay on the login screen with an error. Signup provisioning is unchanged and must successfully create a real staff record.
+- **Public entry points**: Log In opens authentication; Sign Up and the hero Get Started button open registration. Logout returns to the public landing page. Guest navbar auth actions live in the drawer below 1280px to prevent overlap with language, theme, and menu controls.
 
 ### Self-Registration (Sign Up)
 - **Status**: Implemented (`SignUpPage.tsx`).

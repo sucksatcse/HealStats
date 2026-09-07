@@ -11,18 +11,19 @@ test.describe('Landing page', () => {
     // Hero headline copy (English default).
     await expect(page.getByText('Healthcare records', { exact: false }).first()).toBeVisible()
 
-    // Primary CTA present (Get Started button in navbar).
+    // The hero CTA opens self-registration.
     await expect(page.getByRole('button', { name: /Get Started/i }).first()).toBeVisible()
   })
 
-  test('unauthenticated visitor is not shown the dashboard and navbar has no Log in button', async ({ page }) => {
+  test('guest navbar exposes login and signup without protected content', async ({ page }) => {
     await page.goto('/')
-    // Worker dashboard must NOT be visible before login.
     await expect(page.getByRole('button', { name: 'Record Visit' })).toHaveCount(0)
-    // The navbar has NO separate "Log in" button; "Get Started" is the primary authentication entry.
-    await expect(page.locator('header').getByRole('button', { name: 'Log in' })).toHaveCount(0)
-    // Clicking "Get Started" in the navbar opens the sign-in / worker authentication page.
-    await page.locator('header').getByRole('button', { name: 'Get Started' }).click()
+    await page.locator('header').getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await expect(page.getByText('Healthcare Worker Sign Up')).toBeVisible()
+    await page.goto('/')
+    await page.locator('header').getByRole('button', { name: 'Log In', exact: true }).click()
     await expect(page.getByText('Healthcare Worker Portal')).toBeVisible()
+    await page.getByRole('button', { name: 'Create an account' }).click()
+    await expect(page.getByText('Healthcare Worker Sign Up')).toBeVisible()
   })
 })

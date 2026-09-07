@@ -285,7 +285,7 @@ export default function AppNavbar({
 
       {/* ── Unauthenticated / Guest state: Log In + Sign Up ── */}
       {!session ? (
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="hidden xl:flex items-center gap-2 flex-shrink-0 whitespace-nowrap">
           {onLogin && (
             <button
               onClick={onLogin}
@@ -525,7 +525,7 @@ export default function AppNavbar({
 
   /* ─── Shared logo with subtle hover animation (scale 1 -> 1.04) and initial reveal ─── */
   const logo = (
-    <a href="#" className="hs-navbar-logo hs-animate-logo group flex items-center gap-2.5 flex-shrink-0">
+    <a href="#" aria-label="HealStats" className="hs-navbar-logo hs-animate-logo group flex items-center gap-2.5 flex-shrink-0">
       <div className="hs-navbar-logo-icon w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm shadow-teal-600/25 group-hover:bg-teal-700 transition-all">
         <svg
           viewBox="0 0 24 24"
@@ -541,7 +541,7 @@ export default function AppNavbar({
           />
         </svg>
       </div>
-      <span className="font-display text-xl tracking-tight text-teal-900 dark:text-white leading-none select-none">
+      <span className="hidden min-[400px]:inline font-display text-xl tracking-tight text-teal-900 dark:text-white leading-none select-none">
         Heal<span className="text-teal-600 dark:text-teal-400">Stats</span>
       </span>
     </a>
@@ -633,7 +633,7 @@ export default function AppNavbar({
 
   return (
     <header className="sticky top-0 z-50 glass-nav transition-all duration-200">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* [HealthStats Logo] */}
         {logo}
 
@@ -649,15 +649,16 @@ export default function AppNavbar({
         </div>
 
         {/* [ Language ] [ Theme ] [ Auth Actions / Profile ] */}
-        <div className="flex items-center gap-2.5 ml-auto sm:ml-0">
+        <div className="flex items-center gap-2.5 ml-auto sm:ml-0 flex-shrink-0">
           {rightControls}
 
-          {/* Mobile animated hamburger (Visible only < 1024px, completely hidden on desktop) */}
+          {/* Keep the full navigation in the drawer until it fits. */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="hs-hamburger-btn border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:border-teal-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
             aria-label="Toggle navigation menu"
             aria-expanded={menuOpen}
+            aria-controls="landing-mobile-menu"
           >
             <span className="hs-hamburger-box" aria-hidden="true">
               <span className="hs-hamburger-line hs-hamburger-line-1" />
@@ -671,7 +672,8 @@ export default function AppNavbar({
       {/* Mobile drawer with navigation and auth actions */}
       {menuOpen && (
         <div
-          className="hs-mobile-menu-drawer lg:hidden border-t px-4 py-3.5 flex flex-col gap-3"
+          id="landing-mobile-menu"
+          className="hs-mobile-menu-drawer xl:hidden border-t px-4 py-3.5 flex flex-col gap-3"
           style={{
             borderColor: "var(--an-nav-border)",
             background: "var(--an-nav-bg)",

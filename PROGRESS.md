@@ -2,6 +2,14 @@
 
 This document provides a comprehensive and highly detailed breakdown of every single file, configuration, and feature implemented in the project thus far.
 
+## Latest QA Update — 2026-09-08
+- Fixed the Phase-merge E2E regressions: tests now use **Log In** for authentication, **Get Started / Sign Up** for registration, and expect logout to return home before checking protected-route rejection.
+- Admin login retains its denial message while authorization completes; routing waits for staff-profile resolution. Superseded profile requests cannot restore state after sign-out. Missing staff rows no longer trigger login-time inserts or fabricated metadata-only profiles; the existing Account not linked screen is restored. This supersedes Task 31's login-time auto-provisioning claim below; signup provisioning remains unchanged.
+- Fixed overlapping mobile navbar controls: guest auth actions move into the drawer below 1280px, with an accessible compact logo below 400px. Added actual click, drawer-state, viewport-fit, EN/BN, and dark-mode coverage at 320/393/768/1024/1280px.
+- E2E preview builds use a reserved `.invalid` backend URL and test-only public key, block service workers, and cannot reuse an unrelated running preview. Mock auth flows intercept REST/Auth/Edge Function traffic rather than falling through to a live database.
+- Verified with CI-mode pnpm 9: TypeScript passes; **17/17 unit tests and 27/27 Playwright tests pass**, no retries needed; production preview build and `git diff --check` pass. Existing ineffective dynamic-import and large-chunk warnings remain non-blocking. No database changes or commits/pushes performed.
+- Next: manual smoke-test the merged login, signup, profile, and mobile flows; then address production authorization/RLS hardening and isolated DB-backed E2E coverage. Mocked tests do not establish live-backend security or successful clinical writes.
+
 ## 1. Project Infrastructure & Tooling
 The foundational tools and libraries for the frontend application have been fully configured.
 - **Framework**: React 19.0.0

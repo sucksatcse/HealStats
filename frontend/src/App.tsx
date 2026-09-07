@@ -337,6 +337,7 @@ function getInitialPage(): AppPage {
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function App() {
   const [page, setPage] = useState<AppPage>(getInitialPage)
+  const [adminSigningIn, setAdminSigningIn] = useState(false)
   const [loginPrefill, setLoginPrefill] = useState<{
     email?: string
     station?: LoginStation
@@ -368,7 +369,7 @@ export default function App() {
   const { session, user, profile, loading, profileResolved, signOut } = useAuth()
 
   useEffect(() => {
-    if (loading) return
+    if (loading || !profileResolved || adminSigningIn) return
 
     const isProtectedRoute = [
       "dashboard",
@@ -391,7 +392,7 @@ export default function App() {
     const isClinicalOfficer = effectiveDesignation === "clinical_officer"
     const isAdmin = profile?.role === "admin" && !isNurse && !isClinicalOfficer
 
-    if (session && (profile || user)) {
+    if (session && profile) {
       // 1. Nurse: completely forbidden from admin panel and clinical officer station
       if (isNurse) {
         if (page === "admin-dashboard" || page === "admin-login" || page === "clinical-officer") {
@@ -417,7 +418,7 @@ export default function App() {
 
     if (
       session &&
-      (profile || user) &&
+      profile &&
       (page === "login" ||
         page === "admin-login" ||
         page === "landing")
@@ -443,7 +444,7 @@ export default function App() {
         }
       }
     }
-  }, [page, session, user, profile, loading])
+  }, [page, session, user, profile, loading, profileResolved, adminSigningIn])
 
   const authSpinner = (
     <div
@@ -480,7 +481,7 @@ export default function App() {
 
   // Authenticated, but no staff profile is linked to this account. Without an
   // explicit escape hatch the user would be stranded (valid session, no role).
-  if (session && profileResolved && !profile) {
+  if (session && profileResolved && !profile && !adminSigningIn) {
     return (
       <div
         className="min-h-screen flex items-center justify-center px-4"
@@ -525,7 +526,7 @@ export default function App() {
     "record-saved",
     "sync-progress",
   ].includes(page)
-  if (isProtectedPage && !session) return authSpinner
+  if (isProtectedPage && (!session || !profileResolved || !profile)) return authSpinner
 
   const effectiveUserDesignation = profile?.designation || (user?.user_metadata?.designation as string | undefined)
   const isNurseUser = effectiveUserDesignation === "nurse"
@@ -601,6 +602,7 @@ export default function App() {
   if (page === "admin-login")
     return (
       <AdminLoginPage
+        onAuthenticatingChange={setAdminSigningIn}
         onBack={() => {
           setPage("landing")
           if (typeof window !== "undefined" && window.location.pathname === "/admin") {

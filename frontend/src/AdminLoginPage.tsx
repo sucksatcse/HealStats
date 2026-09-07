@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase"
 interface AdminLoginPageProps {
   onBack: () => void
   onLogin: () => void
+  onAuthenticatingChange?: (pending: boolean) => void
 }
 
 // ── Left panel illustration pieces ────────────────────────────────────────────
@@ -233,6 +234,7 @@ const PANEL_STATS = [
 export default function AdminLoginPage({
   onBack,
   onLogin,
+  onAuthenticatingChange,
 }: AdminLoginPageProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -260,6 +262,7 @@ export default function AdminLoginPage({
     }
     setError("")
     setLoading(true)
+    onAuthenticatingChange?.(true)
 
     try {
       const { data: authData, error: authError } =
@@ -303,6 +306,8 @@ export default function AdminLoginPage({
     } catch {
       setError("Unable to reach the server. Check your connection and try again.")
       setLoading(false)
+    } finally {
+      onAuthenticatingChange?.(false)
     }
   }
 
