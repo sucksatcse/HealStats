@@ -88,19 +88,20 @@ When activated, Emergency Mode shifts the UI to an operational state:
 ## 8. RESPONSIVE DESIGN & ACCESSIBILITY
 - **Responsive:** Every major screen must work from 320px to large desktop. Do not just shrink desktop layouts; design mobile workflows intentionally (especially tables).
 - **Accessibility:** Ensure semantic HTML, proper form labels, keyboard navigation, visible focus states, sufficient contrast, and reduced-motion support.
+- **Public navbar fit (2026-09-08):** Full desktop navigation and guest Log In / Sign Up controls appear at 1280px and above. Below that width, auth actions remain available in the hamburger drawer alongside navigation; language and theme controls stay in the header. Below 400px the wordmark is hidden while the logo link retains the accessible name HealStats. Keep header controls non-overlapping and drawer state exposed through `aria-expanded` / `aria-controls`; verify real pointer clicks at 320px in both EN and BN.
 
 ## 9. PERFORMANCE & ANIMATION
 - **Performance:** HealStats must feel fast. Avoid huge UI libraries, duplicate CSS, repeated API calls, and blocking initializations. Prefer lazy loading and efficient queries.
 - **Animation:** Use subtle, professional motion for button feedback, modal transitions, and sync states. Avoid long transitions and distracting motion.
 - **PillNav Navigation Interaction:**
   - Standardized rounded pill navigation (`PillNav.tsx` + `PillNav.css`) for desktop and mobile headers.
-  - **Unified Navigation Pill:** All primary navigation actions (`Features`, `How It Works`, `Coverage`, `Testimonials`, `Check My Visit`, and `Get Started`) are unified inside a single compact rounded pill container (`.hs-pill-nav-container`). Neither `Check My Visit` nor `Get Started` use traditional filled or bordered CTA button styles — they share identical typography, horizontal padding, height, and hover behavior with the rest of the navigation.
+   - **Navigation Pill:** Section links (`Features`, `How It Works`, `Coverage`, `Testimonials`) and `Check My Visit` share the compact pill container. Guest Log In / Sign Up are separate auth actions; the hero Get Started opens registration.
   - **Circular Bottom-Up Fill:** On hover, a GPU-accelerated circle (`.hs-pill-circle`) expands from bottom-center (`scale(1)`) to fill the pill with teal accent (`#0f766e`).
   - **Dual-Layer Sliding Text:** Idle text slides up (`translateY(-105%)`) while hover text glides into position from below (`translateY(0)`), using high-performance cubic-bezier transitions (`cubic-bezier(0.22, 1, 0.36, 1)`).
   - **Active State:** Distinctive teal accent tint, subtle border, and active indicator dot (`.hs-pill-active-dot`) ensuring clear contrast.
   - **Subtle Logo Hover:** Micro-scale `scale(1.04)` over 200ms on the HealthStats cross logo.
   - **Initial Mount Reveal:** Restrained 550ms ease-out reveal for the logo (`hs-animate-logo`), navigation container (`hs-animate-nav`), and staggered pills (`hs-pill-stagger` ~50ms stagger).
-  - **Mobile Drawer & Hamburger:** 3-bar hamburger transforms cleanly into an 'X' (`hs-hamburger-btn`), with smooth slide-down vertical pill menu items for all 6 links.
+   - **Mobile Drawer & Hamburger:** Below 1280px, the 3-bar hamburger transforms into an 'X' (`hs-hamburger-btn`); the drawer contains vertical pill navigation and guest auth actions.
   - **Reduced Motion:** Fully compliant with `@media (prefers-reduced-motion: reduce)` — disables scaling circles, sliding text transforms, logo scaling, and reveal animations, falling back to instant opacity/color transitions.
   - **Zero Dependency Overhead:** Built using pure CSS transforms and opacity; no GSAP or external animation library needed.
 

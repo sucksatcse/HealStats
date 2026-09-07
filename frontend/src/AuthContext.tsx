@@ -50,8 +50,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let mounted = true
+    let profileRequest = 0
 
     async function fetchProfile(userId: string, currentUser?: User | null) {
+      const request = ++profileRequest
       if (mounted) setProfileResolved(false)
       try {
         let { data, error } = await supabase
@@ -123,6 +125,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             data = createdStaff
           }
         }
+
+        // Ignore lookups superseded by sign-out or a newer session.
+        if (!mounted || request !== profileRequest) return
 
         if (error && !data) {
           console.error("Error fetching staff profile:", error)
@@ -208,9 +213,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
-        if (mounted) setProfile(null)
+        if (mounted && request === profileRequest) setProfile(null)
       } finally {
-        if (mounted) setProfileResolved(true)
+        if (mounted && request === profileRequest) setProfileResolved(true)
       }
     }
 
@@ -240,6 +245,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (currentSession?.user) {
         fetchProfile(currentSession.user.id, currentSession.user)
       } else {
+        ++profileRequest
         setProfile(null)
         setProfileResolved(true)
       }

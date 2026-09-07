@@ -161,7 +161,7 @@ export async function setupAuthMockRoutes(page: Page): Promise<void> {
       })
     }
 
-    return route.continue()
+    return route.abort('blockedbyclient')
   })
 
   await page.route('**/rest/v1/**', async (route) => {
@@ -219,7 +219,11 @@ export async function setupAuthMockRoutes(page: Page): Promise<void> {
         })
       }
 
-      if (url.includes('auth_user_id=eq.00000000-0000-0000-0000-000000000099')) {
+      const params = new URL(url).searchParams
+      if (
+        params.get('auth_user_id') === 'eq.00000000-0000-0000-0000-000000000099' ||
+        params.get('email') === `eq.${UNLINKED.email}`
+      ) {
         return route.fulfill({
           status: isSingle ? 406 : 200,
           contentType: isSingle ? 'application/vnd.pgrst.object+json' : 'application/json',
@@ -316,15 +320,25 @@ export async function setupAuthMockRoutes(page: Page): Promise<void> {
       })
     }
 
-    return route.continue()
+    if (method === 'GET' || method === 'HEAD') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'content-range': '*/0' },
+        body: method === 'HEAD' ? '' : '[]',
+      })
+    }
+
+    return route.abort('blockedbyclient')
   })
+  await page.route('**/functions/v1/**', route => route.abort('blockedbyclient'))
 }
 
 /** Log in as the test worker and land on the worker dashboard. */
 export async function loginAsWorker(page: Page): Promise<void> {
   await setupAuthMockRoutes(page)
   await page.goto('/')
-  await page.getByRole('button', { name: 'Get Started' }).first().click()
+  await page.locator('header').getByRole('button', { name: 'Log In', exact: true }).click()
   await page.getByPlaceholder('e.g. name@clinic.org').fill(WORKER.email)
   await page.getByPlaceholder('Enter your password').fill(WORKER.password)
   await page.getByRole('button', { name: 'Sign In', exact: true }).click()

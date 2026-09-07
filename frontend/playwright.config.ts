@@ -7,9 +7,7 @@ import { defineConfig, devices } from '@playwright/test'
  * from the dev server on 8443) so tests are fast, deterministic and unaffected
  * by HMR/on-demand compilation.
  *
- * Tests intentionally avoid mutating the real Supabase database: they exercise
- * the demo-login bypass and read-only / UI flows so they are safe and
- * deterministic without an isolated test DB.
+ * Auth and REST requests are intercepted by the test harness, not application bypasses.
  */
 const PORT = 4599
 const BASE_URL = `http://localhost:${PORT}`
@@ -23,6 +21,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: BASE_URL,
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -41,7 +40,11 @@ export default defineConfig({
   webServer: {
     command: `npx vite build && npx vite preview --port ${PORT} --strictPort`,
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
+    env: {
+      VITE_SUPABASE_URL: 'https://healstats-e2e.invalid',
+      VITE_SUPABASE_ANON_KEY: 'e2e-public-placeholder',
+    },
     timeout: 180_000,
   },
 })
