@@ -92,6 +92,17 @@ When activated, Emergency Mode shifts the UI to an operational state:
 ## 9. PERFORMANCE & ANIMATION
 - **Performance:** HealStats must feel fast. Avoid huge UI libraries, duplicate CSS, repeated API calls, and blocking initializations. Prefer lazy loading and efficient queries.
 - **Animation:** Use subtle, professional motion for button feedback, modal transitions, and sync states. Avoid long transitions and distracting motion.
+- **PillNav Navigation Interaction:**
+  - Standardized rounded pill navigation (`PillNav.tsx` + `PillNav.css`) for desktop and mobile headers.
+  - **Unified Navigation Pill:** All primary navigation actions (`Features`, `How It Works`, `Coverage`, `Testimonials`, `Check My Visit`, and `Get Started`) are unified inside a single compact rounded pill container (`.hs-pill-nav-container`). Neither `Check My Visit` nor `Get Started` use traditional filled or bordered CTA button styles — they share identical typography, horizontal padding, height, and hover behavior with the rest of the navigation.
+  - **Circular Bottom-Up Fill:** On hover, a GPU-accelerated circle (`.hs-pill-circle`) expands from bottom-center (`scale(1)`) to fill the pill with teal accent (`#0f766e`).
+  - **Dual-Layer Sliding Text:** Idle text slides up (`translateY(-105%)`) while hover text glides into position from below (`translateY(0)`), using high-performance cubic-bezier transitions (`cubic-bezier(0.22, 1, 0.36, 1)`).
+  - **Active State:** Distinctive teal accent tint, subtle border, and active indicator dot (`.hs-pill-active-dot`) ensuring clear contrast.
+  - **Subtle Logo Hover:** Micro-scale `scale(1.04)` over 200ms on the HealthStats cross logo.
+  - **Initial Mount Reveal:** Restrained 550ms ease-out reveal for the logo (`hs-animate-logo`), navigation container (`hs-animate-nav`), and staggered pills (`hs-pill-stagger` ~50ms stagger).
+  - **Mobile Drawer & Hamburger:** 3-bar hamburger transforms cleanly into an 'X' (`hs-hamburger-btn`), with smooth slide-down vertical pill menu items for all 6 links.
+  - **Reduced Motion:** Fully compliant with `@media (prefers-reduced-motion: reduce)` — disables scaling circles, sliding text transforms, logo scaling, and reveal animations, falling back to instant opacity/color transitions.
+  - **Zero Dependency Overhead:** Built using pure CSS transforms and opacity; no GSAP or external animation library needed.
 
 ## 10. SUPABASE DATA ACCESS & PRIVACY
 - **Architecture:** Keep Supabase access organized inside services/hooks. Never allow the frontend to bypass RLS security expectations.
@@ -106,7 +117,7 @@ When activated, Emergency Mode shifts the UI to an operational state:
 ## 12. EXHIBITION DEMO PRIORITY
 Prioritize features that demonstrate the core innovation reliably for the exhibition demo.
 
-**🔴 Essential Priority:**
+🔴 Essential Priority:
 1. Authentication
 2. Patient registration
 3. Patient records
@@ -119,5 +130,13 @@ Prioritize features that demonstrate the core innovation reliably for the exhibi
 10. Outbreak detection
 11. End-to-end demo reliability
 
-**Demo-First Reliability Flow to Protect:**
+Demo-First Reliability Flow to Protect:
 `Health Worker Login -> Register Patient -> Turn Internet OFF -> Record Visit -> "Saved Offline" -> Turn Internet ON -> Automatic Sync -> Admin Dashboard sees synced patient & stats -> Trigger outbreak -> Show Alert -> Switch to Emergency Mode.`
+
+---
+
+## 13. UI/UX & MOTION DESIGN SKILL REFERENCE
+For the complete 46-section design rulebook, including the 3-tier motion hierarchy, 1–5 urgency multi-modal cues, Ashen Nebula visual restraint, offline UX patterns, and the pre-commit design checklist:
+- **Workspace Agent Skill:** [`.agents/skills/healthstats-uiux-motion/SKILL.md`](../.agents/skills/healthstats-uiux-motion/SKILL.md)
+- **Tracked Documentation Guide:** [`docs/uiux-motion-skill.md`](./uiux-motion-skill.md)
+

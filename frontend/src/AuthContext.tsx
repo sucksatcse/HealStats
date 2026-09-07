@@ -16,8 +16,6 @@ interface AuthContextType {
   loading: boolean
   profileResolved: boolean
   signOut: () => Promise<void>
-  loginDemoUser: () => Promise<void>
-  loginDemoAdmin: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,8 +25,6 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   profileResolved: false,
   signOut: async () => {},
-  loginDemoUser: async () => {},
-  loginDemoAdmin: async () => {},
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -41,12 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // True once a staff-profile lookup has finished (found or confirmed absent).
   const [profileResolved, setProfileResolved] = useState(false)
 
-  // Demo bypass flag
-  const [isDemo, setIsDemo] = useState(false)
-
   useEffect(() => {
-    if (isDemo) return
-
     let mounted = true
 
     async function fetchProfile(userId: string) {
@@ -56,13 +47,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .from("staff")
           .select("id, name, role, clinic_id")
           .eq("auth_user_id", userId)
-          .single()
+          .limit(1)
+          .maybeSingle()
 
         if (error) {
           console.error("Error fetching staff profile:", error)
           if (mounted) setProfile(null)
         } else if (data && mounted) {
           setProfile(data as AuthProfile)
+        } else if (mounted) {
+          setProfile(null)
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
@@ -92,7 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      if (!mounted || isDemo) return
+      if (!mounted) return
       setSession(currentSession)
       setUser(currentSession?.user ?? null)
       if (currentSession?.user) {
@@ -107,78 +101,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [isDemo])
-
-  const loginDemoAdmin = async () => {
-    // Instant client-side demo bypass (dev/exhibition only). Kept network-free so
-    // it is deterministic and works offline; real staff use signInWithPassword.
-    setIsDemo(true)
-    setSession({} as Session)
-    setUser({ id: "admin-bypass-id" } as User)
-    setProfile({
-      id: "admin-bypass-staff-id",
-      name: "System Admin",
-      role: "admin",
-      clinic_id: null, // null = access to all clinics (system-level admin)
-    })
-    setProfileResolved(true)
-    setLoading(false)
-
-    // Attempt to hydrate from DB if the seeded admin staff row exists
-    supabase
-      .from("staff")
-      .select("id, name, role, clinic_id")
-      .eq("email", "admin@healstats.org")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setProfile(data as AuthProfile)
-      })
-  }
-
-  const loginDemoUser = async () => {
-    // Instant client-side demo bypass (dev/exhibition only). Kept network-free so
-    // it is deterministic and works offline; real staff use signInWithPassword.
-    setIsDemo(true)
-    setSession({} as Session)
-    setUser({ id: "demo-user-id" } as User)
-    setProfile({
-      id: "demo-staff-id",
-      name: "Test Worker (Demo)",
-      role: "worker",
-      clinic_id: "11111111-1111-1111-1111-111111111111",
-    })
-    setProfileResolved(true)
-    setLoading(false)
-
-    // Writes (e.g. visits.staff_id) need a real staff.id; hydrate from the seeded demo row if present.
-    supabase
-      .from("staff")
-      .select("id, name, role, clinic_id")
-      .eq("email", "worker@clinic.org")
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error || !data) return
-        setProfile({ ...(data as AuthProfile), name: `${data.name} (Demo)` })
-      })
-  }
+  }, [])
 
   const signOut = async () => {
-    if (isDemo) {
-      setIsDemo(false)
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error("Error during sign out:", err)
+    } finally {
       setSession(null)
       setUser(null)
       setProfile(null)
       setProfileResolved(true)
-    } else {
-      await supabase.auth.signOut()
     }
   }
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, profileResolved, signOut, loginDemoUser, loginDemoAdmin }}
+      value={{ session, user, profile, loading, profileResolved, signOut }}
     >
       {children}
     </AuthContext.Provider>
   )
 }
+

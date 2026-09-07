@@ -310,6 +310,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
   const [emergency, setEmergency] = useState(false);
   const [adminSearch, setAdminSearch] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [patientDetailReturnNav, setPatientDetailReturnNav] = useState<"patients" | "flagged" | "emergency" | "outbreak" | "emergency-triage">("patients");
 
   /* Global lang + dark from context */
@@ -621,6 +622,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           onProfile={() => setActiveNav("profile")}
           breadcrumb={
             activeNav === "staff" ? "Staff"
+            : activeNav === "staff-profile" ? "Staff Profile"
             : activeNav === "patients" ? "Patients"
             : activeNav === "patient-detail" ? "Patient Details"
             : activeNav === "sync" ? "Sync Status"
@@ -642,12 +644,25 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
         {/* All other content views */}
         {activeNav !== "ops-map" && (
         <main className={`flex-1 overflow-y-auto px-4 lg:px-8 py-6 space-y-6 transition-colors duration-500 ${
-          emergency && !["staff", "patients", "patient-detail", "sync", "flagged", "analytics", "resources", "alerts", "settings", "outbreak", "profile"].includes(activeNav)
+          emergency && !["staff", "staff-profile", "patients", "patient-detail", "sync", "flagged", "analytics", "resources", "alerts", "settings", "outbreak", "profile"].includes(activeNav)
             ? "bg-gradient-to-b from-red-50 to-slate-50"
             : ""
         }`}>
 
-          {activeNav === "staff" && <StaffPage />}
+          {activeNav === "staff" && (
+            <StaffPage
+              onViewStaff={(id) => {
+                setSelectedStaffId(id);
+                setActiveNav("staff-profile");
+              }}
+            />
+          )}
+          {activeNav === "staff-profile" && (
+            <StaffProfilePage
+              staffId={selectedStaffId}
+              onBack={() => setActiveNav("staff")}
+            />
+          )}
           {activeNav === "patients" && (
             <PatientRecordsPage
               onViewPatient={(id) => {
@@ -679,6 +694,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
               </button>
               <PatientDetailPage
                 patientId={selectedPatientId}
+                onBack={() => setActiveNav(patientDetailReturnNav)}
                 onNewVisit={() => {}}
               />
             </div>
@@ -707,7 +723,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           {activeNav === "resources" && <ResourceAllocationPage />}
           {activeNav === "alerts" && <AlertsCenterPage onNavigate={(target) => setActiveNav(target)} />}
           {activeNav === "settings" && <SettingsPage />}
-          {activeNav === "profile" && <StaffProfilePage />}
+          {activeNav === "profile" && <StaffProfilePage onBack={() => setActiveNav("dashboard")} />}
           {activeNav === "emergency-triage" && (
             <EmergencyTriagePage
               onViewPatient={(id) => {
@@ -719,7 +735,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             />
           )}
 
-          {!["staff", "patients", "patient-detail", "sync", "flagged", "analytics", "outbreak", "resources", "alerts", "settings", "emergency-triage", "profile"].includes(activeNav) && (<>
+          {!["staff", "staff-profile", "patients", "patient-detail", "sync", "flagged", "analytics", "outbreak", "resources", "alerts", "settings", "emergency-triage", "profile"].includes(activeNav) && (<>
 
           {/* Outbreak Surveillance Alert Banner (Task 14.5) */}
           {outbreakAnalysis && outbreakAnalysis.clusters.length > 0 && (

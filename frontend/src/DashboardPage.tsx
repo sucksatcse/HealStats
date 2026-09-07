@@ -711,6 +711,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           {activeNav === "patient-detail" && (
             <PatientDetailPage
               patientId={selectedPatientId}
+              onBack={() => setActiveNav("patients")}
               onNewVisit={(id) => {
                 setSelectedPatientId(id)
                 setActiveNav("vitals")
@@ -720,7 +721,9 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
           {activeNav === "digitize" && <DigitizePage />}
           {activeNav === "sync" && <SyncPage />}
           {activeNav === "emergency" && <EmergencyReportPage />}
-          {activeNav === "profile" && <StaffProfilePage />}
+          {activeNav === "profile" && (
+            <StaffProfilePage onBack={() => setActiveNav("dashboard")} />
+          )}
           {activeNav === "triage-queue" && (
             <EmergencyTriagePage
               onViewPatient={(id) => {

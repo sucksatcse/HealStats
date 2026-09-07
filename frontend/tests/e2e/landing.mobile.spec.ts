@@ -9,11 +9,11 @@ test.describe('Mobile landing', () => {
     await expect(page.getByText('HealStats').first()).toBeVisible()
 
     // Mobile menu toggle is available and opens the menu.
-    const menuToggle = page.getByRole('button', { name: 'Toggle menu' })
+    const menuToggle = page.getByRole('button', { name: /Toggle navigation menu|Toggle menu/i })
     await expect(menuToggle).toBeVisible()
     await menuToggle.click()
 
-    // A navigation entry appears in the opened mobile menu (Get Started is a link).
-    await expect(page.getByRole('link', { name: /Get Started/i }).first()).toBeVisible()
+    // A navigation entry appears in the opened mobile menu (Get Started is a button).
+    await expect(page.getByRole('button', { name: /Get Started/i }).first()).toBeVisible()
   })
 })

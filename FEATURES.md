@@ -73,17 +73,13 @@ HealStats is designed around:
   shows an explicit "Account not linked" screen with a Sign out action (instead of a
   dead-end); no flash of protected/admin content before authorization resolves; sign-in
   network/unexpected failures surface a plain-language error.
-- **Demo Mode**: For development and exhibition testing, `worker@clinic.org` /
-  `password123` (and the `admin@healstats.org` admin creds) use an **instant
-  client-side bypass** (network-free, deterministic, works offline). Real staff
-  credentials always go through Supabase Auth. The mock bypass is valid only
-  while RLS is disabled; enabling RLS will require real, confirmed demo sessions.
+- **Demo Bypass Removal (Task 25.1)**: All hardcoded demo credentials, synthetic sessions, and application-level auth bypasses have been completely removed. Both worker (`LoginPage.tsx`) and admin (`AdminLoginPage.tsx`) authenticate against Supabase Auth (`signInWithPassword`) and resolve real staff profiles. For deterministic testing, mock responses are strictly isolated to Playwright network route interception (`tests/e2e/helpers.ts`) and never present in production application code.
 
 ### Self-Registration (Sign Up)
 - **Status**: Implemented (`SignUpPage.tsx`).
 - **Flow**: Creates a Supabase Auth user (`supabase.auth.signUp`) and a linked `staff` row (name, email, `auth_user_id`, optional `clinic_id` chosen from the live clinics list). Handles email-confirmation vs. immediate-session cases and reports duplicate-email/validation errors inline.
-- **Security**: The role is **always `worker`** — admin accounts are never created via public signup. Reachable from the landing page → Log in → "Create an account".
-- **Limitation**: Because MVP RLS is disabled, the client can insert the `staff` row directly. Under production RLS this step should move to an Edge Function or a DB trigger (`on auth.users` insert). See `LIMITATIONS.md`.
+- **Security**: Hardened in Task 25.1 — public signup is strictly limited to clinical worker designations (`community_health_worker`, `nurse`, `clinical_officer`). The resulting database payload enforces `role: "worker"`. District administrator and patient signup options have been eliminated.
+- **Limitation**: Because MVP RLS is disabled, the client currently inserts the `staff` row directly. Under production RLS, this will be handled via the prepared `staff_self_insert` policy or a DB trigger. See `LIMITATIONS.md`.
 
 ### Role-Based Access
 - **Worker**: Authorized to log visits and register patients only for their assigned clinic.
@@ -99,14 +95,15 @@ HealStats is designed around:
 Users are mapped to physical clinics via the `staff` table (`clinic_id`). The application strictly relies on this injected ID for mutations (like patient registration) rather than trusting user-provided inputs.
 
 ### Profiles (Task 26)
-- **Staff "My Profile"** (`StaffProfilePage.tsx`): a read-only profile for the signed-in user, sourced entirely from the authenticated staff record — full name, role label (Health Worker / Administrator), assigned clinic (resolved from Supabase; "All clinics" for system-level admins), short staff ID, and best-effort account email. Reached from the shared user-menu avatar → **My Profile** in both the worker and admin dashboards. Read-only by design — name/role/clinic changes are directed to an administrator (no fake save).
-- **Patient profile** (`PatientDetailPage.tsx`): the existing patient detail experience serves as the patient profile — header (name, short ID, urgency badge on the 1–5 scale, symptom category, clinic, registered/total-visits/last-visit), plus Vitals History, Visit History and Diagnoses tabs, all from live Supabase data with honest loading/empty/error states. Only accessible to authenticated staff through the existing Patient Records / triage / outbreak navigation (no public patient route). No invented medical fields.
+- **Staff Profile** (`StaffProfilePage.tsx`): dual-mode profile supporting both self-inspection ("My Profile" accessible via the navbar user menu on both worker and admin dashboards) and administrator inspection of staff members directly from Staff Management (`StaffPage.tsx`). Sourced entirely from live Supabase data — full name, role badge (Healthcare Worker / District Administrator), assigned clinic with zone and address (resolved from Supabase; "All clinics" for district-level admins), short staff ID with copyable UUID, account email, account & security access permissions, and live central database activity metrics (total clinical visits recorded and last encounter timestamp). Back navigation (`onBack`) seamlessly returns to the dashboard or staff directory.
+- **Patient Profile** (`PatientDetailPage.tsx`): structured healthcare profile layout with Patient Header (avatar initials, name, short ID + copyable UUID, clinic, 1–5 urgency scale badge with numerical score, level label, and icon), Patient Information card (age, sex, village, registration date, facility), Latest Health Overview card (date, latest vitals, diagnosis, symptoms, clinician), Vitals History tab with sparklines & detailed table, Visit History tab with chronological timeline & expandable encounters, Diagnoses tab, honest offline-first fallback checking Dexie `offlineDb.pendingRecords` with "Saved locally (Pending Sync)" badge, loading skeleton, error banner with retry, and back navigation (`onBack`). Reachable from Patient Records, Flagged Patients, Emergency Triage, Outbreak Radar, and recent patients.
+- **Admin Staff Management Integration**: `StaffPage.tsx` exposes a "View Profile" action and clickable staff member rows (`onViewStaff`), routing directly to `StaffProfilePage` within `AdminDashboardPage.tsx`.
 
 
 ### Row Level Security (RLS)
 The intended production security architecture uses Supabase RLS to protect all tables (`clinics`, `staff`, `patients`, `visits`, `sync_log`) and Security Definer functions to enforce that workers only interact with their own clinic's data. 
-*(Note: In the current MVP development state, RLS is intentionally disabled in `initial_schema.sql` to facilitate rapid prototyping. Therefore, RLS does not currently protect the deployed MVP).*
-A prepared migration `20260905000000_enable_rls.sql` defines the clinic-scoped policies and the demo logins now establish real sessions, but RLS is **not yet applied** — it requires seeding the demo Auth users and end-to-end testing first. See `LIMITATIONS.md`.
+*(Note: In the current MVP development state, RLS is explicitly disabled in `initial_schema.sql` to facilitate rapid prototyping. Therefore, RLS does not currently protect the live database).*
+A prepared migration `20260905000000_enable_rls.sql` defines the clinic-scoped policies and self-signup worker role constraints. RLS is **prepared but unapplied** — application code is now hardened to comply with it, and activation remains a database deployment step. See `LIMITATIONS.md`.
 
 ---
 
@@ -362,6 +359,7 @@ flowchart LR
 | AI Assistant (Chatbot) | Implemented | Task 17; grounded intent engine (`chatbotService.ts`) reusing `adminService` queries for patient counts, records today, pending sync, high-risk list, outbreak status, clinic activity and patient look-up; auth/role scoped; platform how-to when signed out; never fabricates data (`ChatWidget.tsx`) |
 | Offline Storage | Implemented | Task 7; Dexie.js offlineDb with pendingRecords queue |
 | Background Sync | Implemented | Task 8; SyncService automatic sync on reconnection + SyncMonitorPage |
+| Pill Navbar Animation | Implemented | `PillNav.tsx` + `PillNav.css` integrated into `AppNavbar.tsx`; circular bottom-up fill, dual text slide, active indicator dot, subtle logo hover, animated mobile hamburger/drawer, reduced-motion support, zero-dependency pure CSS |
 | PWA | Implemented | Manifest + network-first service worker (basic) |
 | OCR | Implemented | Task 9A; Tesseract.js client-side OCR on DigitizePage |
 

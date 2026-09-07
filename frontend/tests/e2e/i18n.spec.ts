@@ -5,8 +5,8 @@ test.describe('Language switching', () => {
   test('switches to Bangla and persists across reload', async ({ page }) => {
     await page.goto('/')
 
-    // English nav CTA present (Get Started is a link to #get-started).
-    await expect(page.getByRole('link', { name: /Get Started/i }).first()).toBeVisible()
+    // English nav CTA present (Get Started button in navbar).
+    await expect(page.getByRole('button', { name: /Get Started/i }).first()).toBeVisible()
 
     // Switch to Bangla via the accessible language button.
     await page.getByRole('button', { name: 'বাংলা' }).click()
@@ -20,6 +20,6 @@ test.describe('Language switching', () => {
 
     // Switch back to English.
     await page.getByRole('button', { name: 'English' }).click()
-    await expect(page.getByRole('link', { name: /Get Started/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Get Started/i }).first()).toBeVisible()
   })
 })
