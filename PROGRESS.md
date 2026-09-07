@@ -25,7 +25,7 @@ The initial database schema (`20260831000000_initial_schema.sql`) has been compl
 ### Row-Level Security (RLS) & Policies:
 - **Status: Prepared but unapplied.**
 - In the active initial schema (`supabase/migrations/20260831000000_initial_schema.sql`), RLS is explicitly **DISABLED** (`DISABLE ROW LEVEL SECURITY`) on all tables to facilitate rapid prototyping.
-- A production migration (`supabase/migrations/20260905000000_enable_rls.sql`) is prepared with clinic-scoped policies and `SECURITY DEFINER` helper functions (`get_current_user_role`, `get_current_user_clinic_id`, `get_current_user_staff_id`), but remains unapplied.
+- A production migration (`supabase/migrations/20260905000001_enable_rls.sql`) is prepared with clinic-scoped policies and `SECURITY DEFINER` helper functions (`get_current_user_role`, `get_current_user_clinic_id`, `get_current_user_staff_id`), but remains unapplied.
 - Current security boundaries depend on application-layer gating and client-side filtering. True database-level isolation remains a future deployment/migration step.
 
 ## 3. Authentication & Authorization (Task 25 & Task 25.1 Hardened)

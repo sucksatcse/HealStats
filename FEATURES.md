@@ -103,7 +103,7 @@ Users are mapped to physical clinics via the `staff` table (`clinic_id`). The ap
 ### Row Level Security (RLS)
 The intended production security architecture uses Supabase RLS to protect all tables (`clinics`, `staff`, `patients`, `visits`, `sync_log`) and Security Definer functions to enforce that workers only interact with their own clinic's data. 
 *(Note: In the current MVP development state, RLS is explicitly disabled in `initial_schema.sql` to facilitate rapid prototyping. Therefore, RLS does not currently protect the live database).*
-A prepared migration `20260905000000_enable_rls.sql` defines the clinic-scoped policies and self-signup worker role constraints. RLS is **prepared but unapplied** — application code is now hardened to comply with it, and activation remains a database deployment step. See `LIMITATIONS.md`.
+A prepared migration `20260905000001_enable_rls.sql` defines the clinic-scoped policies and self-signup worker role constraints. RLS is **prepared but unapplied** — application code is now hardened to comply with it, and activation remains a database deployment step. See `LIMITATIONS.md`.
 
 ---
 
