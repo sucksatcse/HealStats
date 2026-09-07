@@ -309,7 +309,9 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
       ? t("profile.allClinics", "All clinics (district-level)")
       : clinic?.name
       ? clinic.name
-      : "Unassigned Clinic"
+      : (isSelfProfile && authProfile?.clinic_name)
+      ? authProfile.clinic_name
+      : t("profile.unassignedClinic", "Unassigned Clinic")
 
   return (
     <div className="flex flex-col gap-5 max-w-4xl mx-auto pb-12 px-2 sm:px-4 w-full">

@@ -19,6 +19,9 @@ import SignUpPage from "./SignUpPage"
 import NurseDashboardPage from "./NurseDashboardPage"
 import ClinicalOfficerPage from "./ClinicalOfficerPage"
 import { useAuth } from "./AuthContext"
+import HeroScrollFade from "./HeroScrollFade"
+import PublicHealthStats from "./PublicHealthStats"
+import { fetchPublicHealthMetrics, type PublicHealthStatsData } from "./lib/publicStatsService"
 
 /* ══════════════════════════════════════════════════════════════════════════════
    Landing page translations — en / bn
@@ -343,6 +346,33 @@ export default function App() {
     message?: string
   }>({})
 
+  const [publicStats, setPublicStats] = useState<PublicHealthStatsData>({
+    todayVisits: 847,
+    totalClinics: 42,
+    alert: {
+      level: "warning",
+      messageBn: "১টি এলাকায় জ্বরের প্রকোপ বেড়েছে",
+      messageEn: "Elevated fever presentations in 1 coverage area",
+      subtextBn: "নিয়মিত নজরদারি ও স্বাস্থ্য সুরক্ষা নিশ্চিত করা হচ্ছে।",
+      subtextEn: "Active surveillance and field response deployed.",
+    },
+    supplies: {
+      staffPercent: 82,
+      kitsPercent: 74,
+      ambulancePercent: 68,
+    },
+  })
+
+  useEffect(() => {
+    let active = true
+    fetchPublicHealthMetrics().then((res) => {
+      if (active) setPublicStats(res)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
   /* Synchronize browser history and URL navigation */
   useEffect(() => {
     const handlePopState = () => {
@@ -663,8 +693,8 @@ export default function App() {
           lang === "bn" ? "lang-bn" : ""
         }`}
       >
-        {/* ─── Navbar ─── */}
-        <AppNavbar
+        {/* ─── Animated Sticky Hero with Scroll Scrubbing & Fading Navbar ─── */}
+        <HeroScrollFade
           onPatientLookup={() => setPage("patient-lookup")}
           onGetStarted={() => setPage("signup")}
           onLogin={() => setPage("login")}
@@ -681,187 +711,12 @@ export default function App() {
             }
           }}
           onLogout={handleLogout}
+          lang={lang}
+          visitsCount={publicStats.todayVisits}
         />
 
-        {/* ─── Hero ─── */}
-        <section className="relative overflow-hidden" style={{background: 'transparent'}}>
-          <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-[1fr_1fr] gap-0 min-h-[calc(100vh-64px)]">
-            {/* Left: copy */}
-            <div className="flex flex-col justify-center py-16 lg:py-24 lg:pr-16 z-10">
-              <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/40 border border-teal-200 dark:border-teal-700 rounded-full px-3 py-1.5 mb-8 w-fit animate-fade-up">
-                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-                <span className="text-xs font-semibold text-teal-700 dark:text-teal-300 tracking-wide uppercase">
-                  {t.hero.badge}
-                </span>
-              </div>
-
-              <h1 className="font-display text-5xl lg:text-6xl xl:text-[68px] leading-[1.08] text-teal-950 dark:text-white mb-6 animate-fade-up stagger-1">
-                {t.hero.h1a}
-                <br />
-                <em className="not-italic text-teal-600 dark:text-teal-400">
-                  {t.hero.h1b}
-                </em>
-                {t.hero.h1c && (
-                  <>
-                    <br />
-                    {t.hero.h1c}
-                  </>
-                )}
-              </h1>
-
-              <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mb-10 animate-fade-up stagger-2">
-                {t.hero.body}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 animate-fade-up stagger-3">
-                <button
-                  onClick={() => setPage("signup")}
-                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:shadow-lg hover:shadow-teal-600/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
-                >
-                  {t.hero.ctaPrimary}
-                  <svg
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-4 h-4"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => setPage("login")}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-100 border border-teal-200 dark:border-teal-700 hover:border-teal-400 dark:hover:border-teal-500 px-6 py-3.5 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 cursor-pointer"
-                >
-                  {t.hero.ctaSecondary}
-                </button>
-              </div>
-
-              {/* Trust signals */}
-              <div className="flex flex-wrap items-center gap-5 mt-10 pt-8 border-t border-teal-100/70 dark:border-teal-800/60 animate-fade-up stagger-4">
-                {[
-                  {
-                    icon: (
-                      <path
-                        fillRule="evenodd"
-                        d="M8 1a.5.5 0 01.45.28l1.396 2.832 3.125.455a.5.5 0 01.277.852L10.9 7.63l.534 3.11a.5.5 0 01-.726.527L8 9.792l-2.708 1.474a.5.5 0 01-.726-.527l.534-3.11-2.348-2.29a.5.5 0 01.277-.853l3.125-.455L7.55 1.28A.5.5 0 018 1z"
-                        clipRule="evenodd"
-                      />
-                    ),
-                  },
-                  {
-                    icon: (
-                      <path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.83 5.17l-4.5 4.5a.5.5 0 01-.707 0l-2-2a.5.5 0 01.707-.707L7 8.646l4.123-4.123a.5.5 0 11.707.707z" />
-                    ),
-                  },
-                  {
-                    icon: (
-                      <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm-.5 2.5v3.25l2.5 1.5.5-.87-2-1.19V5.5h-1z" />
-                    ),
-                  },
-                ].map((s, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      className="w-4 h-4 text-teal-600 dark:text-teal-400"
-                    >
-                      {s.icon}
-                    </svg>
-                    {t.hero.trust[i]}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: image panel */}
-            <div className="relative hidden lg:block animate-fade-up stagger-2">
-              <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #115e59 100%)'}} />
-              <img
-                src="https://images.unsplash.com/photo-1621353880071-4752fa42cbc7?w=900&h=1000&fit=crop&auto=format"
-                alt="Healthcare worker consulting with a patient at a rural clinic"
-                className="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-55"
-              />
-              <div className="absolute inset-0" style={{background: 'linear-gradient(to br, rgba(15,118,110,0.80) 0%, rgba(13,148,136,0.55) 50%, rgba(17,94,89,0.92) 100%)'}} />
-
-              {/* Floating offline card */}
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5 border border-white/20 dark:border-slate-700/60">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-lg bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center flex-shrink-0">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="w-5 h-5 text-teal-600 dark:text-teal-400"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-teal-900 dark:text-white">
-                      {t.hero.offlineMode}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      {t.hero.recordsQueued}
-                    </p>
-                  </div>
-                  <span className="ml-auto w-2.5 h-2.5 rounded-full bg-amber-400 flex-shrink-0 mt-1" />
-                </div>
-                <div className="h-1.5 bg-teal-100 dark:bg-teal-900/40 rounded-full overflow-hidden">
-                  <div className="h-full w-[62%] bg-teal-500 rounded-full" />
-                </div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
-                  {t.hero.lastSynced}
-                </p>
-              </div>
-
-              {/* Top-right label */}
-              <div className="absolute top-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white shadow-lg">
-                <p className="text-xs font-semibold uppercase tracking-widest text-teal-100 mb-1">
-                  {t.hero.activeToday}
-                </p>
-                <p className="text-2xl font-display text-white">
-                  {t.hero.visits}
-                </p>
-                <p className="text-xs text-teal-200 mt-0.5">
-                  {t.hero.activeSub}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Stats strip ─── */}
-        <section
-          className="py-14 border-y border-teal-800/40 shadow-inner"
-          id="stats"
-          style={{background: 'linear-gradient(135deg, #0a2e2b 0%, #0f766e 50%, #115e59 100%)'}}
-        >
-          <div className="max-w-7xl mx-auto px-6 lg:px-10">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-teal-700/60">
-              {t.stats.map(({ value, label }) => (
-                <div key={label} className="text-center lg:px-8">
-                  <p className="font-display text-4xl lg:text-5xl text-white mb-1.5 tracking-tight">
-                    {value}
-                  </p>
-                  <p className="text-sm text-teal-200 font-medium">
-                    {label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* ─── Simplified Public Health Statistics Section (Viewport Reveal) ─── */}
+        <PublicHealthStats data={publicStats} lang={lang} />
 
         {/* ─── Features ─── */}
         <section className="py-24" id="features" style={{background: 'transparent'}}>
