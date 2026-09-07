@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase"
 interface AdminLoginPageProps {
   onBack: () => void
   onLogin: () => void
+  onAuthenticatingChange?: (pending: boolean) => void
 }
 
 // ── Left panel illustration pieces ────────────────────────────────────────────
@@ -233,6 +234,7 @@ const PANEL_STATS = [
 export default function AdminLoginPage({
   onBack,
   onLogin,
+  onAuthenticatingChange,
 }: AdminLoginPageProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -260,6 +262,7 @@ export default function AdminLoginPage({
     }
     setError("")
     setLoading(true)
+    onAuthenticatingChange?.(true)
 
     try {
       const { data: authData, error: authError } =
@@ -274,9 +277,17 @@ export default function AdminLoginPage({
         return
       }
 
-      // Enforce admin-only access at this entry point: a valid non-admin login
-      // must not be granted admin routing. Reject and sign back out.
       const userId = authData.user?.id
+      const metaDesignation = authData.user?.user_metadata?.designation
+
+      // Explicitly disallow Nurse and Clinical Officer from Admin panel
+      if (metaDesignation === "nurse" || metaDesignation === "clinical_officer") {
+        await supabase.auth.signOut()
+        setError("Access denied: Nurse and Clinical Officer accounts cannot access the Admin panel. Please sign in via the healthcare worker portal.")
+        setLoading(false)
+        return
+      }
+
       const { data: staff } = await supabase
         .from("staff")
         .select("role")
@@ -295,6 +306,8 @@ export default function AdminLoginPage({
     } catch {
       setError("Unable to reach the server. Check your connection and try again.")
       setLoading(false)
+    } finally {
+      onAuthenticatingChange?.(false)
     }
   }
 

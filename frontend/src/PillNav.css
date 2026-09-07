@@ -311,7 +311,7 @@
   transition: background 0.18s ease, border-color 0.18s ease;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .hs-desktop-pill-nav {
     display: inline-flex !important;
     flex: 0 0 auto !important;

@@ -388,6 +388,23 @@ export default function PatientRecordsPage({
     fetchPatients()
   }, [profile])
 
+  const [sortBy, setSortBy] = useState<"recent" | "urgency-desc" | "urgency-asc" | "name">("recent")
+
+  const URGENCY_RANK: Record<Urgency, number> = {
+    Critical: 5,
+    High: 4,
+    Moderate: 3,
+    Low: 2,
+    Stable: 1,
+  }
+
+  const SORT_OPTIONS: { id: "recent" | "urgency-desc" | "urgency-asc" | "name"; label: string }[] = [
+    { id: "recent", label: "Recent Visit" },
+    { id: "urgency-desc", label: "Highest Urgency (Critical first)" },
+    { id: "urgency-asc", label: "Lowest Urgency (Stable first)" },
+    { id: "name", label: "Name (A–Z)" },
+  ]
+
   const VILLAGES = Array.from(new Set(patients.map((p) => p.village))).sort()
   const VILLAGE_OPTIONS = ["All", ...VILLAGES]
 
@@ -398,7 +415,7 @@ export default function PatientRecordsPage({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return patients.filter((r) => {
+    const list = patients.filter((r) => {
       const matchesQuery =
         q === "" ||
         r.name.toLowerCase().includes(q) ||
@@ -413,7 +430,24 @@ export default function PatientRecordsPage({
 
       return matchesQuery && matchesUrgency && matchesVillage && matchesClinic
     })
-  }, [patients, query, urgency, village, clinic])
+
+    return list.slice().sort((a, b) => {
+      if (sortBy === "urgency-desc") {
+        const diff = URGENCY_RANK[b.urgency] - URGENCY_RANK[a.urgency]
+        if (diff !== 0) return diff
+        return a.lastVisitSort - b.lastVisitSort
+      }
+      if (sortBy === "urgency-asc") {
+        const diff = URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency]
+        if (diff !== 0) return diff
+        return a.lastVisitSort - b.lastVisitSort
+      }
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name)
+      }
+      return a.lastVisitSort - b.lastVisitSort
+    })
+  }, [patients, query, urgency, village, clinic, sortBy])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -429,13 +463,15 @@ export default function PatientRecordsPage({
   const activeFilters =
     (urgency !== "All" ? 1 : 0) +
     (village !== "All" ? 1 : 0) +
-    (clinic !== "All" ? 1 : 0)
+    (clinic !== "All" ? 1 : 0) +
+    (sortBy !== "recent" ? 1 : 0)
 
   const clearAllFilters = () => {
     setQuery("")
     setUrgency("All")
     setVillage("All")
     setClinic("All")
+    setSortBy("recent")
     setPage(1)
   }
 
@@ -511,6 +547,24 @@ export default function PatientRecordsPage({
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => fetchPatients()}
+            disabled={isLoading}
+            title="Refresh patient list"
+            aria-label="Refresh patient list"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 hover:text-teal-700 dark:hover:border-teal-700 dark:hover:text-teal-300 bg-white dark:bg-slate-900 px-3.5 py-2.5 rounded-xl transition-all disabled:opacity-40"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button
             onClick={exportCSV}
             disabled={filtered.length === 0}
             className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 hover:text-teal-700 dark:hover:border-teal-700 dark:hover:text-teal-300 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
@@ -565,6 +619,18 @@ export default function PatientRecordsPage({
           onChange={(v) => {
             setUrgency(v)
             resetPage()
+          }}
+        />
+        <Dropdown
+          label="Sort"
+          value={SORT_OPTIONS.find((s) => s.id === sortBy)?.label || "Recent Visit"}
+          options={SORT_OPTIONS.map((s) => s.label)}
+          onChange={(selectedLabel) => {
+            const match = SORT_OPTIONS.find((s) => s.label === selectedLabel)
+            if (match) {
+              setSortBy(match.id)
+              resetPage()
+            }
           }}
         />
         <Dropdown

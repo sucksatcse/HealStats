@@ -22,6 +22,8 @@ HealStats is an offline-first healthcare record and disaster-response platform d
 |---|---|---|---|
 | Authentication | Security | Implemented | Critical |
 | Role-Based Access | Security | Implemented | Critical |
+| Nurse Station & Vitals | Clinical Operations | Implemented | Critical |
+| Clinical Officer Station | Clinical Operations | Implemented | Critical |
 | Patient Registration | Patient Records | Implemented | Critical |
 | Patient Search | Patient Records | Implemented | High |
 | Visit Records & Forms | Patient Records | Implemented | High |
@@ -74,6 +76,8 @@ HealStats is designed around:
   dead-end); no flash of protected/admin content before authorization resolves; sign-in
   network/unexpected failures surface a plain-language error.
 - **Demo Bypass Removal (Task 25.1)**: All hardcoded demo credentials, synthetic sessions, and application-level auth bypasses have been completely removed. Both worker (`LoginPage.tsx`) and admin (`AdminLoginPage.tsx`) authenticate against Supabase Auth (`signInWithPassword`) and resolve real staff profiles. For deterministic testing, mock responses are strictly isolated to Playwright network route interception (`tests/e2e/helpers.ts`) and never present in production application code.
+- **QA regression fixes (2026-09-08)**: Login no longer creates missing staff rows or fabricates a profile from user metadata. If staff lookup (including the existing email fallback) cannot find a record, protected content remains inaccessible and Account not linked is shown. Routing waits for profile resolution and admin-login authorization before navigating; rejected admin sign-ins stay on the login screen with an error. Signup provisioning is unchanged and must successfully create a real staff record.
+- **Public entry points**: Log In opens authentication; Sign Up and the hero Get Started button open registration. Logout returns to the public landing page. Guest navbar auth actions live in the drawer below 1280px to prevent overlap with language, theme, and menu controls.
 
 ### Self-Registration (Sign Up)
 - **Status**: Implemented (`SignUpPage.tsx`).
@@ -81,15 +85,19 @@ HealStats is designed around:
 - **Security**: Hardened in Task 25.1 — public signup is strictly limited to clinical worker designations (`community_health_worker`, `nurse`, `clinical_officer`). The resulting database payload enforces `role: "worker"`. District administrator and patient signup options have been eliminated.
 - **Limitation**: Because MVP RLS is disabled, the client currently inserts the `staff` row directly. Under production RLS, this will be handled via the prepared `staff_self_insert` policy or a DB trigger. See `LIMITATIONS.md`.
 
-### Role-Based Access
-- **Worker**: Authorized to log visits and register patients only for their assigned clinic.
-- **Admin**: Authorized to view aggregated analytics across all clinics.
-- **Enforcement**: Route access is gated in `App.tsx` by session + resolved `role` (not
-  merely by hiding navigation links) — a worker cannot land on the admin dashboard, and
-  unauthenticated users cannot render protected pages. The admin login screen additionally
-  rejects a valid non-admin account (signs out with a clear message) rather than routing it
-  onward. Note this is **client-side** enforcement; true server-side isolation requires
-  enabling RLS (see below).
+### Role-Based Access & Strict Role Boundaries
+- **Admin**: Authorized solely for administrative oversight (Clinic ops, Staff management, Patient directory overview, Analytics, Outbreak radar). Admins do not have access to Nurse Station or Clinical Officer Station clinical workflow pages.
+- **Nurse**: Authorized for patient triage, vitals recording (BP, pulse, temp, SpO2, respiratory rate, BMI), visit notes, and urgency management (1–5 urgency scale). Nurses are strictly forbidden from the Admin panel and Clinical Officer Station.
+- **Clinical Officer**: Authorized for patient diagnosis (primary/secondary), clinical findings evaluation, treatment planning, and multi-medication prescribing. Clinical Officers view nurse vitals in read-only mode and cannot modify nurse triage urgency. Clinical Officers are strictly forbidden from the Admin panel and Nurse Station.
+- **Community Health Worker (CHW)**: Authorized for basic community patient registration, intake vitals, and offline field queueing. CHWs are forbidden from the Admin panel.
+- **Enforcement**: Strict, multi-layered role gating:
+  1. `App.tsx` redirects Nurses attempting to access `/admin` or `/clinical-officer` back to `/nurse`.
+  2. `App.tsx` redirects Clinical Officers attempting to access `/admin` or `/nurse` back to `/clinical-officer`.
+  3. `App.tsx` redirects Admins attempting to access `/nurse` or `/clinical-officer` back to `/admin`.
+  4. Render-time guards prevent any flash of unauthorized screens before redirects resolve.
+  5. `AdminLoginPage.tsx` actively inspects account designation and rejects any Nurse or Clinical Officer credentials with access denied.
+  6. `AppNavbar.tsx` user menu dynamically renders ONLY the specific workstation relevant to the user's role.
+  7. `LoginPage.tsx` includes an intuitive Workstation selector (Auto-detect, Nurse Station, Clinical Officer) and directly routes users upon authentication to their respective station without ever redirecting to the admin page.
 
 ### Clinic-Level Access
 Users are mapped to physical clinics via the `staff` table (`clinic_id`). The application strictly relies on this injected ID for mutations (like patient registration) rather than trusting user-provided inputs.
@@ -139,6 +147,19 @@ A prepared migration `20260905000001_enable_rls.sql` defines the clinic-scoped p
   - Diagnosis / assessment → `diagnosis`; Urgency Score 1–5 → `urgency_score` (the on-device AI Urgency Check pre-fills a suggestion; the worker can override).
   - Saves directly to `visits` with `patient_id`, `staff_id` (from the authenticated staff profile) and `synced_at`. Shows a success screen linking to the patient record.
 - **Limitations**: Online only (no offline queue yet). English-only strings, consistent with the rest of the clinical forms. Visits cannot be edited after saving.
+
+### Nurse Station & Clinical Urgency Management (Task 27)
+- **Status**: Implemented (`NurseDashboardPage.tsx`, `/nurse`)
+- **Purpose**: Dedicated clinical station tailored for staff nurses and clinical officers to triage patients, document vitals, record timestamped clinical notes, and manage patient urgency levels with live synchronization to the central administration directory.
+- **Features**:
+  - **Clinical KPI Banner & Metrics**: Displays live counters for Total Patients in Care, Critical (Level 5) Cases with animated pulse indicators, High Urgency (Level 4) Cases, and Today's Encounters.
+  - **Live Triage Queue**: Search across patient name, ID, village, and clinic; filter by 5 standard urgency levels (Critical, High, Moderate, Low, Stable); sort by Highest Urgency first, Recent Visit, or Name.
+  - **Patient Clinical Drawer**:
+    - **Urgency Assessment**: 5 urgency levels with clinical guidance. Updating urgency persists an assessment entry in `visits` via `updatePatientUrgency`, instantly reflecting in the Admin Patients directory.
+    - **Record Vitals**: Validation for Blood Pressure (systolic/diastolic), Pulse/Heart Rate, Temperature (°C), Oxygen Saturation (SpO2 % with hypoxemia warnings below 92%), Respiratory Rate, Weight (kg), and Height (cm). Saves directly to database with offline fallback (`offlineDb.pendingRecords`).
+    - **Visit Notes**: Add nursing observations and interventions with staff author attribution and chronological timeline.
+    - **Chronological History**: Past vitals readings with abnormal highlights, timestamps, and staff attribution.
+  - **Admin Integration**: Admin Patients table (`PatientRecordsPage.tsx`) immediately displays the updated urgency, allows 1–5 urgency filtering, column sorting (Highest Urgency first, Recent, Name), and live one-click refresh.
 
 ---
 
