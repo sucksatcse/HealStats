@@ -30,16 +30,27 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
   const { profile: authProfile } = useAuth()
   const { t } = useTranslation()
 
-  const [staff, setStaff] = useState<StaffData | null>(null)
+  const isSelfProfile = !staffId || staffId === authProfile?.id
+  const effectiveStaffId = staffId || authProfile?.id
+
+  const [staff, setStaff] = useState<StaffData | null>(() => {
+    if (isSelfProfile && authProfile) {
+      return {
+        id: authProfile.id,
+        name: authProfile.name,
+        role: authProfile.role,
+        clinic_id: authProfile.clinic_id,
+        email: null,
+      }
+    }
+    return null
+  })
   const [clinic, setClinic] = useState<StaffClinic | null>(null)
   const [totalVisits, setTotalVisits] = useState<number | null>(null)
   const [lastVisitAt, setLastVisitAt] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !(isSelfProfile && authProfile))
   const [error, setError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState(false)
-
-  const isSelfProfile = !staffId || staffId === authProfile?.id
-  const effectiveStaffId = staffId || authProfile?.id
 
   const copyId = () => {
     if (!effectiveStaffId) return
@@ -54,7 +65,9 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
       return
     }
 
-    setLoading(true)
+    if (!(isSelfProfile && authProfile)) {
+      setLoading(true)
+    }
     setError(null)
 
     try {
@@ -86,34 +99,38 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
           email: null,
         }
 
-        // Fetch clinic details & email for authenticated user
-        const [staffRes, clinicRes] = await Promise.all([
-          supabase
-            .from("staff")
-            .select("email, clinics ( id, name, zone, address )")
-            .eq("id", authProfile.id)
-            .maybeSingle(),
-          authProfile.clinic_id
-            ? supabase
-                .from("clinics")
-                .select("id, name, zone, address")
-                .eq("id", authProfile.clinic_id)
-                .maybeSingle()
-            : Promise.resolve({ data: null, error: null }),
-        ])
+        try {
+          // Fetch clinic details & email for authenticated user
+          const [staffRes, clinicRes] = await Promise.all([
+            supabase
+              .from("staff")
+              .select("email, clinics ( id, name, zone, address )")
+              .eq("id", authProfile.id)
+              .maybeSingle(),
+            authProfile.clinic_id
+              ? supabase
+                  .from("clinics")
+                  .select("id, name, zone, address")
+                  .eq("id", authProfile.clinic_id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
+          ])
 
-        if (staffRes.data?.email) {
-          currentStaff.email = staffRes.data.email
+          if (staffRes.data?.email) {
+            currentStaff.email = staffRes.data.email
+          }
+          if (staffRes.data?.clinics) {
+            setClinic(staffRes.data.clinics as unknown as StaffClinic)
+          } else if (clinicRes.data) {
+            setClinic(clinicRes.data as unknown as StaffClinic)
+          } else {
+            setClinic(null)
+          }
+        } catch (enrichErr) {
+          console.warn("Could not enrich staff profile details:", enrichErr)
         }
+
         setStaff(currentStaff)
-
-        if (staffRes.data?.clinics) {
-          setClinic(staffRes.data.clinics as unknown as StaffClinic)
-        } else if (clinicRes.data) {
-          setClinic(clinicRes.data as unknown as StaffClinic)
-        } else {
-          setClinic(null)
-        }
       }
 
       // 2. Fetch clinical activity statistics for this staff member (read-only)
@@ -147,7 +164,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
     } finally {
       setLoading(false)
     }
-  }, [effectiveStaffId, staffId, authProfile])
+  }, [effectiveStaffId, staffId, authProfile, isSelfProfile])
 
   useEffect(() => {
     loadProfile()

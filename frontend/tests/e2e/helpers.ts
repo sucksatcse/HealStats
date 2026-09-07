@@ -172,12 +172,23 @@ export async function setupAuthMockRoutes(page: Page): Promise<void> {
       const acceptHeader = route.request().headers()['accept'] || ''
       const isSingle = acceptHeader.includes('application/vnd.pgrst.object+json')
 
-      if (url.includes('auth_user_id=eq.00000000-0000-0000-0000-000000000001')) {
+      if (
+        url.includes('auth_user_id=eq.00000000-0000-0000-0000-000000000001') ||
+        url.includes('id=eq.staff-worker-1')
+      ) {
         const row = {
           id: 'staff-worker-1',
           name: 'Test Worker',
           role: 'worker',
           clinic_id: '11111111-1111-1111-1111-111111111111',
+          email: WORKER.email,
+          auth_user_id: '00000000-0000-0000-0000-000000000001',
+          clinics: {
+            id: '11111111-1111-1111-1111-111111111111',
+            name: "Cox's Bazar Camp Clinic 1",
+            zone: 'Camp 4',
+            address: 'Block B, Camp 4',
+          },
         }
         return route.fulfill({
           status: 200,
@@ -187,12 +198,18 @@ export async function setupAuthMockRoutes(page: Page): Promise<void> {
         })
       }
 
-      if (url.includes('auth_user_id=eq.00000000-0000-0000-0000-000000000002')) {
+      if (
+        url.includes('auth_user_id=eq.00000000-0000-0000-0000-000000000002') ||
+        url.includes('id=eq.staff-admin-1')
+      ) {
         const row = {
           id: 'staff-admin-1',
           name: 'System Admin',
           role: 'admin',
           clinic_id: null,
+          email: ADMIN.email,
+          auth_user_id: '00000000-0000-0000-0000-000000000002',
+          clinics: null,
         }
         return route.fulfill({
           status: 200,
@@ -216,6 +233,73 @@ export async function setupAuthMockRoutes(page: Page): Promise<void> {
             : JSON.stringify([]),
         })
       }
+
+      // Default staff directory list for admin directory view
+      const allStaff = [
+        {
+          id: 'staff-worker-1',
+          name: 'Test Worker',
+          role: 'worker',
+          clinic_id: '11111111-1111-1111-1111-111111111111',
+          email: WORKER.email,
+          clinics: {
+            id: '11111111-1111-1111-1111-111111111111',
+            name: "Cox's Bazar Camp Clinic 1",
+            zone: 'Camp 4',
+          },
+        },
+        {
+          id: 'staff-admin-1',
+          name: 'System Admin',
+          role: 'admin',
+          clinic_id: null,
+          email: ADMIN.email,
+          clinics: null,
+        },
+      ]
+      return route.fulfill({
+        status: 200,
+        contentType: isSingle ? 'application/vnd.pgrst.object+json' : 'application/json',
+        headers: { 'content-range': `0-${allStaff.length - 1}/${allStaff.length}` },
+        body: JSON.stringify(isSingle ? allStaff[0] : allStaff),
+      })
+    }
+
+    if (url.includes('/rest/v1/clinics') && method === 'GET') {
+      const acceptHeader = route.request().headers()['accept'] || ''
+      const isSingle = acceptHeader.includes('application/vnd.pgrst.object+json')
+      const clinic = {
+        id: '11111111-1111-1111-1111-111111111111',
+        name: "Cox's Bazar Camp Clinic 1",
+        zone: 'Camp 4',
+        address: 'Block B, Camp 4',
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: isSingle ? 'application/vnd.pgrst.object+json' : 'application/json',
+        headers: { 'content-range': '0-0/1' },
+        body: JSON.stringify(isSingle ? clinic : [clinic]),
+      })
+    }
+
+    if (url.includes('/rest/v1/visits') && (method === 'GET' || method === 'HEAD')) {
+      if (method === 'HEAD') {
+        return route.fulfill({
+          status: 200,
+          headers: { 'content-range': '0-0/5' },
+        })
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'content-range': '0-0/1' },
+        body: JSON.stringify([
+          {
+            id: 'visit-1',
+            created_at: '2026-09-07T10:00:00.000Z',
+          },
+        ]),
+      })
     }
 
     if (url.includes('/rest/v1/staff') && method === 'POST') {
