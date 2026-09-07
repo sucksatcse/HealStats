@@ -12,22 +12,21 @@
 
 ## 1. Security & Secrets (highest priority)
 
-- 🟡 **Row Level Security (RLS) is DISABLED** in the active MVP migration
-  (`supabase/migrations/20260831000000_initial_schema.sql`). Everything is
-  code-ready to turn it on:
+- 🟡 **Row Level Security (RLS) is DISABLED** in the active MVP database
+  (`supabase/migrations/20260831000000_initial_schema.sql`). Everything in application
+  code is hardened and ready to turn it on:
   - `20260905000000_enable_rls.sql` defines clinic-scoped policies (admin = all
     clinics, worker = own clinic; self-signup INSERT guarded to `role='worker'`).
-  - The demo logins (`AuthContext.loginDemoUser/loginDemoAdmin`) use an instant
-    client-side bypass (no `auth.uid()`); enabling RLS will additionally require
-    switching demo mode to real, confirmed + `staff`-linked Supabase sessions.
-  Remaining to fully enable (needs Supabase credentials / dashboard access):
-  (1) seed the two demo Auth users (`worker@clinic.org`, `admin@healstats.org`)
-  and link their `staff` rows; (2) apply the migration to the project;
-  (3) re-test every signed-in flow. Until then, access is gated at the app layer.
+  - Hardcoded demo authentication bypasses have been completely removed in Task 25.1.
+    All logins use real `supabase.auth.signInWithPassword` and look up actual `staff` profiles.
+  Remaining to fully enable (requires database authorization / deployment):
+  (1) seed confirmed Auth users (`worker@clinic.org`, `admin@healstats.org`) with matching
+  `staff` rows; (2) apply `20260905000000_enable_rls.sql` to the Supabase database;
+  (3) re-test all flows against active RLS. Until applied, security is enforced at the application layer.
 - ⬜ **Self-signup inserts the `staff` row from the client** (`SignUpPage.tsx`),
-  which only works because RLS is disabled. Under production RLS this must move to
-  an Edge Function or a DB trigger on `auth.users` insert. The role is hardcoded
-  `worker` (never admin) as a safeguard.
+  which only works because RLS is disabled. Under production RLS, this will be protected
+  by the prepared `staff_self_insert` policy (or moved to a DB trigger on `auth.users`).
+  The role is strictly hardcoded to `worker` (admin and patient options removed in Task 25.1).
 
 ---
 

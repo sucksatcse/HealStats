@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { supabase } from "./lib/supabase"
 import { SYMPTOM_CATEGORIES, URGENCY_LEVELS } from "./VitalsPage"
+import { offlineDb } from "./lib/offlineDb"
+import { useTranslation } from "react-i18next"
 
-// ── Types (mirror supabase/migrations/20260831000000_initial_schema.sql) ──────
+// ── Types (mirror supabase schema) ──────────────────────────────────────────
 type Patient = {
   id: string
   name: string
@@ -10,7 +12,8 @@ type Patient = {
   sex: string | null
   village: string | null
   created_at: string
-  clinics: { name: string } | null
+  clinics: { name: string; zone?: string | null; address?: string | null } | null
+  isOfflinePending?: boolean
 }
 
 type Vitals = Partial<
@@ -41,24 +44,35 @@ type Visit = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const shortId = (id: string) => id.split("-")[0].toUpperCase()
-const sexLabel = (s: string | null) =>
-  s === "F" ? "Female" : s === "M" ? "Male" : (s ?? "—")
-const fmtDate = (iso: string, withYear = true) =>
-  new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    ...(withYear ? { year: "numeric" } : {}),
-  })
-const fmtTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+
+const fmtDate = (iso: string, withYear = true) => {
+  if (!iso) return "—"
+  try {
+    return new Date(iso).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      ...(withYear ? { year: "numeric" } : {}),
+    })
+  } catch {
+    return iso
+  }
+}
+
+const fmtTime = (iso: string) => {
+  if (!iso) return ""
+  try {
+    return new Date(iso).toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  } catch {
+    return ""
+  }
+}
+
 const categoryLabel = (v: string | null) =>
   SYMPTOM_CATEGORIES.find((c) => c.value === v)?.label ?? v ?? "—"
-const urgencyLabel = (score: number | null) =>
-  URGENCY_LEVELS.find((u) => u.score === score)?.label ??
-  (score !== null && score >= 5 ? "Critical" : null)
+
 const initialsOf = (name: string) => {
   const parts = name.trim().split(/\s+/)
   return (
@@ -88,7 +102,7 @@ function Sparkline({
   const range = maxVal - minVal || 1
 
   const pts = data.map((v, i) => ({
-    x: pad.x + (i / (data.length - 1)) * w,
+    x: pad.x + (i / Math.max(1, data.length - 1)) * w,
     y: pad.y + h - ((v - minVal) / range) * h,
   }))
 
@@ -104,10 +118,11 @@ function Sparkline({
       width="100%"
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
+      className="overflow-visible"
     >
       <defs>
         <linearGradient
-          id={`grad-${color.replace(/[^a-z]/gi, "")}`}
+          id={`grad-${color.replace(/[^a-z0-9]/gi, "")}`}
           x1="0"
           y1="0"
           x2="0"
@@ -117,7 +132,7 @@ function Sparkline({
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={fillPath} fill={`url(#grad-${color.replace(/[^a-z]/gi, "")})`} />
+      <path d={fillPath} fill={`url(#grad-${color.replace(/[^a-z0-9]/gi, "")})`} />
       <path
         d={path}
         fill="none"
@@ -141,44 +156,162 @@ function Sparkline({
   )
 }
 
-// ── Urgency badge ──────────────────────────────────────────────────────────────
-const URGENCY_BADGE_CLS: Record<string, string> = {
-  Critical: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50",
-  High: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50",
-  Moderate: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50",
-  Low: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/50",
-  Stable: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50",
-}
+// ── Urgency Visual System (Section 15 of skill) ────────────────────────────────
+function UrgencyBadge({
+  score,
+  size = "md",
+}: {
+  score: number | null
+  size?: "sm" | "md" | "lg"
+}) {
+  const { t } = useTranslation()
 
-function UrgencyBadge({ score }: { score: number | null }) {
-  const label = urgencyLabel(score)
-  const cls = label
-    ? URGENCY_BADGE_CLS[label]
-    : "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-800"
+  if (score === 5) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 font-bold rounded-full bg-red-600 text-white shadow-sm shadow-red-600/30 ${
+          size === "sm"
+            ? "text-[10px] px-2 py-0.5"
+            : size === "lg"
+            ? "text-xs px-3 py-1"
+            : "text-[11px] px-2.5 py-0.5"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">
+          <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <span>Level 5 · {t("urgency.Critical", "Critical")}</span>
+      </span>
+    )
+  }
+
+  if (score === 4) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 font-semibold rounded-full bg-orange-500 text-white shadow-sm shadow-orange-500/25 ${
+          size === "sm"
+            ? "text-[10px] px-2 py-0.5"
+            : size === "lg"
+            ? "text-xs px-3 py-1"
+            : "text-[11px] px-2.5 py-0.5"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <span>Level 4 · {t("urgency.High", "High")}</span>
+      </span>
+    )
+  }
+
+  if (score === 3) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 font-semibold rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800 ${
+          size === "sm"
+            ? "text-[10px] px-2 py-0.5"
+            : size === "lg"
+            ? "text-xs px-3 py-1"
+            : "text-[11px] px-2.5 py-0.5"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        <span>Level 3 · {t("urgency.Moderate", "Moderate")}</span>
+      </span>
+    )
+  }
+
+  if (score === 2) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 font-semibold rounded-full bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800 ${
+          size === "sm"
+            ? "text-[10px] px-2 py-0.5"
+            : size === "lg"
+            ? "text-xs px-3 py-1"
+            : "text-[11px] px-2.5 py-0.5"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        <span>Level 2 · {t("urgency.Low", "Low")}</span>
+      </span>
+    )
+  }
+
   return (
     <span
-      className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${cls}`}
+      className={`inline-flex items-center gap-1.5 font-semibold rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 ${
+        size === "sm"
+          ? "text-[10px] px-2 py-0.5"
+          : size === "lg"
+          ? "text-xs px-3 py-1"
+          : "text-[11px] px-2.5 py-0.5"
+      }`}
     >
-      {label ?? "Unscored"}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+      <span>Level 1 · {t("urgency.Stable", "Stable")}</span>
     </span>
   )
 }
 
-// ── Tab bar ────────────────────────────────────────────────────────────────────
+// ── Tab bar definition ─────────────────────────────────────────────────────────
 const TABS = [
-  { id: "vitals", label: "Vitals History" },
-  { id: "visits", label: "Visit History" },
-  { id: "diagnosis", label: "Diagnoses" },
+  { id: "vitals", labelKey: "profile.vitalsHistory", defaultLabel: "Vitals History" },
+  { id: "visits", labelKey: "profile.visitHistory", defaultLabel: "Visit History" },
+  { id: "diagnosis", labelKey: "profile.diagnoses", defaultLabel: "Diagnoses" },
 ]
 
-// ── Main ───────────────────────────────────────────────────────────────────────
+// ── Skeleton Loader ───────────────────────────────────────────────────────────
+function ProfileSkeleton() {
+  return (
+    <div className="flex flex-col gap-5 max-w-5xl mx-auto pb-10 w-full animate-pulse" role="status" aria-label="Loading patient record">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm">
+        <div className="flex items-start gap-5">
+          <div className="w-20 h-20 rounded-2xl bg-slate-200 dark:bg-slate-800 flex-shrink-0" />
+          <div className="flex-1 space-y-2.5">
+            <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+            <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-full w-28" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-1">
+              <div className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded w-16" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 h-64 shadow-sm" />
+    </div>
+  )
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function PatientDetailPage({
   patientId,
   onNewVisit,
+  onBack,
 }: {
   patientId?: string | null
   onNewVisit?: (patientId: string) => void
+  onBack?: () => void
 }) {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<"vitals" | "visits" | "diagnosis">("vitals")
   const [visitExpanded, setVisitExpanded] = useState<number | null>(0)
 
@@ -186,53 +319,131 @@ export default function PatientDetailPage({
   const [visits, setVisits] = useState<Visit[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [copiedUuid, setCopiedUuid] = useState(false)
 
-  useEffect(() => {
+  const copyPatientUuid = () => {
+    if (!patient?.id) return
+    navigator.clipboard.writeText(patient.id)
+    setCopiedUuid(true)
+    setTimeout(() => setCopiedUuid(false), 2000)
+  }
+
+  const loadPatientData = useCallback(async () => {
     if (!patientId) {
       setLoading(false)
       return
     }
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      setError(null)
-      setPatient(null)
-      setVisits([])
-      try {
-        const [pRes, vRes] = await Promise.all([
-          supabase
-            .from("patients")
-            .select("id, name, age, sex, village, created_at, clinics ( name )")
-            .eq("id", patientId)
-            .maybeSingle(),
-          supabase
-            .from("visits")
-            .select(
-              "id, created_at, vitals, symptoms, symptom_category, diagnosis, urgency_score, synced_at, staff ( name )",
-            )
-            .eq("patient_id", patientId)
-            .order("created_at", { ascending: false }),
-        ])
-        if (pRes.error) throw pRes.error
-        if (vRes.error) throw vRes.error
-        if (cancelled) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // 1. First attempt to fetch from central Supabase
+      const [pRes, vRes] = await Promise.all([
+        supabase
+          .from("patients")
+          .select("id, name, age, sex, village, created_at, clinics ( name, zone, address )")
+          .eq("id", patientId)
+          .maybeSingle(),
+        supabase
+          .from("visits")
+          .select(
+            "id, created_at, vitals, symptoms, symptom_category, diagnosis, urgency_score, synced_at, staff ( name )",
+          )
+          .eq("patient_id", patientId)
+          .order("created_at", { ascending: false }),
+      ])
+
+      if (pRes.data) {
         setPatient((pRes.data as unknown as Patient) ?? null)
         setVisits((vRes.data as unknown as Visit[]) ?? [])
         setVisitExpanded(0)
-      } catch (err: any) {
-        console.error(err)
-        if (!cancelled) setError(err.message || "Failed to load patient.")
-      } finally {
-        if (!cancelled) setLoading(false)
+        setLoading(false)
+        return
       }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [patientId])
 
-  // Oldest → newest, only visits that captured vitals
+      // If patient not found on remote, check if there was a network failure
+      if (pRes.error) {
+        throw pRes.error
+      }
+    } catch (err: any) {
+      console.warn("Remote fetch failed, inspecting offline cache for patient", patientId, err?.message)
+    }
+
+    // 2. Offline / Local fallback: check Dexie offlineDb for pending records
+    try {
+      const pendingPatients = await offlineDb.pendingRecords
+        .where("type")
+        .equals("patient")
+        .toArray()
+
+      const localPatientRecord = pendingPatients.find(
+        (r) => r.id === patientId || r.payload?.id === patientId,
+      )
+
+      if (localPatientRecord) {
+        const p = localPatientRecord.payload
+        setPatient({
+          id: p.id || localPatientRecord.id,
+          name: p.name || "Unnamed Patient",
+          age: p.age ?? null,
+          sex: p.sex ?? null,
+          village: p.village ?? null,
+          created_at: p.created_at || new Date(localPatientRecord.createdAt).toISOString(),
+          clinics: p.clinic_id ? { name: "Local Clinic (Pending Sync)" } : null,
+          isOfflinePending: true,
+        })
+
+        // Also check for pending visits for this patient
+        const pendingVisits = await offlineDb.pendingRecords
+          .where("type")
+          .equals("visit")
+          .toArray()
+
+        const localVisits = pendingVisits
+          .filter((v) => v.payload?.patient_id === patientId)
+          .map((v) => ({
+            id: v.id,
+            created_at: v.payload?.created_at || new Date(v.createdAt).toISOString(),
+            vitals: v.payload?.vitals || null,
+            symptoms: v.payload?.symptoms || null,
+            symptom_category: v.payload?.symptom_category || null,
+            diagnosis: v.payload?.diagnosis || null,
+            urgency_score: v.payload?.urgency_score ?? null,
+            synced_at: null,
+            staff: { name: "You (Saved locally)" },
+          }))
+
+        setVisits(localVisits)
+        setVisitExpanded(0)
+        setLoading(false)
+        return
+      }
+    } catch (offlineErr) {
+      console.error("Failed checking offline cache:", offlineErr)
+    }
+
+    // 3. Neither remote nor local record available
+    if (!navigator.onLine) {
+      setError(
+        t(
+          "profile.offlineNotice",
+          "You are currently offline. This record is not stored locally and requires an active internet connection to load from Supabase.",
+        ),
+      )
+    } else {
+      setError(
+        "Patient record not found. This record may have been removed or belongs to a clinic outside your access scope.",
+      )
+    }
+    setLoading(false)
+  }, [patientId, t])
+
+  useEffect(() => {
+    loadPatientData()
+  }, [loadPatientData])
+
+  // Oldest → newest for sparklines & vitals table
   const vitalsHistory = visits
     .filter((v) => v.vitals && Object.keys(v.vitals).length > 0)
     .slice()
@@ -241,214 +452,475 @@ export default function PatientDetailPage({
   const latestVisit = visits[0] ?? null
   const diagnosed = visits.filter((v) => v.diagnosis && v.diagnosis.trim())
 
+  const sexDisplay = (s: string | null) => {
+    if (s === "F") return t("profile.female", "Female")
+    if (s === "M") return t("profile.male", "Male")
+    return s || t("profile.unspecified", "Unspecified")
+  }
+
+  // ── No Patient Selected State ─────────────────────────────────────────────
   if (!patientId) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center max-w-5xl mx-auto w-full">
-        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-slate-400 dark:text-slate-500">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            className="w-8 h-8"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.5-1.632z"
-            />
+      <div className="flex flex-col items-center justify-center py-20 text-center max-w-5xl mx-auto w-full px-4">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-slate-400 dark:text-slate-500 shadow-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-8 h-8" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.5-1.632z" />
           </svg>
         </div>
-        <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
           No patient selected
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-          Open a record from the Patients list, or register a new patient to
-          view their history here.
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm">
+          Select a patient from the records directory or register a new intake to view their complete profile.
         </p>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer"
+          >
+            ← {t("profile.backToRecords", "Back to Records")}
+          </button>
+        )}
       </div>
     )
   }
 
+  // ── Loading Skeleton ──────────────────────────────────────────────────────
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
-        <div className="w-10 h-10 border-4 border-slate-200 dark:border-slate-700 border-t-teal-600 rounded-full animate-spin" />
-        <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium">
-          Loading patient record...
-        </p>
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
+  // ── Error / Offline State ─────────────────────────────────────────────────
   if (error || !patient) {
     return (
-      <div className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 p-6 rounded-2xl border border-red-100 dark:border-red-900/50 flex flex-col items-center justify-center py-20 max-w-5xl mx-auto w-full">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="w-12 h-12 mb-4 text-red-400 dark:text-red-500"
+      <div className="flex flex-col gap-4 max-w-5xl mx-auto py-12 px-4 w-full">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="self-start inline-flex items-center gap-2 text-xs font-semibold text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-200 transition-colors cursor-pointer"
+          >
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            {t("profile.backToRecords", "Back to Records")}
+          </button>
+        )}
+        <div
+          role="alert"
+          className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 p-8 rounded-2xl border border-red-200 dark:border-red-900/50 flex flex-col items-center justify-center text-center shadow-sm"
         >
-          <circle cx="12" cy="12" r="10" />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4m0 4h.01"
-          />
-        </svg>
-        <p className="font-semibold text-lg">
-          {error ? "Failed to load patient" : "Patient not found"}
-        </p>
-        <p className="text-sm mt-1">
-          {error ?? "This record may have been removed or belongs to another clinic."}
-        </p>
+          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4 text-red-600 dark:text-red-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h2 className="font-bold text-lg text-red-900 dark:text-red-200">
+            Unable to load patient profile
+          </h2>
+          <p className="text-sm mt-1.5 max-w-md text-red-700 dark:text-red-300">
+            {error || "Record could not be retrieved from the central database."}
+          </p>
+          <div className="flex items-center gap-3 mt-6">
+            <button
+              type="button"
+              onClick={loadPatientData}
+              className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 8A6 6 0 1 1 8 2M14 2v6h-6" />
+              </svg>
+              {t("profile.retry", "Retry")}
+            </button>
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors cursor-pointer"
+              >
+                {t("profile.backToRecords", "Back to Records")}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-5xl mx-auto pb-10 w-full">
-      {/* ── Patient header card ── */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        {/* Teal accent bar */}
-        <div className="h-2 bg-gradient-to-r from-teal-500 to-teal-700" />
+    <div className="flex flex-col gap-5 max-w-5xl mx-auto pb-12 px-2 sm:px-4 w-full">
+      {/* ── Top Navigation Bar / Breadcrumb ── */}
+      {onBack && (
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer"
+          >
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            {t("profile.backToRecords", "Back to Records")}
+          </button>
+          {patient.isOfflinePending && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              {t("profile.savedLocally", "Saved locally (Pending Sync)")}
+            </span>
+          )}
+        </div>
+      )}
 
-        <div className="px-6 py-5 flex flex-col sm:flex-row items-start gap-5">
-          {/* Avatar */}
+      {/* ── Section 1: Patient Header Card ── */}
+      <header className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        {/* Teal gradient accent top bar */}
+        <div className="h-2 bg-gradient-to-r from-teal-500 via-teal-600 to-teal-700" />
+
+        <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start gap-5">
+          {/* Avatar / Initials */}
           <div className="relative flex-shrink-0">
-            <div className="w-20 h-20 rounded-2xl bg-teal-600 flex items-center justify-center text-white font-display text-2xl shadow-md shadow-teal-600/20">
+            <div
+              className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-teal-600 flex items-center justify-center text-white font-display text-2xl shadow-md shadow-teal-600/25 select-none"
+              aria-hidden="true"
+            >
               {initialsOf(patient.name)}
             </div>
+            {patient.isOfflinePending && (
+              <span
+                className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900"
+                title="Saved locally on device"
+              />
+            )}
           </div>
 
-          {/* Identity */}
-          <div className="flex-1 min-w-0">
+          {/* Identity & Header Info */}
+          <div className="flex-1 min-w-0 w-full">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h1 className="font-display text-2xl text-teal-950 dark:text-white leading-tight">
+                <h1 className="font-display text-2xl sm:text-3xl text-teal-950 dark:text-white leading-tight">
                   {patient.name}
                 </h1>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
+
+                {/* Sub-identity pill strip */}
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">
                     {patient.age ?? "—"} yrs
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    {sexLabel(patient.sex)}
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    {patient.village ?? "—"}
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                  <span className="font-mono text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                    {shortId(patient.id)}
-                  </span>
-                </div>
-                {latestVisit && (
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <UrgencyBadge score={latestVisit.urgency_score} />
-                    {latestVisit.symptom_category && (
-                      <span className="text-[11px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
-                        {categoryLabel(latestVisit.symptom_category)}
+                  <span>·</span>
+                  <span>{sexDisplay(patient.sex)}</span>
+                  <span>·</span>
+                  <span>{patient.village ?? "Village unrecorded"}</span>
+                  <span>·</span>
+                  <button
+                    type="button"
+                    onClick={copyPatientUuid}
+                    className="inline-flex items-center gap-1 font-mono text-[11px] text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800/60 px-2 py-0.5 rounded cursor-pointer transition-colors"
+                    title={`Click to copy full UUID: ${patient.id}`}
+                  >
+                    <span>ID: {shortId(patient.id)}</span>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-3 h-3">
+                      <rect x="5" y="5" width="8" height="8" rx="1.5" />
+                      <path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" />
+                    </svg>
+                    {copiedUuid && (
+                      <span className="text-[10px] text-emerald-600 font-bold ml-0.5">
+                        {t("profile.copied", "Copied")}
                       </span>
                     )}
-                  </div>
-                )}
+                  </button>
+                </div>
+
+                {/* Current Urgency & Symptom Category */}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <UrgencyBadge score={latestVisit?.urgency_score ?? null} size="md" />
+                  {latestVisit?.symptom_category && (
+                    <span className="text-[11px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 px-2.5 py-0.5 rounded-full">
+                      {categoryLabel(latestVisit.symptom_category)}
+                    </span>
+                  )}
+                  {patient.clinics?.name && (
+                    <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">
+                      📍 {patient.clinics.name} {patient.clinics.zone ? `(${patient.clinics.zone})` : ""}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Action buttons */}
+              {/* Primary Actions */}
               {onNewVisit && (
-                <div className="flex items-center gap-2.5 flex-shrink-0">
+                <div className="flex items-center gap-2.5 flex-shrink-0 self-start sm:self-center">
                   <button
+                    type="button"
                     onClick={() => onNewVisit(patient.id)}
-                    className="flex items-center gap-1.5 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-xl shadow-sm shadow-teal-600/20 transition-all hover:-translate-y-0.5"
+                    className="flex items-center gap-2 text-sm font-semibold bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5 cursor-pointer"
                   >
-                    <svg
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      className="w-3.5 h-3.5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M8 3v10M3 8h10"
-                      />
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v10M3 8h10" />
                     </svg>
-                    New Visit
+                    {t("profile.newVisit", "New Visit")}
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Meta row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-              {[
-                { label: "Registered", value: fmtDate(patient.created_at) },
-                {
-                  label: "Total Visits",
-                  value: `${visits.length} visit${visits.length === 1 ? "" : "s"}`,
-                },
-                {
-                  label: "Last Visit",
-                  value: latestVisit ? fmtDate(latestVisit.created_at) : "—",
-                },
-                { label: "Clinic", value: patient.clinics?.name ?? "—" },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                    {label}
-                  </p>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
-                    {value}
-                  </p>
-                </div>
-              ))}
+            {/* Quick Meta Summary Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {t("profile.registered", "Registered")}
+                </p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+                  {fmtDate(patient.created_at)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {t("profile.totalVisits", "Total Visits")}
+                </p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+                  {visits.length} {visits.length === 1 ? "visit" : "visits"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {t("profile.lastVisit", "Last Visit")}
+                </p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+                  {latestVisit ? fmtDate(latestVisit.created_at) : "No visits recorded"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {t("profile.clinic", "Clinic")}
+                </p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5 truncate">
+                  {patient.clinics?.name ?? "Assigned Clinic"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
+      </header>
+
+      {/* ── Section 2: Patient Information & Latest Health Overview ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left Column: Demographics & Registration details */}
+        <section
+          aria-labelledby="patient-info-heading"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4"
+        >
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 id="patient-info-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100">
+              {t("profile.patientInfo", "Patient Information")}
+            </h2>
+            <span className="text-[11px] text-slate-400 font-mono">
+              {shortId(patient.id)}
+            </span>
+          </div>
+
+          <dl className="grid grid-cols-2 gap-y-3.5 gap-x-2 text-sm">
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {t("profile.age", "Age")}
+              </dt>
+              <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                {patient.age ? `${patient.age} years` : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {t("profile.sex", "Sex")}
+              </dt>
+              <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                {sexDisplay(patient.sex)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {t("profile.village", "Village / Union")}
+              </dt>
+              <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                {patient.village || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {t("profile.registered", "Registration Date")}
+              </dt>
+              <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                {fmtDate(patient.created_at)}
+              </dd>
+            </div>
+            <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Assigned Clinic / Facility
+              </dt>
+              <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
+                {patient.clinics?.name || "Primary Healthcare Facility"}
+                {patient.clinics?.zone && (
+                  <span className="ml-1.5 text-xs font-normal text-slate-500">
+                    ({patient.clinics.zone})
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Patient UUID (Internal ID)
+              </dt>
+              <dd className="font-mono text-xs text-slate-500 dark:text-slate-400 mt-0.5 break-all select-all">
+                {patient.id}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Right Column: Latest Health Information Summary */}
+        <section
+          aria-labelledby="latest-health-heading"
+          className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4"
+        >
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 id="latest-health-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100">
+              {t("profile.latestHealthInfo", "Latest Health Information")}
+            </h2>
+            {latestVisit && (
+              <span className="text-xs text-slate-400">
+                {fmtDate(latestVisit.created_at)} · {fmtTime(latestVisit.created_at)}
+              </span>
+            )}
+          </div>
+
+          {!latestVisit ? (
+            <div className="py-8 text-center">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                {t("profile.noVisits", "No visits recorded yet")}
+              </p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                No clinical encounters have been filed for this patient. Click "New Visit" above to enter vitals, chief complaints, and diagnosis.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Primary triage & diagnosis banner */}
+              <div className="flex flex-wrap items-start justify-between gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Latest Assessment / Diagnosis
+                  </p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {latestVisit.diagnosis || "No recorded diagnosis"}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Presenting: {latestVisit.symptoms || "None documented"}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <UrgencyBadge score={latestVisit.urgency_score} size="md" />
+                  <span className="text-[11px] text-slate-400">
+                    Recorded by: {latestVisit.staff?.name ?? "Healthcare Worker"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Latest Vitals Strip */}
+              {latestVitals && Object.keys(latestVitals).length > 0 ? (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                    Latest Measured Vitals
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {[
+                      {
+                        label: "Blood Pressure",
+                        value: latestVitals.systolic ? `${latestVitals.systolic}/${latestVitals.diastolic ?? "—"}` : null,
+                        unit: "mmHg",
+                        flag: (latestVitals.systolic ?? 0) >= 140,
+                      },
+                      {
+                        label: "Temperature",
+                        value: latestVitals.temperature ?? null,
+                        unit: "°C",
+                        flag: (latestVitals.temperature ?? 0) >= 38,
+                      },
+                      {
+                        label: "Pulse Rate",
+                        value: latestVitals.pulse ?? null,
+                        unit: "bpm",
+                        flag: (latestVitals.pulse ?? 0) > 100,
+                      },
+                      {
+                        label: "Oxygen Saturation",
+                        value: latestVitals.spo2 ?? null,
+                        unit: "%",
+                        flag: latestVitals.spo2 !== undefined && latestVitals.spo2 < 95,
+                      },
+                    ].map((v) => (
+                      <div
+                        key={v.label}
+                        className={`p-2.5 rounded-xl border ${
+                          v.flag
+                            ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800"
+                            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                        }`}
+                      >
+                        <p className="text-[10px] font-semibold text-slate-400">{v.label}</p>
+                        <p className={`text-base font-display mt-0.5 ${v.flag ? "text-amber-700 dark:text-amber-400 font-bold" : "text-slate-800 dark:text-slate-100"}`}>
+                          {v.value ?? "—"}{" "}
+                          <span className="text-[10px] font-normal text-slate-400">{v.value ? v.unit : ""}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">No vitals were recorded on the latest visit.</p>
+              )}
+            </div>
+          )}
+        </section>
       </div>
 
-      {/* ── Tab bar ── */}
-      <div role="tablist" className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1">
-        {TABS.map(({ id, label }) => (
+      {/* ── Section 3: Clinical Detail Tabs (Vitals, Visits, Diagnoses) ── */}
+      <div role="tablist" className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1 mt-2">
+        {TABS.map(({ id, labelKey, defaultLabel }) => (
           <button
             key={id}
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id as typeof tab)}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
               tab === id
                 ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             }`}
           >
-            {label}
+            {t(labelKey, defaultLabel)}
           </button>
         ))}
       </div>
 
-      {/* ══════════════════════════════════════════════
+      {/* ══════════════════════════════════════════════════════════════════════
           TAB 1 — Vitals History
-      ══════════════════════════════════════════════ */}
+      ══════════════════════════════════════════════════════════════════════ */}
       {tab === "vitals" && vitalsHistory.length === 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            No vitals recorded yet
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {t("profile.noVitals", "No vitals recorded yet")}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Measurements entered during a visit will appear here.
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+            Measurements such as Blood Pressure, Pulse, Temperature, and SpO₂ entered during visits will appear here with trend sparklines.
           </p>
         </div>
       )}
+
       {tab === "vitals" && vitalsHistory.length > 0 && latestVitals && (
-        <div className="flex flex-col gap-4">
-          {/* Sparkline cards row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-5">
+          {/* Sparklines grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {(
               [
                 {
@@ -459,7 +931,7 @@ export default function PatientDetailPage({
                   min: 80,
                   max: 180,
                   flag: (n: number) => n >= 140,
-                  flagLabel: "High",
+                  flagLabel: "Elevated",
                 },
                 {
                   key: "temperature",
@@ -469,7 +941,7 @@ export default function PatientDetailPage({
                   min: 35,
                   max: 40,
                   flag: (n: number) => n >= 38,
-                  flagLabel: "Elevated",
+                  flagLabel: "Fever",
                 },
                 {
                   key: "pulse",
@@ -479,17 +951,17 @@ export default function PatientDetailPage({
                   min: 40,
                   max: 140,
                   flag: (n: number) => n > 100,
-                  flagLabel: "High",
+                  flagLabel: "Tachycardia",
                 },
                 {
                   key: "spo2",
-                  label: "SpO₂",
+                  label: "Oxygen (SpO₂)",
                   unit: "%",
                   color: "#0d9488",
                   min: 85,
                   max: 100,
                   flag: (n: number) => n < 95,
-                  flagLabel: "Low",
+                  flagLabel: "Hypoxia Risk",
                 },
               ] as const
             ).map(({ key, label, unit, color, min, max, flag, flagLabel }) => {
@@ -500,10 +972,11 @@ export default function PatientDetailPage({
               const lv = data[data.length - 1]
               const status =
                 lv === undefined ? null : flag(lv) ? flagLabel : "Normal"
+
               return (
                 <div
                   key={label}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-4 pt-4 pb-3 flex flex-col gap-2 overflow-hidden"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-2 overflow-hidden"
                 >
                   <div className="flex items-start justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
@@ -513,8 +986,8 @@ export default function PatientDetailPage({
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                           status === "Normal"
-                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
-                            : "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                            : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
                         }`}
                       >
                         {status}
@@ -547,11 +1020,11 @@ export default function PatientDetailPage({
                       </span>
                     )}
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1">
+                  <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <span>
                       {series[0] ? fmtDate(series[0].created_at, false) : ""}
                     </span>
-                    {data.length >= 2 && <span>Trend</span>}
+                    {data.length >= 2 && <span className="font-semibold">Trend</span>}
                     <span>
                       {series.length > 1
                         ? fmtDate(series[series.length - 1].created_at, false)
@@ -563,14 +1036,13 @@ export default function PatientDetailPage({
             })}
           </div>
 
-          {/* Detailed vitals table */}
+          {/* Vitals Table */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                All Readings — {vitalsHistory.length} visit
-                {vitalsHistory.length === 1 ? "" : "s"}
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                All Recorded Vitals — {vitalsHistory.length} visit{vitalsHistory.length === 1 ? "" : "s"}
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500">Oldest → newest</span>
+              <span className="text-xs text-slate-400">Oldest → Newest</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -588,74 +1060,65 @@ export default function PatientDetailPage({
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 whitespace-nowrap"
+                        className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 whitespace-nowrap"
                       >
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {vitalsHistory.map((v, i) => {
                     const isLatest = i === vitalsHistory.length - 1
                     const vt = v.vitals ?? {}
-                    const cell = (
-                      n: number | undefined,
-                      warn?: boolean,
-                    ) => (
-                      <span
-                        className={
-                          warn
-                            ? "text-amber-600 dark:text-amber-400 font-semibold"
-                            : "text-slate-700 dark:text-slate-200"
-                        }
-                      >
-                        {n ?? "—"}
-                      </span>
-                    )
                     return (
                       <tr
                         key={v.id}
-                        className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${
-                          isLatest ? "bg-teal-50/50 dark:bg-teal-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className={`${
+                          isLatest
+                            ? "bg-teal-50/50 dark:bg-teal-950/30 font-medium"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                         } transition-colors`}
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                          <span className="text-slate-800 dark:text-slate-200">
                             {fmtDate(v.created_at)}
                           </span>
                           {isLatest && (
-                            <span className="ml-2 text-[10px] font-bold text-teal-600 dark:text-teal-400 bg-teal-100 dark:bg-teal-950/40 px-1.5 py-0.5 rounded-full">
+                            <span className="ml-2 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 px-1.5 py-0.5 rounded-full">
                               Latest
                             </span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`font-semibold ${
+                            className={
                               (vt.systolic ?? 0) >= 140
-                                ? "text-amber-600 dark:text-amber-400"
+                                ? "text-amber-600 dark:text-amber-400 font-semibold"
                                 : "text-slate-700 dark:text-slate-200"
-                            }`}
+                            }
                           >
                             {vt.systolic ?? "—"}/{vt.diastolic ?? "—"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {cell(vt.temperature, (vt.temperature ?? 0) >= 38)}
+                          <span className={(vt.temperature ?? 0) >= 38 ? "text-amber-600 dark:text-amber-400 font-semibold" : "text-slate-700 dark:text-slate-200"}>
+                            {vt.temperature ?? "—"}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
-                          {cell(vt.pulse, (vt.pulse ?? 0) > 100)}
+                          <span className={(vt.pulse ?? 0) > 100 ? "text-amber-600 dark:text-amber-400 font-semibold" : "text-slate-700 dark:text-slate-200"}>
+                            {vt.pulse ?? "—"}
+                          </span>
                         </td>
-                        <td className="px-4 py-3">{cell(vt.weight)}</td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-200">{vt.weight ?? "—"}</td>
                         <td className="px-4 py-3">
-                          {cell(
-                            vt.spo2,
-                            vt.spo2 !== undefined && vt.spo2 < 96,
-                          )}
+                          <span className={vt.spo2 !== undefined && vt.spo2 < 95 ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-700 dark:text-slate-200"}>
+                            {vt.spo2 ?? "—"}
+                          </span>
                         </td>
-                        <td className="px-4 py-3">{cell(vt.respRate)}</td>
-                        <td className="px-4 py-3">{cell(vt.muac)}</td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-200">{vt.respRate ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-200">{vt.muac ?? "—"}</td>
                       </tr>
                     )
                   })}
@@ -666,39 +1129,40 @@ export default function PatientDetailPage({
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════
+      {/* ══════════════════════════════════════════════════════════════════════
           TAB 2 — Visit History
-      ══════════════════════════════════════════════ */}
+      ══════════════════════════════════════════════════════════════════════ */}
       {tab === "visits" && visits.length === 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            No visits recorded yet
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {t("profile.noVisits", "No visits recorded yet")}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Use “New Visit” to record vitals and symptoms for this patient.
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+            Use “New Visit” to record an intake visit, vitals, symptoms, and clinical assessment for this patient.
           </p>
         </div>
       )}
+
       {tab === "visits" && visits.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {visits.length} recorded visit{visits.length === 1 ? "" : "s"}
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+            <span>
+              {visits.length} recorded clinical encounter{visits.length === 1 ? "" : "s"}
+            </span>
             {visits.every((v) => v.synced_at) ? (
-              <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
-                All synced ✓
+              <span className="text-teal-600 dark:text-teal-400 font-medium">
+                ✓ All synchronized with central database
               </span>
             ) : (
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+              <span className="text-amber-600 dark:text-amber-400 font-medium">
                 {visits.filter((v) => !v.synced_at).length} pending sync
               </span>
             )}
           </div>
 
-          {/* Timeline */}
+          {/* Timeline list */}
           <div className="relative">
-            {/* Vertical line */}
+            {/* Vertical timeline connector */}
             <div className="absolute left-[19px] top-6 bottom-6 w-px bg-slate-200 dark:bg-slate-800" />
 
             <div className="flex flex-col gap-3">
@@ -706,35 +1170,36 @@ export default function PatientDetailPage({
                 const open = visitExpanded === i
                 return (
                   <div key={v.id} className="flex gap-4">
-                    {/* Timeline node */}
-                    <div className="flex-shrink-0 flex flex-col items-center mt-4">
+                    {/* Node marker */}
+                    <div className="flex-shrink-0 flex flex-col items-center mt-3">
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold z-10 border-2 ${
                           i === 0
-                            ? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20"
+                            ? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/25"
                             : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"
                         }`}
                       >
-                        {visits.length - i}
+                        #{visits.length - i}
                       </div>
                     </div>
 
-                    {/* Card */}
+                    {/* Visit Card */}
                     <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                       <button
+                        type="button"
                         onClick={() => setVisitExpanded(open ? null : i)}
                         aria-expanded={open}
-                        className="w-full px-5 py-4 flex items-start justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        className="w-full px-5 py-4 flex items-start justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">
+                            <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
                               {fmtDate(v.created_at)}
                             </span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                            <span className="text-xs text-slate-400">
                               {fmtTime(v.created_at)}
                             </span>
-                            <UrgencyBadge score={v.urgency_score} />
+                            <UrgencyBadge score={v.urgency_score} size="sm" />
                             {v.symptom_category && (
                               <span className="text-[10px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
                                 {categoryLabel(v.symptom_category)}
@@ -750,8 +1215,9 @@ export default function PatientDetailPage({
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {v.symptoms?.split("\n")[0] || "No symptoms recorded"}
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">
+                            {v.diagnosis ? `Dx: ${v.diagnosis} — ` : ""}
+                            {v.symptoms || "No chief complaint documented"}
                           </p>
                         </div>
                         <svg
@@ -759,59 +1225,59 @@ export default function PatientDetailPage({
                           fill="none"
                           stroke="currentColor"
                           strokeWidth={2}
-                          className={`w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0 transition-transform mt-0.5 ${
+                          className={`w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0 transition-transform mt-1 ${
                             open ? "rotate-180" : ""
                           }`}
+                          aria-hidden="true"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M4 6l4 4 4-4"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6l4 4 4-4" />
                         </svg>
                       </button>
 
                       {open && (
-                        <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-4 grid sm:grid-cols-2 gap-4">
-                          {[
-                            {
-                              label: "Clinician",
-                              value: v.staff?.name ?? "—",
-                            },
-                            {
-                              label: "Symptom Category",
-                              value: categoryLabel(v.symptom_category),
-                            },
-                            {
-                              label: "Symptoms",
-                              value: v.symptoms || "—",
-                              wide: true,
-                            },
-                            {
-                              label: "Diagnosis",
-                              value: v.diagnosis || "Not recorded",
-                              wide: true,
-                            },
-                          ].map(({ label, value, wide }) => (
-                            <div key={label} className={wide ? "sm:col-span-2" : ""}>
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">
-                                {label}
-                              </p>
-                              <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
-                                {value}
-                              </p>
-                            </div>
-                          ))}
+                        <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-4 grid sm:grid-cols-2 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                              Attending Clinician
+                            </p>
+                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                              {v.staff?.name ?? "Healthcare Provider"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                              Symptom Category
+                            </p>
+                            <p className="text-sm text-slate-700 dark:text-slate-200">
+                              {categoryLabel(v.symptom_category)}
+                            </p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                              Presenting Symptoms / Chief Complaint
+                            </p>
+                            <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                              {v.symptoms || "None recorded"}
+                            </p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                              Diagnosis / Clinical Assessment
+                            </p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                              {v.diagnosis || "No formal diagnosis documented on this visit"}
+                            </p>
+                          </div>
                           {v.vitals && Object.keys(v.vitals).length > 0 && (
                             <div className="sm:col-span-2">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
-                                Vitals
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                                Measured Vitals
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {(
                                   [
-                                    ["systolic", "Sys", "mmHg"],
-                                    ["diastolic", "Dia", "mmHg"],
+                                    ["systolic", "BP Sys", "mmHg"],
+                                    ["diastolic", "BP Dia", "mmHg"],
                                     ["temperature", "Temp", "°C"],
                                     ["pulse", "Pulse", "bpm"],
                                     ["spo2", "SpO₂", "%"],
@@ -824,15 +1290,15 @@ export default function PatientDetailPage({
                                   .map(([k, lbl, unit]) => (
                                     <span
                                       key={k}
-                                      className="text-xs bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200"
+                                      className="text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200"
                                     >
-                                      <span className="text-slate-400 dark:text-slate-500 font-medium mr-1">
+                                      <span className="text-slate-400 font-medium mr-1">
                                         {lbl}
                                       </span>
-                                      <span className="font-semibold">
+                                      <span className="font-bold">
                                         {v.vitals![k]}
                                       </span>
-                                      <span className="text-slate-400 dark:text-slate-500 ml-0.5">
+                                      <span className="text-slate-400 ml-0.5">
                                         {unit}
                                       </span>
                                     </span>
@@ -851,19 +1317,20 @@ export default function PatientDetailPage({
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════
-          TAB 3 — Diagnoses (from visits.diagnosis)
-      ══════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          TAB 3 — Diagnoses
+      ══════════════════════════════════════════════════════════════════════ */}
       {tab === "diagnosis" && diagnosed.length === 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            No diagnoses recorded yet
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {t("profile.noDiagnoses", "No diagnoses recorded yet")}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Diagnoses entered on the visit form will be listed here.
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+            Clinical assessments and diagnoses entered during intake encounters will be summarized chronologically here.
           </p>
         </div>
       )}
+
       {tab === "diagnosis" && diagnosed.length > 0 && (
         <div className="flex flex-col gap-4">
           {diagnosed.map((v) => (
@@ -874,36 +1341,36 @@ export default function PatientDetailPage({
               <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                       {fmtDate(v.created_at)}
                     </h3>
-                    <UrgencyBadge score={v.urgency_score} />
+                    <UrgencyBadge score={v.urgency_score} size="sm" />
                     {v.symptom_category && (
                       <span className="text-[10px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
                         {categoryLabel(v.symptom_category)}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                    {fmtTime(v.created_at)} · {v.staff?.name ?? "Unknown clinician"}
+                  <p className="text-xs text-slate-400 mt-1">
+                    {fmtTime(v.created_at)} · Recorded by {v.staff?.name ?? "Attending Clinician"}
                   </p>
                 </div>
               </div>
-              <div className="px-5 py-4 grid sm:grid-cols-2 gap-5">
+              <div className="p-5 grid sm:grid-cols-2 gap-5">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
-                    Diagnosis / Assessment
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+                    Diagnosis / Clinical Assessment
                   </p>
-                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
                     {v.diagnosis}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
                     Presenting Symptoms
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 px-3 py-3 whitespace-pre-line">
-                    {v.symptoms || "—"}
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 p-3.5 whitespace-pre-line">
+                    {v.symptoms || "No symptoms recorded"}
                   </p>
                 </div>
               </div>

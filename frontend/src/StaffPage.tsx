@@ -38,6 +38,26 @@ const Icon = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v10M3 8h10" />
     </svg>
   ),
+  view: (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      className="w-4 h-4"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10 12a2 2 0 100-4 2 2 0 000 4z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+      />
+    </svg>
+  ),
   edit: (
     <svg
       viewBox="0 0 20 20"
@@ -634,7 +654,11 @@ function FilterDropdown({
 }
 
 // ── Main StaffPage ─────────────────────────────────────────────────────────────
-export default function StaffPage() {
+export default function StaffPage({
+  onViewStaff,
+}: {
+  onViewStaff?: (staffId: string) => void
+} = {}) {
   const { profile } = useAuth()
   const [staff, setStaff] = useState<StaffWithClinic[]>([])
   const [clinics, setClinics] = useState<ClinicRow[]>([])
@@ -1094,14 +1118,22 @@ export default function StaffPage() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${avatarColor}`}
+                              onClick={() => onViewStaff?.(s.id)}
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${avatarColor} ${
+                                onViewStaff ? "cursor-pointer hover:opacity-90" : ""
+                              }`}
                             >
                               {getInitials(s.name)}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                              <button
+                                type="button"
+                                onClick={() => onViewStaff ? onViewStaff(s.id) : setEditingStaff(s)}
+                                className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate hover:text-teal-700 dark:hover:text-teal-400 text-left block cursor-pointer"
+                                title="View staff profile"
+                              >
                                 {s.name}
-                              </p>
+                              </button>
                               <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                                 {s.email ?? "No email"} · {s.id.slice(0, 8).toUpperCase()}
                               </p>
@@ -1156,9 +1188,19 @@ export default function StaffPage() {
                           </span>
                         </td>
 
-                        {/* Actions: Edit & Soft Deactivate */}
+                        {/* Actions: View Profile, Edit & Soft Deactivate */}
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1.5">
+                            {onViewStaff && (
+                              <button
+                                type="button"
+                                onClick={() => onViewStaff(s.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="View staff profile"
+                              >
+                                {Icon.view}
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => setEditingStaff(s)}

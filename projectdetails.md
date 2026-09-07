@@ -159,10 +159,10 @@ HealStats/
 - Run locally via `npm run dev` in the `frontend` directory.
 
 ## 19. Testing Strategy
-- **E2E**: Playwright suite (`frontend/tests/e2e/`) for auth, landing (desktop+mobile), i18n, dark mode and the chatbot, run against a production preview server via the demo-login bypass (no real DB writes). Run with `npm run test:e2e`.
+- **E2E**: Playwright suite (`frontend/tests/e2e/`) for auth hardening, landing (desktop+mobile), i18n, dark mode, staff profile, and the chatbot, run against a production preview server via Playwright network-level route mocking (`tests/e2e/helpers.ts`) without demo bypasses in application code and without real DB writes. Run with `npm run test:e2e`.
 - **Static checks**: `tsc --noEmit` and `vite build` before merging.
-- **Pending**: DB-mutating E2E (needs isolated test DB) and Vitest unit tests.
-- Also perform manual smoke-tests (Login, Patient Registration, Theme/Language toggles) for changes not covered by E2E.
+- **Unit testing**: Vitest suite (`npm run test:unit`) covering OCR parsing, types, and weather alert services.
+- Also perform manual smoke-tests (Login, Patient Registration, Theme/Language toggles) for changes not covered by automated suites.
 
 ## 20. Implementation Roadmap
 1. **Foundation**: Complete (UI Scaffolding, DB Schema, Auth).

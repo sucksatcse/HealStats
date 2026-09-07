@@ -5,7 +5,6 @@ import LoginPage from "./LoginPage"
 import DashboardPage from "./DashboardPage"
 import AdminLoginPage from "./AdminLoginPage"
 import AdminDashboardPage from "./AdminDashboardPage"
-import RoleSelectionPage from "./RoleSelectionPage"
 import PatientLookupPage from "./PatientLookupPage"
 import EmptyStatesShowcase from "./EmptyStates"
 import StyleGuidePage from "./StyleGuidePage"
@@ -261,14 +260,61 @@ const FEATURE_ICONS = [
   </svg>,
 ]
 
+type AppPage =
+  | "landing"
+  | "login"
+  | "signup"
+  | "admin-login"
+  | "dashboard"
+  | "admin-dashboard"
+  | "patient-lookup"
+  | "system-states"
+  | "design-system"
+  | "navbar-demo"
+  | "loading-states"
+  | "button-states"
+  | "record-saved"
+  | "sync-progress"
+
+function getInitialPage(): AppPage {
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname.replace(/\/+$/, "")
+    if (path === "/admin") {
+      return "admin-login"
+    }
+  }
+  return "landing"
+}
+
 /* ══════════════════════════════════════════════════════════════════════════════
    App root — page router + landing page
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function App() {
-  const [page, setPage] =
-    useState<"landing" | "login" | "signup" | "admin-login" | "role-selection" | "dashboard" | "admin-dashboard" | "patient-lookup" | "system-states" | "design-system" | "navbar-demo" | "loading-states" | "button-states" | "record-saved" | "sync-progress">(
-      "landing",
-    )
+  const [page, setPage] = useState<AppPage>(getInitialPage)
+
+  /* Synchronize browser history and URL navigation for /admin */
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/\/+$/, "")
+      if (path === "/admin") {
+        setPage((prev) => (prev === "admin-dashboard" ? prev : "admin-login"))
+      } else if (path === "" || path === "/") {
+        setPage((prev) => (prev === "admin-login" ? "landing" : prev))
+      }
+    }
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const path = window.location.pathname.replace(/\/+$/, "")
+    if (page === "admin-login" && path !== "/admin") {
+      window.history.pushState(null, "", "/admin")
+    } else if (page === "landing" && path === "/admin") {
+      window.history.pushState(null, "", "/")
+    }
+  }, [page])
 
   /* Global language from context — drives all landing page text */
   const { lang } = useLang()
@@ -302,10 +348,17 @@ export default function App() {
       (page === "login" ||
         page === "signup" ||
         page === "admin-login" ||
-        page === "role-selection" ||
         page === "landing")
     ) {
-      setPage(profile.role === "admin" ? "admin-dashboard" : "dashboard")
+      if (page === "admin-login") {
+        if (profile.role === "admin") {
+          setPage("admin-dashboard")
+        }
+        // If a non-admin is on admin-login, do not auto-route to worker dashboard;
+        // let AdminLoginPage enforce the admin boundary and display rejection.
+      } else {
+        setPage(profile.role === "admin" ? "admin-dashboard" : "dashboard")
+      }
     }
   }, [page, session, profile, loading])
 
@@ -413,15 +466,14 @@ export default function App() {
     return <SignUpPage onBack={() => setPage("landing")} onGoToLogin={() => setPage("login")} />
   if (page === "admin-login")
     return (
-      <AdminLoginPage onBack={() => setPage("landing")} onLogin={() => setPage("admin-dashboard")} />
-    )
-  if (page === "role-selection")
-    return (
-      <RoleSelectionPage
-        onSelect={(role) => {
-          setPage(role === "district-admin" ? "admin-dashboard" : "dashboard")
+      <AdminLoginPage
+        onBack={() => {
+          setPage("landing")
+          if (typeof window !== "undefined" && window.location.pathname === "/admin") {
+            window.history.pushState(null, "", "/")
+          }
         }}
-        onBack={() => setPage("login")}
+        onLogin={() => setPage("admin-dashboard")}
       />
     )
   if (page === "dashboard")
@@ -434,7 +486,14 @@ export default function App() {
   if (page === "admin-dashboard")
     return (
       <>
-        <AdminDashboardPage onLogout={() => setPage("landing")} />
+        <AdminDashboardPage
+          onLogout={() => {
+            setPage("landing")
+            if (typeof window !== "undefined" && window.location.pathname === "/admin") {
+              window.history.pushState(null, "", "/")
+            }
+          }}
+        />
         <ChatWidget />
       </>
     )
@@ -452,8 +511,7 @@ export default function App() {
         {/* ─── Navbar ─── */}
         <AppNavbar
           onPatientLookup={() => setPage("patient-lookup")}
-          onAdminLogin={() => setPage("admin-login")}
-          onLogin={() => setPage("login")}
+          onGetStarted={() => setPage("login")}
         />
 
         {/* ─── Hero ─── */}
@@ -789,38 +847,6 @@ export default function App() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── CTA ─── */}
-        <section
-          className="py-24 border-y border-teal-800/40 shadow-inner"
-          id="get-started"
-          style={{background: 'linear-gradient(135deg, #0a2e2b 0%, #0f766e 50%, #115e59 100%)'}}
-        >
-          <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center justify-between gap-10">
-            <div className="lg:max-w-xl">
-              <h2 className="font-display text-4xl lg:text-5xl text-white leading-tight mb-4">
-                {t.cta.h2}
-              </h2>
-              <p className="text-teal-200 text-lg leading-relaxed">
-                {t.cta.body}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4 flex-shrink-0 w-full sm:w-auto">
-              <button
-                onClick={() => setPage("signup")}
-                className="bg-white text-teal-800 hover:text-teal-900 font-bold text-sm px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800 cursor-pointer"
-              >
-                {t.cta.primary}
-              </button>
-              <a
-                href="#demo"
-                className="border border-teal-400 hover:border-white text-white font-semibold text-sm px-8 py-4 rounded-xl hover:bg-teal-700/60 transition-colors w-full sm:w-auto text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-teal-800"
-              >
-                {t.cta.secondary}
-              </a>
             </div>
           </div>
         </section>

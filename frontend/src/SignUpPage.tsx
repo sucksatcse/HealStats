@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { supabase } from "./lib/supabase"
-import { fetchClinicsList } from "./lib/adminService"
-import type { ClinicRow } from "./lib/types"
 
 interface SignUpPageProps {
   onBack: () => void
@@ -14,27 +12,21 @@ interface SignUpPageProps {
  * never via public signup). Clinic assignment is optional and can be set later
  * by an admin. No schema changes; uses the existing Supabase client.
  */
+export type StaffDesignation = "community_health_worker" | "nurse" | "clinical_officer"
+
 export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
-  const [clinicId, setClinicId] = useState("")
-  const [role, setRole] = useState<
-    "clinical_officer" | "nurse" | "community_health_worker" | "district_admin" | "patient"
-  >("patient")
+  const [designation, setDesignation] = useState<StaffDesignation>("community_health_worker")
   const [showPassword, setShowPassword] = useState(false)
-
-
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [done, setDone] = useState<null | {
     needsConfirmation: boolean
-    role: "clinical_officer" | "nurse" | "community_health_worker" | "district_admin" | "patient"
   }>(null)
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,14 +64,13 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
       return
     }
 
-    // Map UI sub-role to database StaffRole enum ('admin' or 'worker')
-    const dbRole = role === "district_admin" ? "admin" : "worker"
-
-    // 2. Create the linked profile (assuming staff table for now).
+    // 2. Create the linked staff profile.
+    // SECURITY: Public registration is strictly restricted to 'worker'.
+    // Admin accounts must be provisioned by an administrator.
     const { error: staffError } = await supabase.from("staff").insert({
       name: name.trim(),
       email: email.trim(),
-      role: dbRole,
+      role: "worker",
       clinic_id: null,
       auth_user_id: userId,
     })
@@ -95,7 +86,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
     if (data.session) await supabase.auth.signOut()
 
     setLoading(false)
-    setDone({ needsConfirmation, role })
+    setDone({ needsConfirmation })
   }
 
   // ── Success screen ──
@@ -167,9 +158,9 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
 
             {/* Card */}
             <div className="rounded-3xl p-8" style={{ background: "var(--an-glass-bg)", backdropFilter: "blur(24px)", border: "1px solid var(--an-border)", boxShadow: "var(--an-glass-shadow-lg)" }}>
-              <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">Sign up</h2>
+              <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">Healthcare Worker Sign Up</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                Register as a health worker or doctor. Admin accounts are created by your coordinator.
+                Register as a community health worker or clinician. Administrator accounts are provisioned by your district coordinator.
               </p>
 
               {error && (
@@ -208,15 +199,15 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                   </div>
                 </div>
 
-                {/* Role selection */}
+                {/* Clinical designation selection */}
                 <div>
-                  <label className={labelCls}>Select Your Role</label>
+                  <label className={labelCls}>Clinical Role</label>
                   <div className="space-y-2.5">
                     {([
                       {
-                        value: "patient",
-                        label: "Patient",
-                        desc: "View your medical history and appointments",
+                        value: "community_health_worker",
+                        label: "Community Health Worker",
+                        desc: "Register patients and capture vitals in the field",
                         icon: (
                           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -224,19 +215,9 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                         ),
                       },
                       {
-                        value: "clinical_officer",
-                        label: "Clinical Officer",
-                        desc: "Full clinical access — diagnose, prescribe, edit records",
-                        icon: (
-                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 3.75v12.5m6.25-6.25H3.75" />
-                          </svg>
-                        ),
-                      },
-                      {
                         value: "nurse",
                         label: "Nurse",
-                        desc: "Record vitals, view histories, add visit notes",
+                        desc: "Record vitals, view patient histories, add visit notes",
                         icon: (
                           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L8 14l7.5-7.5" />
@@ -244,32 +225,22 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                         ),
                       },
                       {
-                        value: "community_health_worker",
-                        label: "Community Health Worker",
-                        desc: "Register patients, capture vitals in the field",
+                        value: "clinical_officer",
+                        label: "Clinical Officer",
+                        desc: "Diagnose, prescribe, and record clinical visits",
                         icon: (
                           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                          </svg>
-                        ),
-                      },
-                      {
-                        value: "district_admin",
-                        label: "District Administrator",
-                        desc: "Manage staff, facilities, and system configuration",
-                        icon: (
-                          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 2.5a7.5 7.5 0 100 15 7.5 7.5 0 000-15zm-2.25 7.5l1.5 1.5 3-3" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 3.75v12.5m6.25-6.25H3.75" />
                           </svg>
                         ),
                       },
                     ] as const).map(({ value, label, desc, icon }) => {
-                      const isSelected = role === value
+                      const isSelected = designation === value
                       return (
                         <button
                           key={value}
                           type="button"
-                          onClick={() => setRole(value)}
+                          onClick={() => setDesignation(value)}
                           className={`w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-start gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                             isSelected
                               ? "border-teal-500 bg-teal-50/70 dark:bg-teal-950/40 shadow-sm"

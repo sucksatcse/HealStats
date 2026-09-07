@@ -2,37 +2,35 @@ import { useState, useRef, useEffect } from "react"
 import { useLang } from "./LanguageContext"
 import { useTheme } from "./ThemeContext"
 import { useAuth } from "./AuthContext"
+import PillNav, { PillNavItem } from "./PillNav"
+
+export type { PillNavItem }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    HealStats — single unified navbar used by every page.
-
-   variant="landing"  (default)
-     · Logo + marketing anchor links + optional CTA buttons on the right
-     · Right controls: lang pill → dark-mode circle → user avatar
-
-   variant="app"
-     · Logo + mobile sidebar toggle + optional breadcrumb + search bar
-     · Right controls: connectivity badge → lang pill → dark-mode circle → divider → notifications → user avatar
-
-   Lang and dark mode are read from LanguageContext / ThemeContext (global state).
-   No local lang/dark state; no localStorage calls — the contexts own all of that.
+   Now upgraded with premium animated PillNav interaction.
    ══════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Landing-page anchor links ── */
-const LANDING_LINKS = [
-  { en: "Features", bn: "বৈশিষ্ট্য", href: "#features" },
-  { en: "How It Works", bn: "কীভাবে কাজ করে", href: "#how-it-works-detail" },
-  { en: "Coverage", bn: "কভারেজ", href: "#coverage" },
-  { en: "Testimonials", bn: "প্রশংসাপত্র", href: "#testimonials" },
+const LANDING_LINKS: PillNavItem[] = [
+  { id: "features", label: "Features", labelBn: "বৈশিষ্ট্য", href: "#features" },
+  { id: "how-it-works", label: "How It Works", labelBn: "কীভাবে কাজ করে", href: "#how-it-works-detail" },
+  { id: "coverage", label: "Coverage", labelBn: "কভারেজ", href: "#coverage" },
+  { id: "testimonials", label: "Testimonials", labelBn: "প্রশংসাপত্র", href: "#testimonials" },
 ]
 
 /* ── Props ── */
 interface AppNavbarProps {
   variant?: "landing" | "app"
 
+  /* Pill navigation items & active selection */
+  navItems?: PillNavItem[]
+  activeNav?: string
+  onNavChange?: (id: string) => void
+
   /* landing CTA callbacks — omit to hide the button */
   onPatientLookup?: () => void
-  onAdminLogin?: () => void
+  onGetStarted?: () => void
   onLogin?: () => void
 
   /* app-header props */
@@ -146,8 +144,11 @@ function SearchIcon() {
 
 export default function AppNavbar({
   variant = "landing",
+  navItems,
+  activeNav,
+  onNavChange,
   onPatientLookup,
-  onAdminLogin,
+  onGetStarted,
   onLogin,
   onSidebarOpen,
   onProfile,
@@ -185,6 +186,7 @@ export default function AppNavbar({
   }, [])
 
   const isApp = variant === "app"
+  const currentNavItems = navItems ?? LANDING_LINKS
 
   /* Avatar styling — app shows initials, landing shows silhouette icon */
   const avatarBase =
@@ -357,10 +359,10 @@ export default function AppNavbar({
     </>
   )
 
-  /* ─── Shared logo ─── */
+  /* ─── Shared logo with subtle hover animation (scale 1 -> 1.04) and initial reveal ─── */
   const logo = (
-    <a href="#" className="flex items-center gap-2.5 flex-shrink-0 group">
-      <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm shadow-teal-600/25 group-hover:bg-teal-700 transition-colors">
+    <a href="#" className="hs-navbar-logo hs-animate-logo group flex items-center gap-2.5 flex-shrink-0">
+      <div className="hs-navbar-logo-icon w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm shadow-teal-600/25 group-hover:bg-teal-700 transition-all">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -417,7 +419,7 @@ export default function AppNavbar({
         )}
 
         {/* Search */}
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-xs sm:max-w-sm">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
             <SearchIcon />
           </span>
@@ -430,156 +432,113 @@ export default function AppNavbar({
           />
         </div>
 
+        {/* Optional App PillNav for quick section switching */}
+        {navItems && navItems.length > 0 && (
+          <div className="hidden xl:flex items-center mx-2 flex-shrink-0">
+            <PillNav
+              items={navItems}
+              activeId={activeNav}
+              onSelect={onNavChange}
+              lang={lang}
+            />
+          </div>
+        )}
+
         <div className="flex items-center gap-2.5 ml-auto">{rightControls}</div>
       </header>
     )
   }
 
   /* ─────────────── LANDING variant ─────────────── */
-  const hasCtas = onPatientLookup || onAdminLogin || onLogin
+  const handleGetStarted = onGetStarted || onLogin
+
+  const landingNavItems: PillNavItem[] = navItems || [
+    { id: "features", label: "Features", labelBn: "বৈশিষ্ট্য", href: "#features" },
+    { id: "how-it-works", label: "How It Works", labelBn: "কীভাবে কাজ করে", href: "#how-it-works-detail" },
+    { id: "coverage", label: "Coverage", labelBn: "কভারেজ", href: "#coverage" },
+    { id: "testimonials", label: "Testimonials", labelBn: "প্রশংসাপত্র", href: "#testimonials" },
+    ...(onPatientLookup
+      ? [
+          {
+            id: "patient-lookup",
+            label: "Check My Visit",
+            labelBn: "ভিজিট দেখুন",
+            onClick: onPatientLookup,
+          },
+        ]
+      : []),
+    ...(handleGetStarted
+      ? [
+          {
+            id: "get-started",
+            label: "Get Started",
+            labelBn: "শুরু করুন",
+            onClick: handleGetStarted,
+          },
+        ]
+      : []),
+  ]
 
   return (
     <header className="sticky top-0 z-50 glass-nav transition-all duration-200">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center gap-4">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
+        {/* [HealthStats Logo] */}
         {logo}
 
-        {/* Desktop anchor links */}
-        <ul className="hidden md:flex items-center gap-1 ml-4">
-          {LANDING_LINKS.map(({ en, bn, href }) => (
-            <li key={href}>
-              <a
-                href={href}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                {lang === "bn" ? bn : en}
-              </a>
-            </li>
-          ))}
-        </ul>
+        {/* [ Features | How It Works | Coverage | Testimonials | Check My Visit | Get Started ] */}
+        <div className="hs-desktop-pill-nav items-center mx-auto">
+          <PillNav
+            items={landingNavItems}
+            activeId={activeNav}
+            onSelect={onNavChange}
+            lang={lang}
+            animateReveal
+          />
+        </div>
 
-        <div className="flex items-center gap-2.5 ml-auto">
-          {/* Landing CTA buttons */}
-          {hasCtas && (
-            <div className="hidden md:flex items-center gap-1.5 mr-1">
-              {onPatientLookup && (
-                <button
-                  onClick={onPatientLookup}
-                  className="text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
-                >
-                  {lang === "bn" ? "ভিজিট দেখুন" : "Check My Visit"}
-                </button>
-              )}
-              {onAdminLogin && (
-                <button
-                  onClick={onAdminLogin}
-                  className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 px-3 py-2 border border-slate-200 dark:border-slate-700 hover:border-teal-300 rounded-lg transition-colors"
-                >
-                  {lang === "bn" ? "অ্যাডমিন" : "Admin"}
-                </button>
-              )}
-              {onLogin && (
-                <button
-                  onClick={onLogin}
-                  className="text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 px-3 py-2 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
-                >
-                  {lang === "bn" ? "লগ ইন" : "Log in"}
-                </button>
-              )}
-              <a
-                href="#get-started"
-                className="text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm shadow-teal-600/20"
-              >
-                {lang === "bn" ? "শুরু করুন" : "Get Started"}
-              </a>
-            </div>
-          )}
-
-          {hasCtas && (
-            <span className="hidden md:block w-px h-6 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
-          )}
-
+        {/* [ Language ] [ Theme ] [ Profile ] */}
+        <div className="flex items-center gap-2.5 ml-auto sm:ml-0">
           {rightControls}
 
-          {/* Mobile hamburger */}
+          {/* Mobile animated hamburger (Visible only < 1024px, completely hidden on desktop) */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:border-teal-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
-            aria-label="Toggle menu"
+            className="hs-hamburger-btn border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:border-teal-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
+            aria-label="Toggle navigation menu"
+            aria-expanded={menuOpen}
           >
-            {menuOpen ? (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="w-[18px] h-[18px]"
-              >
-                <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            ) : (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="w-[18px] h-[18px]"
-              >
-                <path strokeLinecap="round" d="M4 7h16M4 12h10M4 17h14" />
-              </svg>
-            )}
+            <span className="hs-hamburger-box" aria-hidden="true">
+              <span className="hs-hamburger-line hs-hamburger-line-1" />
+              <span className="hs-hamburger-line hs-hamburger-line-2" />
+              <span className="hs-hamburger-line hs-hamburger-line-3" />
+            </span>
           </button>
         </div>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer with all navigation items */}
       {menuOpen && (
-        <div className="md:hidden border-t px-4 py-3 flex flex-col gap-0.5 animate-slide-up" style={{borderColor: 'var(--an-nav-border)', background: 'var(--an-nav-bg)', backdropFilter: 'blur(20px)'}}>
-          {LANDING_LINKS.map(({ en, bn, href }) => (
-            <a
-              key={href}
-              href={href}
-              onClick={() => setMenuOpen(false)}
-              className="px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              {lang === "bn" ? bn : en}
-            </a>
-          ))}
-          {hasCtas && (
-            <>
-              <hr className="border-teal-100 dark:border-slate-800 my-1" />
-              {onPatientLookup && (
-                <button
-                  onClick={() => {
-                    onPatientLookup()
-                    setMenuOpen(false)
-                  }}
-                  className="px-3 py-2.5 text-sm font-medium text-teal-700 dark:text-teal-300 text-left rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
-                >
-                  {lang === "bn" ? "ভিজিট দেখুন" : "Check My Visit"}
-                </button>
-              )}
-              {onLogin && (
-                <button
-                  onClick={() => {
-                    onLogin()
-                    setMenuOpen(false)
-                  }}
-                  className="px-3 py-2.5 text-sm font-medium text-teal-700 dark:text-teal-300 text-left rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors"
-                >
-                  {lang === "bn" ? "লগ ইন" : "Log in"}
-                </button>
-              )}
-              <a
-                href="#get-started"
-                onClick={() => setMenuOpen(false)}
-                className="mx-0 mt-1 py-2.5 rounded-lg text-sm font-semibold bg-teal-600 text-white text-center hover:bg-teal-700 transition-colors"
-              >
-                {lang === "bn" ? "শুরু করুন" : "Get Started"}
-              </a>
-            </>
-          )}
+        <div
+          className="hs-mobile-menu-drawer md:hidden border-t px-4 py-3 flex flex-col gap-1.5"
+          style={{
+            borderColor: "var(--an-nav-border)",
+            background: "var(--an-nav-bg)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <PillNav
+            variant="mobile"
+            items={landingNavItems}
+            activeId={activeNav}
+            onSelect={(id) => {
+              onNavChange?.(id)
+              setMenuOpen(false)
+            }}
+            lang={lang}
+          />
         </div>
       )}
     </header>
   )
 }
+

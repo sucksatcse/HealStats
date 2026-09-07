@@ -1,0 +1,462 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   HealthStats — Animated Pill Navigation (PillNav)
+   Inspired by React Bits PillNav, refined for clinical & healthcare SaaS aesthetics.
+   Uses GPU-accelerated transforms (scale, translateY) & opacity for 60fps performance.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Container for pill navigation items — Content-sized (never spans full navbar) */
+.hs-pill-nav-container {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: fit-content;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 9999px;
+  background: var(--an-surface-raised, rgba(255, 255, 255, 0.75));
+  border: 1px solid var(--an-border-subtle, rgba(148, 163, 184, 0.2));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.dark .hs-pill-nav-container {
+  background: rgba(28, 25, 23, 0.7);
+  border-color: rgba(148, 163, 184, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Initial Mount Reveal Animations */
+@keyframes hsNavbarLogoReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes hsNavbarNavReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hsNavbarPillStagger {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes hsNavbarCtaReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes hsMobileMenuReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hs-animate-logo {
+  animation: hsNavbarLogoReveal 550ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hs-animate-nav {
+  animation: hsNavbarNavReveal 550ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.hs-pill-stagger {
+  animation: hsNavbarPillStagger 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hs-animate-cta {
+  animation: hsNavbarCtaReveal 500ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both;
+}
+
+.hs-mobile-menu-drawer {
+  animation: hsMobileMenuReveal 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Individual pill item */
+.hs-pill-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--an-text-secondary, #44403c);
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  background: transparent;
+  transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+  white-space: nowrap;
+}
+
+.dark .hs-pill-item {
+  color: var(--an-text-secondary, #cbd5e1);
+}
+
+/* Focus visibility for keyboard navigation */
+.hs-pill-item:focus-visible {
+  outline: none;
+  border-color: var(--an-accent, #0d9488);
+  box-shadow: 0 0 0 2px var(--an-accent-glow, rgba(13, 148, 136, 0.2));
+}
+
+/* ── Signature circular expanding hover fill ── */
+.hs-pill-circle {
+  position: absolute;
+  left: 50%;
+  bottom: -60%;
+  width: 260%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, 50%) scale(0);
+  opacity: 0;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+  background: rgba(13, 148, 136, 0.12);
+  z-index: 0;
+  will-change: transform, opacity;
+}
+
+.dark .hs-pill-circle {
+  background: rgba(45, 212, 191, 0.16);
+}
+
+.hs-pill-item:hover .hs-pill-circle,
+.hs-pill-item:focus-visible .hs-pill-circle {
+  transform: translate(-50%, 50%) scale(1);
+  opacity: 1;
+}
+
+/* ── Sliding text layers ── */
+.hs-pill-text-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  height: 1.25rem;
+  line-height: 1.25rem;
+  z-index: 1;
+}
+
+.hs-pill-text-normal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transform: translateY(0);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), color 200ms ease;
+}
+
+.hs-pill-text-hover {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transform: translateY(105%);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), color 200ms ease;
+  color: var(--an-accent-hover, #0f766e);
+  font-weight: 600;
+}
+
+.dark .hs-pill-text-hover {
+  color: #2dd4bf;
+}
+
+.hs-pill-item:hover .hs-pill-text-normal,
+.hs-pill-item:focus-visible .hs-pill-text-normal {
+  transform: translateY(-105%);
+}
+
+.hs-pill-item:hover .hs-pill-text-hover,
+.hs-pill-item:focus-visible .hs-pill-text-hover {
+  transform: translateY(0);
+}
+
+/* ── Active navigation treatment ── */
+.hs-pill-item.is-active {
+  background: rgba(13, 148, 136, 0.10);
+  border-color: rgba(13, 148, 136, 0.28);
+  color: var(--an-accent, #0d9488);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(13, 148, 136, 0.08);
+}
+
+.dark .hs-pill-item.is-active {
+  background: rgba(20, 184, 166, 0.14);
+  border-color: rgba(45, 212, 191, 0.32);
+  color: #2dd4bf;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hs-pill-item.is-active .hs-pill-circle {
+  background: rgba(13, 148, 136, 0.20);
+}
+
+.dark .hs-pill-item.is-active .hs-pill-circle {
+  background: rgba(45, 212, 191, 0.24);
+}
+
+/* Active indicator dot */
+.hs-pill-active-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--an-accent, #0d9488);
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.dark .hs-pill-active-dot {
+  background: #2dd4bf;
+  box-shadow: 0 0 6px rgba(45, 212, 191, 0.5);
+}
+
+/* Subtle emphasis for primary navigation action while retaining unified interaction */
+.hs-pill-item[data-nav-id="get-started"] .hs-pill-text-hover {
+  font-weight: 600;
+  color: var(--an-accent-hover, #0f766e);
+}
+
+.dark .hs-pill-item[data-nav-id="get-started"] .hs-pill-text-hover {
+  color: #2dd4bf;
+}
+
+/* ── Logo Interaction ── */
+.hs-navbar-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.hs-navbar-logo:hover {
+  transform: scale(1.04);
+}
+
+.hs-navbar-logo:active {
+  transform: scale(0.98);
+}
+
+.hs-navbar-logo-icon {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.hs-navbar-logo:hover .hs-navbar-logo-icon {
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+
+/* ── Responsive visibility rules (Mutually exclusive: desktop vs mobile) ── */
+.hs-desktop-pill-nav {
+  display: none !important;
+}
+
+.hs-desktop-ctas {
+  display: none !important;
+}
+
+.hs-desktop-divider {
+  display: none !important;
+}
+
+.hs-hamburger-btn {
+  display: inline-flex !important;
+  position: relative;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+@media (min-width: 1024px) {
+  .hs-desktop-pill-nav {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    width: max-content !important;
+  }
+  .hs-desktop-ctas {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    width: max-content !important;
+  }
+  .hs-desktop-divider {
+    display: block !important;
+  }
+  .hs-hamburger-btn {
+    display: none !important;
+  }
+  .hs-mobile-menu-drawer {
+    display: none !important;
+  }
+}
+
+.hs-hamburger-box {
+  position: relative;
+  width: 18px;
+  height: 14px;
+}
+
+.hs-hamburger-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 9999px;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease, top 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hs-hamburger-line-1 {
+  top: 0;
+}
+
+.hs-hamburger-line-2 {
+  top: 6px;
+}
+
+.hs-hamburger-line-3 {
+  top: 12px;
+}
+
+.hs-hamburger-btn[aria-expanded="true"] .hs-hamburger-line-1 {
+  top: 6px;
+  transform: rotate(45deg);
+}
+
+.hs-hamburger-btn[aria-expanded="true"] .hs-hamburger-line-2 {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hs-hamburger-btn[aria-expanded="true"] .hs-hamburger-line-3 {
+  top: 6px;
+  transform: rotate(-45deg);
+}
+
+/* ── Mobile menu items ── */
+.hs-mobile-pill-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: left;
+  border: 1px solid transparent;
+  color: var(--an-text-secondary, #44403c);
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dark .hs-mobile-pill-item {
+  color: var(--an-text-secondary, #cbd5e1);
+}
+
+.hs-mobile-pill-item:hover {
+  background: rgba(13, 148, 136, 0.08);
+  color: var(--an-accent, #0d9488);
+}
+
+.dark .hs-mobile-pill-item:hover {
+  background: rgba(45, 212, 191, 0.10);
+  color: #2dd4bf;
+}
+
+.hs-mobile-pill-item.is-active {
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.25);
+  color: var(--an-accent, #0d9488);
+  font-weight: 600;
+}
+
+.dark .hs-mobile-pill-item.is-active {
+  background: rgba(45, 212, 191, 0.14);
+  border-color: rgba(45, 212, 191, 0.28);
+  color: #2dd4bf;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: PREFERS-REDUCED-MOTION
+   Respects user choice by disabling expanding circles and text sliding
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .hs-pill-circle {
+    display: none !important;
+  }
+  .hs-pill-text-normal {
+    transform: none !important;
+    transition: color 0.12s ease !important;
+  }
+  .hs-pill-text-hover {
+    display: none !important;
+  }
+  .hs-pill-item:hover .hs-pill-text-normal,
+  .hs-pill-item:focus-visible .hs-pill-text-normal {
+    transform: none !important;
+    color: var(--an-accent, #0d9488) !important;
+  }
+  .hs-navbar-logo,
+  .hs-navbar-logo-icon {
+    transform: none !important;
+    transition: none !important;
+  }
+  .hs-hamburger-line {
+    transition: none !important;
+  }
+  .hs-animate-logo,
+  .hs-animate-nav,
+  .hs-pill-stagger,
+  .hs-animate-cta,
+  .hs-mobile-menu-drawer {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
