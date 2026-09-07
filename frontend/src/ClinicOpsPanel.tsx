@@ -1,849 +1,909 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { divIcon, type Marker as LeafletMarker } from "leaflet"
+import {
+  AttributionControl,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from "react-leaflet"
 import { useTheme } from "./ThemeContext"
+import { useAuth } from "./AuthContext"
 import {
   fetchClinicMapData,
+  saveClinic,
   type ClinicActivity,
   type ClinicMapEntry,
 } from "./lib/adminService"
+import {
+  BANGLADESH_BOUNDS,
+  BANGLADESH_CENTER,
+  filterClinics,
+  hasCoordinates,
+} from "./lib/clinicMapUtils"
+import { searchPlaces, type PlaceResult } from "./lib/geocodingService"
+import "leaflet/dist/leaflet.css"
+import "./ClinicOpsPanel.css"
 
-type TFunc = (key: string, opts?: Record<string, unknown>) => string
-
-// ── Activity status visual config ─────────────────────────────────────────────
-// Honest status derived from real visit recency (see ClinicActivity in types.ts).
 type Filter = "all" | ClinicActivity
-
-const S = {
-  active: {
-    fill: "#22c55e",
-    label: "Active",
-    dot: "bg-emerald-500",
-    badge:
-      "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400",
-    card: "hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10",
-    pulseR: "5;18;5",
-    pulseDur: "3s",
-  },
-  recent: {
-    fill: "#f59e0b",
-    label: "Recent",
-    dot: "bg-amber-400",
-    badge:
-      "text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400",
-    card: "hover:bg-amber-50/40 dark:hover:bg-amber-900/10",
-    pulseR: "5;16;5",
-    pulseDur: "2.4s",
-  },
-  quiet: {
-    fill: "#94a3b8",
-    label: "Quiet",
-    dot: "bg-slate-400",
-    badge: "text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300",
-    card: "hover:bg-slate-50 dark:hover:bg-slate-800/40",
-    pulseR: "5;12;5",
-    pulseDur: "3.4s",
-  },
-} satisfies Record<ClinicActivity, object>
-
-// ── Bangladesh SVG paths (viewBox 0 0 380 450) ─────────────────────────────
-const BD_PATH =
-  "M 42,28 L 116,16 L 155,18 L 195,28 L 258,42 " +
-  "Q 308,68 342,128 " +
-  "L 344,190 L 347,238 L 336,274 L 322,310 " +
-  "L 330,348 L 316,404 " +
-  "C 299,416 284,422 275,422 " +
-  "C 252,428 228,432 218,432 " +
-  "C 195,428 175,424 165,422 " +
-  "C 148,416 134,412 124,410 " +
-  "C 106,402 96,394 88,390 " +
-  "L 58,354 L 38,300 L 16,244 L 20,194 L 28,144 L 38,86 Z"
-
-const RIVER_JAMUNA =
-  "M 155,18 C 150,72 148,132 150,188 C 152,224 156,255 160,282"
-const RIVER_PADMA = "M 16,244 C 58,244 98,248 138,252 C 168,257 194,264 220,274"
-const RIVER_MEGHNA =
-  "M 220,155 C 224,196 228,236 230,276 C 234,313 244,352 265,410"
-
-// ── District → SVG coordinate lookup ───────────────────────────────────────
-// Presentation-layer geocoding only. The database stores no coordinates, so
-// clinics are placed on the map by matching their `zone` (or name) against known
-// Bangladeshi district/division names. Clinics with no match are listed in the
-// sidebar as "unmapped" rather than being given a fabricated location.
-const DISTRICT_COORDS: Record<string, { x: number; y: number }> = {
-  dhaka: { x: 193, y: 210 },
-  narayanganj: { x: 215, y: 234 },
-  gazipur: { x: 200, y: 190 },
-  tangail: { x: 170, y: 186 },
-  faridpur: { x: 152, y: 240 },
-  chittagong: { x: 297, y: 318 },
-  chattogram: { x: 297, y: 318 },
-  coxsbazar: { x: 322, y: 390 },
-  comilla: { x: 254, y: 256 },
-  cumilla: { x: 254, y: 256 },
-  noakhali: { x: 254, y: 300 },
-  sylhet: { x: 314, y: 160 },
-  moulvibazar: { x: 298, y: 192 },
-  rajshahi: { x: 52, y: 186 },
-  bogra: { x: 110, y: 144 },
-  bogura: { x: 110, y: 144 },
-  dinajpur: { x: 68, y: 102 },
-  rangpur: { x: 92, y: 88 },
-  khulna: { x: 118, y: 340 },
-  jessore: { x: 88, y: 278 },
-  jashore: { x: 88, y: 278 },
-  barisal: { x: 192, y: 326 },
-  barishal: { x: 192, y: 326 },
-  mymensingh: { x: 193, y: 162 },
+type Focus = {
+  latitude: number
+  longitude: number
+  zoom: number
+} | null
+type Draft = {
+  id?: string
+  name: string
+  zone: string
+  address: string
+  latitude: string
+  longitude: string
 }
+const COLORS = { active: "#22c55e", recent: "#f59e0b", quiet: "#94a3b8" }
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+const CARTO_ATTRIBUTION = `${OSM_ATTRIBUTION} &copy; <a href="https://carto.com/attributions">CARTO</a>`
 
-/** Normalize a location string for matching: lowercase, strip non-alphanumerics. */
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "")
-}
-
-/** Resolve a clinic to base map coordinates via its zone, then its name. */
-function resolveCoords(entry: ClinicMapEntry): { x: number; y: number } | null {
-  const candidates = [entry.zone, entry.name].filter(Boolean) as string[]
-  for (const raw of candidates) {
-    const n = normalize(raw)
-    for (const key of Object.keys(DISTRICT_COORDS)) {
-      if (n.includes(key) || key.includes(n)) return DISTRICT_COORDS[key]
-    }
+function coordinates(draft: Draft | null) {
+  if (!draft || !draft.latitude.trim() || !draft.longitude.trim()) return null
+  const point = {
+    latitude: Number(draft.latitude),
+    longitude: Number(draft.longitude),
   }
+  return hasCoordinates(point) ? point : null
+}
+
+function ClinicDetails({ clinic }: { clinic: ClinicMapEntry }) {
+  const { t } = useTranslation()
+  return (
+    <div className="hs-clinic-details">
+      <strong>{clinic.name}</strong>
+      <p>
+        {clinic.zone || t("map:unzoned")}
+        {clinic.address ? ` · ${clinic.address}` : ""}
+      </p>
+      <p>
+        <span
+          className="hs-map-status"
+          style={{ background: COLORS[clinic.activity] }}
+        />
+        {t(`map:${clinic.activity}`)}
+      </p>
+      <dl>
+        <div>
+          <dt>{t("map:detailPatients")}</dt>
+          <dd>{clinic.patientCount}</dd>
+        </div>
+        <div>
+          <dt>{t("map:detailVisits24h")}</dt>
+          <dd>{clinic.visitsLast24h}</dd>
+        </div>
+        <div>
+          <dt>{t("map:detailVisits7d")}</dt>
+          <dd>{clinic.visitsLast7d}</dd>
+        </div>
+        <div>
+          <dt>{t("map:detailHighRisk")}</dt>
+          <dd>{clinic.highRisk}</dd>
+        </div>
+        <div>
+          <dt>{t("map:detailPendingSync")}</dt>
+          <dd>{clinic.pendingSync}</dd>
+        </div>
+      </dl>
+      <p>
+        {t("map:detailLastVisit", {
+          time: clinic.lastVisitAt
+            ? new Date(clinic.lastVisitAt).toLocaleString(t("map:dateLocale"))
+            : t("map:timeNoVisits"),
+        })}
+      </p>
+      {!hasCoordinates(clinic) && <p>{t("map:missingCoordinates")}</p>}
+    </div>
+  )
+}
+
+function ClinicMarker({
+  clinic,
+  selected,
+  spotlight,
+  onSelect,
+  selectionFocus,
+}: {
+  clinic: ClinicMapEntry & {
+    latitude: number
+    longitude: number
+  }
+  selected: boolean
+  spotlight: boolean
+  onSelect: () => void
+  selectionFocus: Focus
+}) {
+  const marker = useRef<LeafletMarker>(null)
+  const icon = useMemo(
+    () =>
+      divIcon({
+        className: `hs-clinic-marker ${selected ? "is-selected" : ""} ${
+          spotlight ? "is-spotlit" : ""
+        }`,
+        html: `<span style="background:${COLORS[clinic.activity]}"></span>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -14],
+      }),
+    [clinic.activity, selected, spotlight],
+  )
+  useEffect(() => {
+    if (selected) marker.current?.openPopup()
+    else marker.current?.closePopup()
+  }, [selected, selectionFocus])
+  return (
+    <Marker
+      ref={marker}
+      position={[clinic.latitude, clinic.longitude]}
+      icon={icon}
+      title={clinic.name}
+      alt={clinic.name}
+      eventHandlers={{ click: onSelect }}
+    >
+      <Tooltip direction="top">
+        <ClinicDetails clinic={clinic} />
+      </Tooltip>
+      <Popup autoPan={false} maxHeight={140}>
+        <ClinicDetails clinic={clinic} />
+      </Popup>
+    </Marker>
+  )
+}
+
+function MapBehavior({
+  focus,
+  placing,
+  onPlace,
+}: {
+  focus: Focus
+  placing: boolean
+  onPlace: (latitude: number, longitude: number) => void
+}) {
+  const { t } = useTranslation()
+  const map = useMapEvents({
+    click: (event) => {
+      if (placing) onPlace(event.latlng.lat, event.latlng.lng)
+    },
+  })
+  useEffect(() => {
+    if (!focus) return
+    map.flyTo([focus.latitude, focus.longitude], focus.zoom, {
+      animate: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      duration: 0.6,
+    })
+  }, [focus, map])
+  useEffect(() => {
+    const container = map.getContainer()
+    container.setAttribute("aria-label", t("map:ariaMap"))
+    container
+      .querySelector(".leaflet-control-zoom-in")
+      ?.setAttribute("aria-label", t("map:zoomIn"))
+    container
+      .querySelector(".leaflet-control-zoom-out")
+      ?.setAttribute("aria-label", t("map:zoomOut"))
+  }, [map, t])
+  useEffect(() => {
+    const container = map.getContainer()
+    const update = () => {
+      const center = map.getCenter()
+      container.dataset.latitude = String(center.lat)
+      container.dataset.longitude = String(center.lng)
+      container.dataset.zoom = String(map.getZoom())
+    }
+    update()
+    map.on("moveend zoomend", update)
+    const observer = new ResizeObserver(() =>
+      map.invalidateSize({ pan: false }),
+    )
+    observer.observe(container)
+    return () => {
+      observer.disconnect()
+      map.off("moveend zoomend", update)
+    }
+  }, [map])
   return null
 }
 
-interface PositionedClinic extends ClinicMapEntry {
-  x: number
-  y: number
+function TileStatus({ dark }: { dark: boolean }) {
+  const { t } = useTranslation()
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+  const map = useMap()
+  useEffect(() => {
+    setFailed(false)
+  }, [dark])
+  return (
+    <>
+      <TileLayer
+        key={`${dark}-${attempt}`}
+        url={
+          dark
+            ? "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+            : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        }
+        attribution={dark ? CARTO_ATTRIBUTION : OSM_ATTRIBUTION}
+        maxZoom={19}
+        eventHandlers={{ tileerror: () => setFailed(true) }}
+      />
+      {failed && (
+        <div
+          className="hs-map-tile-error"
+          role="status"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {t("map:tilesUnavailable")}
+          <button
+            type="button"
+            onClick={() => {
+              setFailed(false)
+              setAttempt((n) => n + 1)
+              map.invalidateSize()
+            }}
+          >
+            {t("common:retry")}
+          </button>
+        </div>
+      )}
+    </>
+  )
 }
 
-/**
- * Assign map coordinates, spreading clinics that share a district apart with a
- * deterministic golden-angle spiral so pins never perfectly overlap.
- */
-function positionClinics(entries: ClinicMapEntry[]): {
-  mapped: PositionedClinic[]
-  unmapped: ClinicMapEntry[]
-} {
-  const mapped: PositionedClinic[] = []
-  const unmapped: ClinicMapEntry[] = []
-  const seen = new Map<string, number>()
-
-  for (const entry of entries) {
-    const base = resolveCoords(entry)
-    if (!base) {
-      unmapped.push(entry)
-      continue
-    }
-    const bucket = `${base.x},${base.y}`
-    const i = seen.get(bucket) ?? 0
-    seen.set(bucket, i + 1)
-    let x = base.x
-    let y = base.y
-    if (i > 0) {
-      const angle = i * 2.399963 // golden angle in radians
-      const radius = 9 + Math.floor((i - 1) / 8) * 7
-      x = base.x + Math.cos(angle) * radius
-      y = base.y + Math.sin(angle) * radius
-    }
-    mapped.push({ ...entry, x, y })
-  }
-  return { mapped, unmapped }
-}
-
-// ── Relative-time helper ─────────────────────────────────────────────────────
-function timeAgo(iso: string | null, t: TFunc): string {
-  if (!iso) return t("map:timeNoVisits")
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return t("map:timeJustNow")
-  if (mins < 60) return t("map:timeMinutes", { count: mins })
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return t("map:timeHours", { count: hrs })
-  const days = Math.floor(hrs / 24)
-  return t("map:timeDays", { count: days })
-}
-
-// ── Component ───────────────────────────────────────────────────────────────
 export default function ClinicOpsPanel() {
   const { dark } = useTheme()
+  const { profile } = useAuth()
   const { t } = useTranslation()
-  const [spotlight, setSpotlight] = useState(false)
-  const [filter, setFilter] = useState<Filter>("all")
-  const [hovId, setHovId] = useState<string | null>(null)
-  const [selId, setSelId] = useState<string | null>(null)
-
   const [entries, setEntries] = useState<ClinicMapEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [loadedAt, setLoadedAt] = useState<number | null>(null)
+  const [error, setError] = useState(false)
+  const [coordinatesAvailable, setCoordinatesAvailable] = useState(false)
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null)
+  const [filter, setFilter] = useState<Filter>("all")
+  const [query, setQuery] = useState("")
+  const [spotlight, setSpotlight] = useState(false)
+  const [listOpen, setListOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [focus, setFocus] = useState<Focus>(null)
+  const [places, setPlaces] = useState<PlaceResult[]>([])
+  const [placeTarget, setPlaceTarget] = useState<"map" | "editor">("map")
+  const [placeStatus, setPlaceStatus] = useState<string | null>(null)
+  const [searching, setSearching] = useState(false)
+  const searchAbort = useRef<AbortController | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [placing, setPlacing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const editorHeading = useRef<HTMLHeadingElement>(null)
+  const loadVersion = useRef(0)
+  const canEdit =
+    profile?.role === "admin" &&
+    !["nurse", "clinical_officer"].includes(profile.designation ?? "")
 
   const load = useCallback(async () => {
+    const version = ++loadVersion.current
     setLoading(true)
-    setError(null)
-    const res = await fetchClinicMapData()
-    if (res.error) {
-      setError(res.error)
+    setError(false)
+    try {
+      const result = await fetchClinicMapData()
+      if (version !== loadVersion.current) return
+      setError(!!result.error)
+      setEntries(result.error ? [] : result.clinics)
+      setCoordinatesAvailable(result.coordinatesAvailable === true)
+      if (!result.error) setLoadedAt(new Date())
+    } catch {
+      if (version !== loadVersion.current) return
+      setError(true)
       setEntries([])
-    } else {
-      setEntries(res.clinics)
+    } finally {
+      if (version === loadVersion.current) setLoading(false)
     }
-    setLoadedAt(Date.now())
-    setLoading(false)
   }, [])
-
   useEffect(() => {
-    load()
+    void load()
+    return () => {
+      ++loadVersion.current
+      searchAbort.current?.abort()
+    }
   }, [load])
+  useEffect(() => {
+    if (draft) editorHeading.current?.focus()
+  }, [draft?.id, draft !== null])
 
-  const { mapped, unmapped } = useMemo(() => positionClinics(entries), [entries])
-
-  const counts = useMemo(
-    () => ({
-      active: entries.filter((c) => c.activity === "active").length,
-      recent: entries.filter((c) => c.activity === "recent").length,
-      quiet: entries.filter((c) => c.activity === "quiet").length,
-    }),
-    [entries],
+  const filtered = useMemo(
+    () => filterClinics(entries, filter, query, spotlight),
+    [entries, filter, query, spotlight],
   )
-  const quietCount = counts.quiet
+  const mapped = filtered.filter(hasCoordinates)
+  const unmapped = entries.filter((clinic) => !hasCoordinates(clinic))
+  const selected = entries.find((clinic) => clinic.id === selectedId) ?? null
+  const draftPoint = coordinates(draft)
 
-  const displayList = useMemo(
-    () =>
-      entries
-        .filter((c) => filter === "all" || c.activity === filter)
-        .sort((a, b) => {
-          const ord: Record<ClinicActivity, number> = { active: 0, recent: 1, quiet: 2 }
-          const d = ord[a.activity] - ord[b.activity]
-          if (d !== 0) return d
-          return b.patientCount - a.patientCount
-        }),
-    [entries, filter],
-  )
-
-  const hovClinic = mapped.find((c) => c.id === hovId) ?? null
-  const selClinic = entries.find((c) => c.id === selId) ?? null
-
-  // SVG map color scheme
-  const mc = dark
-    ? {
-        country: "#152f29",
-        border: "#2d6b62",
-        river: "#1d4ed8",
-        div: "#1a4a42",
-        sea: "#0a1628",
+  function selectClinic(clinic: ClinicMapEntry) {
+    setSelectedId(clinic.id)
+    setPlaces([])
+    if (hasCoordinates(clinic))
+      setFocus({
+        latitude: clinic.latitude,
+        longitude: clinic.longitude,
+        zoom: 14,
+      })
+  }
+  function cancelSearch() {
+    searchAbort.current?.abort()
+    searchAbort.current = null
+    setSearching(false)
+    setPlaces([])
+    setPlaceStatus(null)
+  }
+  async function findPlaces(text: string, target: "map" | "editor") {
+    cancelSearch()
+    const controller = new AbortController()
+    searchAbort.current = controller
+    setSearching(true)
+    setPlaceTarget(target)
+    try {
+      const results = await searchPlaces(text, controller.signal)
+      if (controller.signal.aborted) return
+      setPlaces(results)
+      if (!results.length) setPlaceStatus("map:noPlaces")
+    } catch (err) {
+      if (!controller.signal.aborted)
+        setPlaceStatus(
+          err instanceof Error ? err.message : "map:placeSearchError",
+        )
+    } finally {
+      if (!controller.signal.aborted) setSearching(false)
+    }
+  }
+  function beginEdit(clinic?: ClinicMapEntry) {
+    cancelSearch()
+    setSaved(false)
+    setSaveError(null)
+    setPlacing(false)
+    setDraft({
+      id: clinic?.id,
+      name: clinic?.name ?? "",
+      zone: clinic?.zone ?? "",
+      address: clinic?.address ?? "",
+      latitude: clinic?.latitude?.toString() ?? "",
+      longitude: clinic?.longitude?.toString() ?? "",
+    })
+  }
+  function placeClinic(latitude: number, longitude: number) {
+    if (!hasCoordinates({ latitude, longitude })) {
+      setSaveError("map:invalidCoordinates")
+      return
+    }
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            latitude: latitude.toFixed(6),
+            longitude: longitude.toFixed(6),
+          }
+        : null,
+    )
+    setSaveError(null)
+    setPlacing(false)
+  }
+  async function submitClinic(event: React.FormEvent) {
+    event.preventDefault()
+    if (!draft || !draftPoint || !canEdit || saving) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const result = await saveClinic({ ...draft, ...draftPoint })
+      if (result.error || !result.data) {
+        setSaveError(result.error ?? "map:saveError")
+        return
       }
-    : {
-        country: "#d1ede8",
-        border: "#5eada0",
-        river: "#60a5fa",
-        div: "#a7d4cd",
-        sea: "#dbeffe",
-      }
-
-  function tipTransform(c: PositionedClinic) {
-    const goLeft = c.x > 225
-    const goBelow = c.y < 115
-    if (goBelow) return goLeft ? "translate(-108%, 16%)" : "translate(-5%, 16%)"
-    return goLeft ? "translate(-108%, -125%)" : "translate(-5%, -125%)"
+      setSelectedId(result.data.id)
+      setFocus({ ...draftPoint, zoom: 14 })
+      setDraft(null)
+      setPlacing(false)
+      setSaved(true)
+      cancelSearch()
+      await load()
+    } catch {
+      setSaveError("map:saveError")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden min-h-0">
-      {/* ── Sidebar ── */}
-      <aside className="w-[272px] flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col overflow-hidden">
-        {/* Sidebar header */}
-        <div className="px-4 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                {loading ? t("common:loading") : t("map:clinicsCount", { count: entries.length })}
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                {t("map:network")}
-              </p>
-            </div>
-            {/* Spotlight quiet clinics */}
-            <button
-              onClick={() => setSpotlight((m) => !m)}
-              disabled={loading || !!error}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
-                spotlight
-                  ? "bg-slate-800 text-white shadow-lg shadow-slate-800/20 hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900"
-                  : "border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                className="w-3.5 h-3.5 flex-shrink-0"
-              >
-                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 4h2v5H7V4zm0 6h2v2H7v-2z" />
-              </svg>
-              {spotlight ? t("common:clear") : t("map:quiet")}
-            </button>
-          </div>
-
-          {/* Activity summary pills */}
-          <div className="flex gap-1.5">
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/25 px-2 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              {counts.active}
-            </span>
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/25 px-2 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-              {counts.recent}
-            </span>
-            <span
-              className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full ${
-                spotlight
-                  ? "text-slate-800 dark:text-slate-100 bg-slate-200 dark:bg-slate-700"
-                  : "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
-              {counts.quiet}
-            </span>
-          </div>
+    <section className="hs-ops-map" aria-label={t("map:title")}>
+      <header className="hs-map-toolbar">
+        <div>
+          <h2>{t("map:title")}</h2>
+          <p>
+            {t("map:databaseSnapshot")}
+            {loadedAt &&
+              ` · ${loadedAt.toLocaleTimeString(t("map:dateLocale"))}`}
+          </p>
         </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-0.5 px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-          {(["all", "active", "recent", "quiet"] as Filter[]).map((f) => (
+        <div className="hs-map-actions">
+          <button
+            type="button"
+            className="hs-map-button"
+            onClick={() => void load()}
+            disabled={loading || saving}
+            aria-label={t("map:refreshAria")}
+          >
+            {t("map:refreshAction")}
+          </button>
+          <button
+            type="button"
+            className="hs-map-button"
+            onClick={() =>
+              setFocus({
+                latitude: BANGLADESH_CENTER[0],
+                longitude: BANGLADESH_CENTER[1],
+                zoom: 7,
+              })
+            }
+          >
+            {t("map:resetView")}
+          </button>
+          {canEdit && (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`flex-1 py-1 rounded text-[11px] font-semibold capitalize transition-colors ${
-                filter === f
-                  ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+              type="button"
+              className="hs-map-button primary"
+              disabled={loading || error || !coordinatesAvailable || !!draft}
+              onClick={() => beginEdit()}
             >
-              {f === "all" ? t("common:all") : t(`map:${f}`)}
+              {t("map:addClinic")}
             </button>
-          ))}
-        </div>
-
-        {/* Clinic list */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="p-4 space-y-3">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-start gap-3 animate-pulse">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 mt-1" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
-                    <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="p-6 text-center" role="alert">
-              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
-                {t("map:loadError")}
-              </p>
-              <button
-                onClick={load}
-                className="mt-3 text-xs font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                {t("common:retry")}
-              </button>
-            </div>
-          ) : entries.length === 0 ? (
-            <div className="p-6 text-center" role="status">
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                {t("map:noClinics")}
-              </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                {t("map:noClinicsDesc")}
-              </p>
-            </div>
-          ) : (
-            <>
-              {displayList.map((clinic) => {
-                const cfg = S[clinic.activity]
-                const isSel = selId === clinic.id
-                const isSpotlit = spotlight && clinic.activity === "quiet"
-                return (
-                  <button
-                    key={clinic.id}
-                    onClick={() => setSelId(isSel ? null : clinic.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800 transition-all duration-150 flex items-start gap-3 ${
-                      isSpotlit
-                        ? "bg-slate-100 dark:bg-slate-800/60"
-                        : isSel
-                          ? "bg-teal-50 dark:bg-teal-900/20"
-                          : cfg.card
-                    }`}
-                  >
-                    {/* Activity dot */}
-                    <div className="mt-1 flex-shrink-0 relative">
-                      <div
-                        className={`w-2.5 h-2.5 rounded-full ${cfg.dot} ${
-                          clinic.activity === "active" ? "" : "animate-pulse"
-                        }`}
-                      />
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-1">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight truncate">
-                          {clinic.name}
-                        </p>
-                        {clinic.pendingSync > 0 && (
-                          <span className="text-[9px] font-extrabold tracking-wider text-white bg-amber-500 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                            {t("map:queued", { count: clinic.pendingSync })}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
-                        {clinic.zone || t("map:unzoned")} · {timeAgo(clinic.lastVisitAt, t)}
-                      </p>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.badge}`}
-                        >
-                          {t(`map:${clinic.activity}`)}
-                        </span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500">
-                          {clinic.patientCount} {t("common:patientsUnit")}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-
-              {/* Unmapped clinics (no district match — shown honestly, not pinned) */}
-              {unmapped.length > 0 && (
-                <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-                    {t("map:notOnMap", { count: unmapped.length })}
-                  </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                    {t("map:notOnMapDesc", { names: unmapped.map((c) => c.name).join(", ") })}
-                  </p>
-                </div>
-              )}
-            </>
           )}
         </div>
-      </aside>
+      </header>
 
-      {/* ── Map area ── */}
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Map toolbar */}
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center flex-shrink-0">
-              <svg viewBox="0 0 20 20" fill="white" className="w-4 h-4">
-                <path
-                  fillRule="evenodd"
-                  d="M9 17A8 8 0 109 1a8 8 0 000 16zm-1-10a1 1 0 011-1h.01a1 1 0 010 2H9a1 1 0 01-1-1zm0 3a1 1 0 012 0v3a1 1 0 01-2 0v-3z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                {t("map:title")}
-              </h2>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
-                {t("map:subtitleLive")}
-                {loadedAt
-                  ? ` · ${t("map:updated", { time: timeAgo(new Date(loadedAt).toISOString(), t) })}`
-                  : ""}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/25 px-2.5 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-              {t("common:live")}
-            </div>
+      {!loading && !error && !coordinatesAvailable && (
+        <p className="hs-map-notice" role="status">
+          {t("map:migrationRequired")}
+        </p>
+      )}
+      {saved && (
+        <p className="hs-map-notice" role="status">
+          {t("map:clinicSaved")}
+        </p>
+      )}
+      <div className="hs-map-search">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            void findPlaces(query, "map")
+          }}
+        >
+          <label htmlFor="clinic-map-search">{t("map:searchLabel")}</label>
+          <div className="hs-map-search-row">
+            <input
+              id="clinic-map-search"
+              type="search"
+              maxLength={200}
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                cancelSearch()
+              }}
+              placeholder={t("map:searchPlaceholder")}
+            />
             <button
-              onClick={load}
-              disabled={loading}
-              className="w-8 h-8 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center text-slate-400 hover:text-teal-600 hover:border-teal-300 dark:hover:border-teal-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label={t("map:refreshAria")}
+              type="submit"
+              className="hs-map-button"
+              disabled={searching || query.trim().length < 2}
             >
-              <svg
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 4v4h.582m15.356 2A8.001 8.001 0 004.582 8m0 0H9m11 11v-4h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              {searching ? t("common:loading") : t("map:searchPlaces")}
             </button>
-          </div>
-        </div>
-
-        {/* Spotlight info banner */}
-        {spotlight && !loading && !error && (
-          <div className="bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <p className="text-sm font-semibold tracking-wide flex-1">
-              {t("map:spotlightBanner", { count: quietCount })}
-            </p>
             <button
-              onClick={() => setSpotlight(false)}
-              className="text-xs font-bold underline hover:no-underline opacity-80 hover:opacity-100 transition-opacity whitespace-nowrap"
+              type="button"
+              className="hs-map-button"
+              onClick={() => {
+                setQuery("")
+                setFilter("all")
+                setSpotlight(false)
+                cancelSearch()
+              }}
             >
               {t("common:clear")}
             </button>
           </div>
-        )}
-
-        {/* SVG Map */}
-        <div
-          className="flex-1 flex items-center justify-center p-6 overflow-hidden relative"
-          style={{ background: mc.sea }}
-        >
-          {/* Subtle ambient gradients */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: dark
-                ? "radial-gradient(ellipse at 20% 80%, #0f2a45 0%, transparent 50%), radial-gradient(ellipse at 80% 15%, #0a2a22 0%, transparent 45%)"
-                : "radial-gradient(ellipse at 20% 80%, #bae6fd 0%, transparent 50%), radial-gradient(ellipse at 80% 15%, #99f6e4 0%, transparent 45%)",
-            }}
-          />
-
-          {/* Map canvas (ratio-locked so %-based tooltip positions work) */}
-          <div
-            className="relative h-full"
-            style={{
-              aspectRatio: "380 / 450",
-              maxHeight: "100%",
-              maxWidth: "100%",
-            }}
+        </form>
+        <p className="hs-map-muted">
+          {t("map:searchPrivacy")}{" "}
+          <a
+            href="https://operations.osmfoundation.org/policies/nominatim/"
+            target="_blank"
+            rel="noreferrer"
           >
-            <svg
-              viewBox="0 0 380 450"
-              className="w-full h-full drop-shadow-2xl"
-              aria-label={t("map:ariaMap")}
-            >
-              <defs>
-                <pattern
-                  id="ops-dots"
-                  x="0"
-                  y="0"
-                  width="16"
-                  height="16"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="0.8"
-                    fill={dark ? "#1e3a5c" : "#bae6fd"}
-                    opacity="0.5"
-                  />
-                </pattern>
-              </defs>
-
-              {/* Sea texture */}
-              <rect width="380" height="450" fill="url(#ops-dots)" />
-
-              {/* Country body */}
-              <path
-                d={BD_PATH}
-                fill={mc.country}
-                stroke={mc.border}
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-
-              {/* Division hints */}
-              <path
-                d="M 150,188 L 160,282"
-                fill="none"
-                stroke={mc.div}
-                strokeWidth="0.9"
-                strokeDasharray="5 5"
-                opacity="0.7"
-              />
-              <path
-                d="M 220,155 L 265,410"
-                fill="none"
-                stroke={mc.div}
-                strokeWidth="0.9"
-                strokeDasharray="5 5"
-                opacity="0.7"
-              />
-
-              {/* Rivers */}
-              <path
-                d={RIVER_JAMUNA}
-                fill="none"
-                stroke={mc.river}
-                strokeWidth="3"
-                strokeLinecap="round"
-                opacity="0.7"
-              />
-              <path
-                d={RIVER_PADMA}
-                fill="none"
-                stroke={mc.river}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                opacity="0.6"
-              />
-              <path
-                d={RIVER_MEGHNA}
-                fill="none"
-                stroke={mc.river}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                opacity="0.6"
-              />
-
-              {/* Spotlight: rings around quiet clinics */}
-              {spotlight &&
-                mapped
-                  .filter((c) => c.activity === "quiet")
-                  .map((c) => (
-                    <circle
-                      key={`zone-${c.id}`}
-                      cx={c.x}
-                      cy={c.y}
-                      r="30"
-                      fill="rgba(100,116,139,0.08)"
-                      stroke="rgba(100,116,139,0.4)"
-                      strokeWidth="1"
-                      strokeDasharray="6 4"
-                    />
-                  ))}
-
-              {/* Clinic pins */}
-              {mapped.map((clinic, i) => {
-                const cfg = S[clinic.activity]
-                const fill = cfg.fill as string
-                const isSel = selId === clinic.id
-                const isHov = hovId === clinic.id
-
-                return (
-                  <g
-                    key={clinic.id}
-                    onMouseEnter={() => setHovId(clinic.id)}
-                    onMouseLeave={() => setHovId(null)}
-                    onClick={() => setSelId(isSel ? null : clinic.id)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {/* Animated pulse ring */}
-                    <circle cx={clinic.x} cy={clinic.y} r="5" fill={fill} opacity="0">
-                      <animate
-                        attributeName="r"
-                        values={cfg.pulseR as string}
-                        dur={cfg.pulseDur as string}
-                        repeatCount="indefinite"
-                        begin={`${(i % 8) * 0.3}s`}
-                      />
-                      <animate
-                        attributeName="opacity"
-                        values="0.35;0;0.35"
-                        dur={cfg.pulseDur as string}
-                        repeatCount="indefinite"
-                        begin={`${(i % 8) * 0.3}s`}
-                      />
-                    </circle>
-
-                    {/* Selected: white selection ring */}
-                    {isSel && (
-                      <circle
-                        cx={clinic.x}
-                        cy={clinic.y}
-                        r="11"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2.5"
-                      />
-                    )}
-
-                    {/* Hover glow */}
-                    {isHov && (
-                      <circle cx={clinic.x} cy={clinic.y} r="13" fill={`${fill}22`} />
-                    )}
-
-                    {/* Pin body */}
-                    <circle
-                      cx={clinic.x}
-                      cy={clinic.y}
-                      r={isHov || isSel ? 8 : 6}
-                      fill={fill}
-                      stroke="white"
-                      strokeWidth={1.5}
-                    />
-
-                    {/* Active checkmark */}
-                    {clinic.activity === "active" && (
-                      <path
-                        d={`M ${clinic.x - 2.5},${clinic.y} L ${clinic.x - 0.5},${clinic.y + 2} L ${clinic.x + 2.8},${clinic.y - 2}`}
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    )}
-
-                    {/* Recent dash */}
-                    {clinic.activity === "recent" && (
-                      <line
-                        x1={clinic.x - 3}
-                        y1={clinic.y}
-                        x2={clinic.x + 3}
-                        y2={clinic.y}
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    )}
-
-                    {/* Quiet dot */}
-                    {clinic.activity === "quiet" && (
-                      <circle cx={clinic.x} cy={clinic.y} r="1.6" fill="white" />
-                    )}
-                  </g>
-                )
-              })}
-            </svg>
-
-            {/* Floating tooltip */}
-            {hovClinic && (
-              <div
-                className="absolute z-30 pointer-events-none"
-                style={{
-                  left: `${(hovClinic.x / 380) * 100}%`,
-                  top: `${(hovClinic.y / 450) * 100}%`,
-                  transform: tipTransform(hovClinic),
+            {t("map:searchPolicy")}
+          </a>
+        </p>
+        {query.trim() && (
+          <div
+            className="hs-map-search-results"
+            aria-label={t("map:clinicResults")}
+          >
+            {filtered.slice(0, 8).map((clinic) => (
+              <button
+                type="button"
+                key={clinic.id}
+                onClick={() => selectClinic(clinic)}
+              >
+                {clinic.name} · {clinic.zone || t("map:unzoned")}
+                {!hasCoordinates(clinic) && ` · ${t("map:missingCoordinates")}`}
+              </button>
+            ))}
+            {!filtered.length && <p role="status">{t("map:noMatches")}</p>}
+          </div>
+        )}
+        {placeStatus && <p role="status">{t(placeStatus)}</p>}
+        {places.length > 0 && (
+          <div
+            className="hs-map-search-results"
+            aria-label={t("map:placeResults")}
+          >
+            <p>{t("map:placeAttribution")}</p>
+            {places.map((place) => (
+              <button
+                type="button"
+                key={place.id}
+                onClick={() => {
+                  setFocus({
+                    latitude: place.latitude,
+                    longitude: place.longitude,
+                    zoom: 13,
+                  })
+                  if (placeTarget === "editor" && draft)
+                    placeClinic(place.latitude, place.longitude)
+                  else {
+                    setQuery("")
+                    setFilter("all")
+                    setSpotlight(false)
+                    setSelectedId(null)
+                  }
+                  setPlaces([])
                 }}
               >
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl px-3.5 py-2.5 min-w-[170px]">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${S[hovClinic.activity].dot} ${
-                        hovClinic.activity === "active" ? "" : "animate-pulse"
-                      }`}
-                    />
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                      {hovClinic.name}
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1">
-                    {hovClinic.zone || t("map:unzoned")} · {timeAgo(hovClinic.lastVisitAt, t)}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${S[hovClinic.activity].badge}`}
-                    >
-                      {t(`map:${hovClinic.activity}`)}
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                      {hovClinic.patientCount} {t("common:patients")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Loading overlay */}
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-slate-950/40 backdrop-blur-[1px]" role="status" aria-live="polite">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-lg">
-                  <svg
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    className="w-4 h-4 animate-spin"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 4v4h.582m15.356 2A8.001 8.001 0 004.582 8m0 0H9m11 11v-4h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  {t("map:loadingClinics")}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Selected clinic detail bar */}
-        {selClinic && (
-          <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center gap-x-6 gap-y-1.5 flex-shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${S[selClinic.activity].dot}`} />
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                {selClinic.name}
-              </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
-                {selClinic.zone || t("map:unzoned")}
-              </span>
-            </div>
-            <div className="flex items-center gap-5 text-xs text-slate-500 dark:text-slate-400">
-              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.patientCount}</strong> {t("map:detailPatients")}</span>
-              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.visitsLast7d}</strong> {t("map:detailVisits7d")}</span>
-              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.highRisk}</strong> {t("map:detailHighRisk")}</span>
-              <span><strong className="text-slate-800 dark:text-slate-100">{selClinic.pendingSync}</strong> {t("map:detailPendingSync")}</span>
-              <span>{t("map:detailLastVisit", { time: timeAgo(selClinic.lastVisitAt, t) })}</span>
-            </div>
-            <button
-              onClick={() => setSelId(null)}
-              className="ml-auto text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            >
-              {t("common:close")}
-            </button>
+                {place.label}
+              </button>
+            ))}
           </div>
         )}
+      </div>
 
-        {/* Status legend */}
-        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-6 flex-shrink-0">
-          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            {t("map:legend")}
-          </span>
-          <div className="flex items-center gap-5 flex-1 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0" />
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                {t("map:legendActive")}
-              </span>
+      {draft && (
+        <form
+          className="hs-clinic-editor"
+          onSubmit={submitClinic}
+          aria-label={draft.id ? t("map:editClinic") : t("map:addClinic")}
+        >
+          <h3 ref={editorHeading} tabIndex={-1}>
+            {draft.id ? t("map:editClinic") : t("map:addClinic")}
+          </h3>
+          <fieldset disabled={saving}>
+            <div className="hs-editor-fields">
+              {([
+                "name",
+                "zone",
+                "address",
+                "latitude",
+                "longitude",
+              ] as const).map((field) => (
+                <label key={field}>
+                  {t(`map:clinicField_${field}`)}
+                  <input
+                    type={
+                      field === "latitude" || field === "longitude"
+                        ? "number"
+                        : "text"
+                    }
+                    step="any"
+                    required
+                    maxLength={field === "address" ? 150 : 100}
+                    value={draft[field]}
+                    onChange={(event) => {
+                      setDraft({ ...draft, [field]: event.target.value })
+                      setSaveError(null)
+                    }}
+                  />
+                </label>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-amber-400 flex-shrink-0" />
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                {t("map:legendRecent")}
-              </span>
+            <p className="hs-map-muted">{t("map:placementHelp")}</p>
+            <div className="hs-map-actions">
+              <button
+                type="button"
+                className="hs-map-button"
+                aria-pressed={placing}
+                onClick={() => setPlacing(!placing)}
+              >
+                {t("map:placeOnMap")}
+              </button>
+              <button
+                type="button"
+                className="hs-map-button"
+                disabled={
+                  searching || !draft.address.trim() || !draft.zone.trim()
+                }
+                onClick={() =>
+                  void findPlaces(
+                    `${draft.address}, ${draft.zone}, Bangladesh`,
+                    "editor",
+                  )
+                }
+              >
+                {t("map:geocodeAddress")}
+              </button>
+              <button
+                className="hs-map-button primary"
+                type="submit"
+                disabled={!draftPoint || !draft.name.trim()}
+              >
+                {saving ? t("common:loading") : t("map:saveClinic")}
+              </button>
+              <button
+                type="button"
+                className="hs-map-button"
+                onClick={() => {
+                  setDraft(null)
+                  setPlacing(false)
+                  cancelSearch()
+                }}
+              >
+                {t("map:cancel")}
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-slate-400 flex-shrink-0" />
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                {t("map:legendQuiet")}
-              </span>
+          </fieldset>
+          {saveError && <p role="alert">{t(saveError)}</p>}
+        </form>
+      )}
+      {placing && (
+        <p className="hs-map-notice" role="status">
+          {t("map:clickToPlace")}
+        </p>
+      )}
+
+      <div className="hs-map-body">
+        <aside className="hs-map-sidebar" aria-label={t("map:clinicList")}>
+          <button
+            type="button"
+            className="hs-map-button hs-map-list-toggle"
+            aria-expanded={listOpen}
+            aria-controls="ops-clinic-list"
+            onClick={() => setListOpen(!listOpen)}
+          >
+            {t("map:clinicsCount", { count: entries.length })} ·{" "}
+            {t("map:toggleList")}
+          </button>
+          <div
+            className={`hs-map-sidebar-content ${listOpen ? "is-open" : ""}`}
+            id="ops-clinic-list"
+          >
+            <div className="hs-map-counts">
+              {(["active", "recent", "quiet"] as const).map((activity) => (
+                <span key={activity}>
+                  <span
+                    className="hs-map-status"
+                    style={{ background: COLORS[activity] }}
+                  />
+                  {t(`map:${activity}`)}{" "}
+                  {entries.filter((c) => c.activity === activity).length}
+                </span>
+              ))}
             </div>
+            <div
+              className="hs-map-filters"
+              role="group"
+              aria-label={t("map:activityFilter")}
+            >
+              {(["all", "active", "recent", "quiet"] as const).map((value) => (
+                <button
+                  type="button"
+                  key={value}
+                  aria-pressed={filter === value}
+                  onClick={() => setFilter(value)}
+                >
+                  {value === "all" ? t("common:all") : t(`map:${value}`)}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="hs-map-button"
+              aria-pressed={spotlight}
+              disabled={loading || error}
+              onClick={() => {
+                setSpotlight(!spotlight)
+                if (!spotlight) setFilter("all")
+              }}
+            >
+              {t("map:quietSpotlight")}
+            </button>
+            {loading ? (
+              <p role="status">{t("map:loadingClinics")}</p>
+            ) : error ? (
+              <div role="alert">
+                <p>{t("map:loadError")}</p>
+                <button className="hs-map-button" onClick={() => void load()}>
+                  {t("common:retry")}
+                </button>
+              </div>
+            ) : entries.length === 0 ? (
+              <p role="status">{t("map:noClinics")}</p>
+            ) : (
+              <>
+                {!filtered.length && <p role="status">{t("map:noMatches")}</p>}
+                <div className="hs-map-clinic-list">
+                  {filtered.map((clinic) => (
+                    <button
+                      type="button"
+                      key={clinic.id}
+                      aria-pressed={selectedId === clinic.id}
+                      onClick={() => selectClinic(clinic)}
+                    >
+                      <strong>{clinic.name}</strong>
+                      <span>{clinic.zone || t("map:unzoned")}</span>
+                      <span>
+                        <span
+                          className="hs-map-status"
+                          style={{ background: COLORS[clinic.activity] }}
+                        />
+                        {t(`map:${clinic.activity}`)} · {clinic.patientCount}{" "}
+                        {t("map:detailPatients")}
+                      </span>
+                      {clinic.pendingSync > 0 && (
+                        <span>
+                          {t("map:queued", { count: clinic.pendingSync })}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {unmapped.length > 0 && (
+                  <section
+                    className="hs-map-unmapped"
+                    aria-label={t("map:notOnMapTitle")}
+                  >
+                    <h3>{t("map:notOnMap", { count: unmapped.length })}</h3>
+                    <p>{t("map:missingCoordinatesHelp")}</p>
+                    {unmapped.map((clinic) => (
+                      <button
+                        type="button"
+                        key={clinic.id}
+                        onClick={() => selectClinic(clinic)}
+                      >
+                        {clinic.name}
+                      </button>
+                    ))}
+                  </section>
+                )}
+              </>
+            )}
           </div>
-          <div className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">
-            {t("map:activeOf", { active: counts.active, total: entries.length })}
-          </div>
+        </aside>
+
+        <div className="hs-map-canvas-column">
+          {spotlight && (
+            <p className="hs-map-notice">
+              {t("map:spotlightBanner", {
+                count: entries.filter((c) => c.activity === "quiet").length,
+              })}
+            </p>
+          )}
+          {loading && <p role="status">{t("map:loadingClinics")}</p>}
+          {error && (
+            <p className="hs-map-notice" role="alert">
+              {t("map:loadError")}
+            </p>
+          )}
+          <MapContainer
+            attributionControl={false}
+            center={BANGLADESH_CENTER}
+            zoom={7}
+            minZoom={6}
+            maxZoom={19}
+            maxBounds={BANGLADESH_BOUNDS}
+            fadeAnimation={false}
+            maxBoundsViscosity={0.8}
+            scrollWheelZoom
+            touchZoom
+            dragging
+            className={`hs-leaflet-map ${placing ? "is-placing" : ""}`}
+          >
+            <TileStatus dark={dark} />
+            <AttributionControl position="bottomleft" />
+            <MapBehavior
+              focus={focus}
+              placing={placing && !saving}
+              onPlace={placeClinic}
+            />
+            {!loading &&
+              !error &&
+              mapped.map((clinic) => (
+                <ClinicMarker
+                  key={clinic.id}
+                  clinic={clinic}
+                  selected={selectedId === clinic.id}
+                  selectionFocus={focus}
+                  spotlight={spotlight && clinic.activity === "quiet"}
+                  onSelect={() => selectClinic(clinic)}
+                />
+              ))}
+            {draftPoint && (
+              <Marker
+                position={[draftPoint.latitude, draftPoint.longitude]}
+                title={t("map:draftLocation")}
+                alt={t("map:draftLocation")}
+                draggable={!saving}
+                eventHandlers={{
+                  dragend: (event) => {
+                    const point = event.target.getLatLng()
+                    placeClinic(point.lat, point.lng)
+                  },
+                }}
+                icon={divIcon({
+                  className: "hs-clinic-marker is-draft",
+                  html: '<span style="background:#0f766e"></span>',
+                  iconSize: [28, 28],
+                  iconAnchor: [14, 14],
+                })}
+              />
+            )}
+          </MapContainer>
+          {selected && (
+            <section
+              className="hs-map-selection"
+              aria-label={t("map:selectedClinic")}
+            >
+              <ClinicDetails clinic={selected} />
+              <div className="hs-map-actions">
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="hs-map-button"
+                    disabled={!coordinatesAvailable || !!draft}
+                    onClick={() => beginEdit(selected)}
+                  >
+                    {t("map:editClinic")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="hs-map-button"
+                  onClick={() => setSelectedId(null)}
+                >
+                  {t("common:close")}
+                </button>
+              </div>
+            </section>
+          )}
+          <footer className="hs-map-legend">
+            {(["active", "recent", "quiet"] as const).map((activity) => (
+              <span key={activity}>
+                <span
+                  className="hs-map-status"
+                  style={{ background: COLORS[activity] }}
+                />
+                {t(
+                  `map:legend${activity[0].toUpperCase()}${activity.slice(1)}`,
+                )}
+              </span>
+            ))}
+            <p>{t("map:metricCaveat")}</p>
+          </footer>
         </div>
-      </main>
-    </div>
+      </div>
+    </section>
   )
 }

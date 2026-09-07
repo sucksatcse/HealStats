@@ -11,6 +11,9 @@ export interface ClinicRow {
   name: string;
   zone: string | null;
   address: string | null;
+  /** Nullable coordinates from the prepared 20260908000000 migration; legacy selects omit them. */
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface StaffRow {
@@ -199,6 +202,8 @@ export interface ClinicMapEntry {
   name: string;
   zone: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   patientCount: number;
   visitsLast24h: number;
   visitsLast7d: number;
@@ -210,6 +215,8 @@ export interface ClinicMapEntry {
 
 export interface ClinicMapData {
   clinics: ClinicMapEntry[];
+  /** False when coordinate columns are absent: disable editing and show migration needed. */
+  coordinatesAvailable?: boolean;
   totals: {
     clinics: number;
     patients: number;
