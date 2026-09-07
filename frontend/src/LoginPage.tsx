@@ -14,6 +14,8 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [resending, setResending] = useState(false)
+  const [resendStatus, setResendStatus] = useState<string | null>(null)
 
   useEffect(() => {
     const onOnline = () => setIsOnline(true)
@@ -135,19 +137,60 @@ export default function LoginPage({ onBack, onLogin, onSignUp }: LoginPageProps)
 
             {/* Error */}
             {error && (
-              <div role="alert" className="flex items-start gap-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5">
-                <svg
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-4 h-4 flex-shrink-0 mt-0.5"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {error}
+              <div role="alert" className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-5">
+                <div className="flex items-start gap-2.5">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4 flex-shrink-0 mt-0.5"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="font-semibold">{error}</p>
+                    {error.toLowerCase().includes("email not confirmed") && (
+                      <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-900/50 text-xs text-red-600 dark:text-red-300">
+                        <p>Your account was registered, but the email address has not been confirmed yet. Please check your inbox or click below to resend the confirmation link.</p>
+                        <button
+                          type="button"
+                          disabled={resending}
+                          onClick={async () => {
+                            if (!email.trim()) return
+                            setResending(true)
+                            setResendStatus(null)
+                            try {
+                              const { error: resendErr } = await supabase.auth.resend({
+                                type: "signup",
+                                email: email.trim(),
+                              })
+                              if (resendErr) {
+                                setResendStatus(`Resend failed: ${resendErr.message}`)
+                              } else {
+                                setResendStatus("Confirmation link sent! Check your inbox.")
+                              }
+                            } catch {
+                              setResendStatus("Failed to contact the auth server.")
+                            } finally {
+                              setResending(false)
+                            }
+                          }}
+                          className="mt-2 inline-flex items-center gap-1 font-semibold text-teal-800 dark:text-teal-300 underline hover:no-underline cursor-pointer disabled:opacity-50"
+                        >
+                          {resending ? "Sending link…" : "Resend confirmation email"}
+                        </button>
+                        {resendStatus && (
+                          <p className="mt-1 font-medium text-slate-700 dark:text-slate-200">
+                            {resendStatus}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
