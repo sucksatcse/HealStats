@@ -658,13 +658,16 @@ export default function ClinicalOfficerPage({
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-800/60 border border-teal-500/30 text-teal-200 text-xs font-semibold mb-3">
                 <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
-                Clinical Officer & Medical Officer Station
+                <span>Clinical Officer & Medical Officer Station</span>
+                <span className="opacity-50">•</span>
+                <span className="text-white font-bold">{profile?.clinic_name || "General Clinic"}</span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold font-display tracking-tight text-white">
                 Clinical Diagnoses, Prescriptions & Visit Management
               </h1>
               <p className="text-sm text-teal-100/80 mt-1 max-w-2xl">
-                Logged in as <strong className="text-white">{profile?.name || "Clinical Officer"}</strong> (Clinical Officer / Clinician). Diagnose patients, prescribe treatments, and review nurse-captured vitals from the central database.
+                Logged in as <strong className="text-white">{profile?.name || "Clinical Officer"}</strong> at{" "}
+                <strong className="text-white underline decoration-teal-400/50">{profile?.clinic_name || "Assigned Clinic"}</strong>. Diagnose patients, prescribe treatments, and review nurse-captured vitals from the central database.
               </p>
             </div>
             <div className="flex items-center gap-3">

@@ -640,7 +640,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
               <p className="text-sm font-semibold text-white truncate">
                 {workerName}
               </p>
-              <p className="text-[10px] text-teal-400">{t.clinic}</p>
+              <p className="text-[10px] text-teal-400 truncate">{profile?.clinic_name || t.clinic}</p>
             </div>
             <button
               onClick={onLogout}
@@ -760,8 +760,8 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{today}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide font-semibold">
-                    {t.clinic}
+                  <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide font-semibold truncate max-w-[200px]">
+                    {profile?.clinic_name || t.clinic}
                   </p>
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t.workerId}: {workerIdShort}</p>
                 </div>
