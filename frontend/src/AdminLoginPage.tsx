@@ -281,6 +281,7 @@ export default function AdminLoginPage({
         .from("staff")
         .select("role")
         .eq("auth_user_id", userId)
+        .limit(1)
         .maybeSingle()
 
       if (staff?.role !== "admin") {

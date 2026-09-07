@@ -47,13 +47,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .from("staff")
           .select("id, name, role, clinic_id")
           .eq("auth_user_id", userId)
-          .single()
+          .limit(1)
+          .maybeSingle()
 
         if (error) {
           console.error("Error fetching staff profile:", error)
           if (mounted) setProfile(null)
         } else if (data && mounted) {
           setProfile(data as AuthProfile)
+        } else if (mounted) {
+          setProfile(null)
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
