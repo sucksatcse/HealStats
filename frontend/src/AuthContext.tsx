@@ -81,51 +81,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        // Fallback 2: Auto-provision staff row from user_metadata if completely absent
-        if (!data && u) {
-          const metaRole = u.user_metadata?.role === "admin" ? "admin" : "worker"
-          const metaDes = (u.user_metadata?.designation as ClinicalDesignation) || "nurse"
-          const metaName = u.user_metadata?.name || u.email?.split("@")[0] || "Staff Member"
-          const metaClinicName = (u.user_metadata?.clinic_name as string | undefined)?.trim()
-          let metaClinicId = (u.user_metadata?.clinic_id as string | undefined) || null
-
-          if (!metaClinicId && metaClinicName) {
-            const { data: cMatch } = await supabase
-              .from("clinics")
-              .select("id, name")
-              .ilike("name", metaClinicName)
-              .limit(1)
-              .maybeSingle()
-            if (cMatch) {
-              metaClinicId = cMatch.id
-            } else {
-              const { data: cNew } = await supabase
-                .from("clinics")
-                .insert([{ name: metaClinicName, zone: "Zone A" }])
-                .select("id, name")
-                .maybeSingle()
-              if (cNew) metaClinicId = cNew.id
-            }
-          }
-
-          const { data: createdStaff, error: createErr } = await supabase
-            .from("staff")
-            .insert({
-              name: metaName,
-              email: u.email,
-              auth_user_id: userId,
-              role: metaRole,
-              designation: metaDes,
-              clinic_id: metaClinicId,
-            })
-            .select("id, name, role, clinic_id, designation, clinics (id, name, zone)")
-            .maybeSingle()
-
-          if (!createErr && createdStaff) {
-            data = createdStaff
-          }
-        }
-
         // Ignore lookups superseded by sign-out or a newer session.
         if (!mounted || request !== profileRequest) return
 
@@ -194,22 +149,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             designation,
           })
         } else if (mounted) {
-          // If still no staff record, build a temporary profile from authenticated user metadata
-          if (u) {
-            const metaRole = u.user_metadata?.role === "admin" ? "admin" : "worker"
-            const metaDes = (u.user_metadata?.designation as ClinicalDesignation) || "nurse"
-            const metaClinicName = (u.user_metadata?.clinic_name as string | undefined)?.trim() || null
-            setProfile({
-              id: userId,
-              name: u.user_metadata?.name || u.email?.split("@")[0] || "Staff Member",
-              role: metaRole,
-              clinic_id: (u.user_metadata?.clinic_id as string | undefined) || null,
-              clinic_name: metaClinicName,
-              designation: metaDes,
-            })
-          } else {
-            setProfile(null)
-          }
+          setProfile(null)
         }
       } catch (err) {
         console.error("Unexpected error fetching profile:", err)
