@@ -107,11 +107,13 @@ export async function atomicWriteJson(file, value) {
       await handle.close()
     }
     await rename(temporary, file)
-    const directory = await open(dirname(file), "r")
-    try {
-      await directory.sync()
-    } finally {
-      await directory.close()
+    if (process.platform !== "win32") {
+      const directory = await open(dirname(file), "r")
+      try {
+        await directory.sync()
+      } finally {
+        await directory.close()
+      }
     }
   } finally {
     await rm(temporary, { force: true })

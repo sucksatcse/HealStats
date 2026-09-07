@@ -128,7 +128,9 @@ test("serializes concurrent requests, spaces actual starts >=1100ms and caches d
     parseCache(await readFile(f.cachePath, "utf8")).entries.length,
     3,
   )
-  assert.equal((await stat(f.cachePath)).mode & 0o777, 0o600)
+  if (process.platform !== "win32") {
+    assert.equal((await stat(f.cachePath)).mode & 0o777, 0o600)
+  }
   results[0][0].latitude = 0
   assert.deepEqual(await f.geocoder.search("Dhaka clinic"), [place])
 })

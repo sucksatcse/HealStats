@@ -49,10 +49,14 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    optimizeDeps: {
+      include: ["react-leaflet", "leaflet"],
+    },
     server: {
       host: "0.0.0.0",
       port: parseInt(process.env.PORT || "8443"),
       strictPort: true,
+      allowedHosts: true,
       fs: {
         // Preserve Vite's defaults; private cache/checkpoints must never be served.
         deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "**/.cache/**"],
@@ -61,6 +65,7 @@ export default defineConfig(({ mode }) => {
     preview: {
       host: "0.0.0.0",
       port: parseInt(process.env.PORT || "8443"),
+      allowedHosts: true,
     },
   }
-})
+}) // dev server config
