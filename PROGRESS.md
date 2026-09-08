@@ -3,10 +3,20 @@
 This document provides a comprehensive and highly detailed breakdown of every single file, configuration, and feature implemented in the project thus far.
 
 ## Latest Map Update — 2026-09-08
+- **Homepage Interactive Coverage Map**: Integrated Leaflet interactive map into public homepage coverage section ([`ClinicsMapSection.tsx`](file:///i:/HealStats/frontend/src/ClinicsMapSection.tsx)). Added an accessible view toggle allowing visitors to switch between the **Interactive Map** (live OpenStreetMap tiles, real Supabase clinic markers, activity indicators, popups, and dark mode tiles) and the simplified **Overview Map** (stylized SVG Bangladesh outline).
 - **Coordinate migration APPLIED & ACTIVATED**: Operator authorized and executed the prepared coordinate migration (`20260908000000_add_clinic_coordinates.sql`) and `auth.users` token cleanup in target development database (`ckcovsgmiykenokkvxrk.supabase.co`).
 - **Live Verification**: `clinics.latitude`, `clinics.longitude`, and pair/range checks (`clinics_coordinates_pair_check`, `clinics_latitude_range_check`, `clinics_longitude_range_check`) are active and verified via live Supabase REST query (`HTTP 200`). Admin sign-in (`admin@healstats.org`) now succeeds cleanly (`HTTP 200`).
 - **100 Additional Real Community Clinics Populated**: Sourced from the Bangladesh Healthsites (OSM-derived) dataset (`electricsheepasia/asia-health-facilities-bangladesh-healthsites`) with DGHS cross-referencing. Exactly 100 unique community-clinic records were validated and inserted into `public.clinics` (74 DGHS-verified by facility naming standards, 26 Healthsites/OSM-sourced). The facilities are distributed across all 8 divisions (Khulna: 15, Barishal: 15, Dhaka: 15, Chattogram: 15, Rajshahi: 15, Rangpur: 12, Mymensingh: 8, Sylhet: 5) with verified, non-fabricated GPS coordinates within Bangladesh bounds. Full export available in `scripts/bangladesh_100_community_clinics.csv`.
 - **UI State**: The Ops Map notice `migrationRequired` is resolved, `coordinatesAvailable` is `true`, all 121 clinics with coordinates render on the interactive map with accurate coordinates and Quiet status (0 visits), and the "Add clinic" button is fully enabled for authorized district health admins.
+
+## Latest Demo Data Seed Update — 2026-09-08
+- **Fictional Demo Data Seeded**: Fictional demo dataset saved to `seed.sql` and `supabase/seed.sql`, and seeded into `ckcovsgmiykenokkvxrk.supabase.co` via idempotent script (`frontend/scripts/seed_demo_data.mjs`).
+- **Data Counts Verified**:
+  - `public.clinics`: 122 total (61 clinics in the seed assignment pool where `rn % 2 = 0`).
+  - `public.staff`: 138 total (100 seeded staff with `@seed.healstats.invalid` emails, `auth_user_id = NULL`, designations: 35 CHW, 30 Nurse, 25 Clinical Officer, 10 Admin; 38 pre-existing).
+  - `public.patients`: 103 total (100 seeded fictional patients distributed across alternate clinics with realistic Bangladeshi names and coastal/rural villages; 3 pre-existing).
+  - `public.visits`: 303 total (300 seeded intake visits with structured vitals JSONB, symptoms, diagnoses, 1–5 urgency scores, and staggered timestamps; 3 pre-existing).
+- **Idempotency**: Re-execution verified cleanly with zero errors and no duplicate row creation.
 
 ## Latest QA Update — 2026-09-08
 - Fixed the Phase-merge E2E regressions: tests now use **Log In** for authentication, **Get Started / Sign Up** for registration, and expect logout to return home before checking protected-route rejection.
