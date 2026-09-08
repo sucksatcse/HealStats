@@ -309,6 +309,8 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
       ? t("profile:allClinics", "All clinics (district-level)")
       : clinic?.name
       ? clinic.name
+      : (isSelfProfile && authProfile?.clinic_name)
+      ? authProfile.clinic_name
       : t("profile:unassignedClinicStaff", "Unassigned Clinic")
 
   return (

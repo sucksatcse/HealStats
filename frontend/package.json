@@ -16,6 +16,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
     "dexie": "^4.4.5",
+    "framer-motion": "^13.2.0",
     "i18next": "^26.4.2",
     "i18next-browser-languagedetector": "^8.2.1",
     "leaflet": "^1.9.4",

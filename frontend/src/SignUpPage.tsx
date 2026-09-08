@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { supabase } from "./lib/supabase"
 
@@ -10,8 +10,7 @@ interface SignUpPageProps {
 /**
  * Self-service registration. Creates a Supabase Auth user, then a linked row in
  * `staff` (role is always 'worker' — admin accounts are provisioned by an admin,
- * never via public signup). Clinic assignment is optional and can be set later
- * by an admin. No schema changes; uses the existing Supabase client.
+ * never via public signup). Clinic assignment is required and linked to `clinics` table.
  */
 export type StaffDesignation = "community_health_worker" | "nurse" | "clinical_officer"
 
@@ -20,6 +19,8 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
+  const [clinicName, setClinicName] = useState("")
+  const [clinicSuggestions, setClinicSuggestions] = useState<Array<{ id: string; name: string }>>([])
   const [designation, setDesignation] = useState<StaffDesignation>("community_health_worker")
   const [showPassword, setShowPassword] = useState(false)
 
@@ -30,6 +31,16 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
   }>(null)
   const { t } = useTranslation()
 
+  useEffect(() => {
+    supabase
+      .from("clinics")
+      .select("id, name")
+      .order("name")
+      .then(({ data }) => {
+        if (data) setClinicSuggestions(data)
+      })
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -39,9 +50,39 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
     if (password.length < 8) return setError(t("auth:errPwMin"))
     if (password !== confirm) return setError(t("auth:errPwMatch"))
 
+    const cleanClinic = clinicName.trim()
+    if (!cleanClinic) return setError(t("auth:errClinic"))
+    if (cleanClinic.length < 2) return setError(t("auth:errClinicMin"))
+
     setLoading(true)
 
-    // 1. Create the auth user.
+    // 1. Resolve or create the clinic record
+    let clinicId: string | null = null
+    try {
+      const { data: existingClinic } = await supabase
+        .from("clinics")
+        .select("id, name")
+        .ilike("name", cleanClinic)
+        .limit(1)
+        .maybeSingle()
+
+      if (existingClinic?.id) {
+        clinicId = existingClinic.id
+      } else {
+        const { data: createdClinic } = await supabase
+          .from("clinics")
+          .insert([{ name: cleanClinic, zone: "Zone A" }])
+          .select("id, name")
+          .maybeSingle()
+        if (createdClinic?.id) {
+          clinicId = createdClinic.id
+        }
+      }
+    } catch (cErr) {
+      console.warn("Could not pre-resolve clinic:", cErr)
+    }
+
+    // 2. Create the auth user.
     const { data, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -50,6 +91,8 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
           role: "worker",
           designation,
           name: name.trim(),
+          clinic_id: clinicId,
+          clinic_name: cleanClinic,
         },
       },
     })
@@ -73,8 +116,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
       return
     }
 
-    // 2. Create or update the linked staff profile with EXACT designation.
-    // Check if staff row was created by trigger or exists by email / auth_user_id
+    // 3. Create or update the linked staff profile with EXACT designation and clinic_id.
     const { data: existingStaff } = await supabase
       .from("staff")
       .select("id")
@@ -90,6 +132,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
           email: email.trim(),
           role: "worker",
           designation: designation,
+          clinic_id: clinicId,
           auth_user_id: userId,
         })
         .eq("id", existingStaff.id)
@@ -99,7 +142,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
         email: email.trim(),
         role: "worker",
         designation: designation,
-        clinic_id: null,
+        clinic_id: clinicId,
         auth_user_id: userId,
       })
     }
@@ -354,6 +397,40 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                       </svg>
                     </span>
                     <input id="su-confirm" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder={t("auth:confirmPlaceholder")} value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputCls} />
+                  </div>
+                </div>
+
+                {/* Clinic Name */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="su-clinic" className={labelCls.replace("mb-1.5", "")}>
+                      {t("auth:suClinicName")} <span className="text-teal-600 dark:text-teal-400">*</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                      {t("auth:suClinicAssigned")}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4.5 h-4.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v12.5m12.5-12.5v12.5M3.75 16.25h12.5M6.25 7.5h7.5M6.25 11.25h7.5" />
+                      </svg>
+                    </span>
+                    <input
+                      id="su-clinic"
+                      type="text"
+                      list="existing-clinics-list"
+                      autoComplete="organization"
+                      placeholder={t("auth:suClinicPh")}
+                      value={clinicName}
+                      onChange={(e) => setClinicName(e.target.value)}
+                      className={inputCls}
+                    />
+                    <datalist id="existing-clinics-list">
+                      {clinicSuggestions.map((c) => (
+                        <option key={c.id} value={c.name} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 

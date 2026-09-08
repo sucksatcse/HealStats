@@ -41,6 +41,8 @@ HealStats is an offline-first healthcare record and disaster-response platform d
 | Bangla/English | Accessibility | Implemented (full page coverage) | Critical |
 | Dark Mode | UI/UX | Implemented | High |
 | Motion & Animation | UI/UX | Implemented | Medium |
+| Animated Hero & Scroll-Reveal Stats | UI/UX | Implemented | High |
+| Clinic Name Registration & Display | Auth / Multi-Clinic | Implemented | High |
 | Error/Empty/Loading States | UI/UX | Implemented | High |
 | End-to-End Testing | Quality | Implemented (safe flows) | Medium |
 | PWA | Platform | Implemented | High |

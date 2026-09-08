@@ -39,6 +39,7 @@ interface AppNavbarProps {
   /* app-header props */
   onSidebarOpen?: () => void
   onProfile?: () => void
+  showSearch?: boolean
   searchValue?: string
   onSearchChange?: (value: string) => void
   searchPlaceholder?: string
@@ -158,6 +159,7 @@ export default function AppNavbar({
   onLogout,
   onSidebarOpen,
   onProfile,
+  showSearch,
   searchValue = "",
   onSearchChange,
   searchPlaceholder = "Search…",
@@ -358,6 +360,21 @@ export default function AppNavbar({
                       ? (lang === "bn" ? "ক্লিনিক্যাল অফিসার" : "Clinical Officer")
                       : (lang === "bn" ? "স্বাস্থ্যকর্মী" : "Health Worker")}
                   </p>
+                  {profile?.clinic_name ? (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 mt-0.5 font-medium">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                      </svg>
+                      <span className="truncate">{profile.clinic_name}</span>
+                    </p>
+                  ) : profile?.role === "admin" ? (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="truncate">{lang === "bn" ? "সকল ক্লিনিক (সুপারঅ্যাডমিন)" : "All Clinics (Admin)"}</span>
+                    </p>
+                  ) : null}
                 </div>
 
                 {/* Role-specific Navigation: strictly isolated by role */}
@@ -583,18 +600,20 @@ export default function AppNavbar({
         )}
 
         {/* Search */}
-        <div className="relative flex-1 max-w-xs sm:max-w-sm">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
-            <SearchIcon />
-          </span>
-          <input
-            type="text"
-            value={searchValue}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
-          />
-        </div>
+        {(showSearch ?? Boolean(onSearchChange)) && (
+          <div className="relative flex-1 max-w-xs sm:max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
+              <SearchIcon />
+            </span>
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+            />
+          </div>
+        )}
 
         {/* Optional App PillNav for quick section switching */}
         {navItems && navItems.length > 0 && (
@@ -726,8 +745,20 @@ export default function AppNavbar({
                 <p className="text-xs text-teal-600 dark:text-teal-400 capitalize">
                   {profile?.role === "admin"
                     ? (lang === "bn" ? "অ্যাডমিনিস্ট্রেটর" : "Administrator")
+                    : profile?.designation === "nurse"
+                    ? (lang === "bn" ? "নার্স / ক্লিনিক্যাল ট্রায়াজ" : "Staff Nurse / Triage")
+                    : profile?.designation === "clinical_officer"
+                    ? (lang === "bn" ? "ক্লিনিক্যাল অফিসার" : "Clinical Officer")
                     : (lang === "bn" ? "স্বাস্থ্যকর্মী" : "Health Worker")}
                 </p>
+                {profile?.clinic_name ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-slate-400 shrink-0">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                    </svg>
+                    <span className="truncate">{profile.clinic_name}</span>
+                  </p>
+                ) : null}
               </div>
               {onDashboard && (
                 <button

@@ -13,6 +13,8 @@ export interface AuthProfile {
   name: string
   role: "worker" | "admin"
   clinic_id: string | null
+  clinic_name?: string | null
+  clinics?: { id: string; name: string; zone?: string | null } | null
   designation?: ClinicalDesignation | string
 }
 
@@ -56,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         let { data, error } = await supabase
           .from("staff")
-          .select("id, name, role, clinic_id, designation")
+          .select("id, name, role, clinic_id, designation, clinics (id, name, zone)")
           .eq("auth_user_id", userId)
           .limit(1)
           .maybeSingle()
@@ -67,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!data && u?.email) {
           const { data: emailMatch } = await supabase
             .from("staff")
-            .select("id, name, role, clinic_id, designation")
+            .select("id, name, role, clinic_id, designation, clinics (id, name, zone)")
             .eq("email", u.email.trim())
             .limit(1)
             .maybeSingle()
@@ -86,8 +88,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error("Error fetching staff profile:", error)
           if (mounted) setProfile(null)
         } else if (data && mounted) {
-          const staffRec = data as { id: string; name: string; role: "worker" | "admin"; clinic_id: string | null; designation?: string }
+          interface RawStaffRec {
+            id: string
+            name: string
+            role: "worker" | "admin"
+            clinic_id: string | null
+            designation?: string
+            clinics?: { id: string; name: string; zone?: string | null } | null
+          }
+          const staffRec = data as unknown as RawStaffRec
           const metaDesignation = u?.user_metadata?.designation as ClinicalDesignation | undefined
+          const metaClinicName = (u?.user_metadata?.clinic_name as string | undefined)?.trim()
+
+          // If staff has no clinic_id but metadata has clinic_name, self-heal in background
+          if (!staffRec.clinic_id && metaClinicName) {
+            void (async () => {
+              const { data: cMatch } = await supabase
+                .from("clinics")
+                .select("id, name")
+                .ilike("name", metaClinicName)
+                .limit(1)
+                .maybeSingle()
+              let targetId = cMatch?.id
+              if (!targetId) {
+                const { data: cNew } = await supabase
+                  .from("clinics")
+                  .insert([{ name: metaClinicName, zone: "Zone A" }])
+                  .select("id, name")
+                  .maybeSingle()
+                targetId = cNew?.id
+              }
+              if (targetId) {
+                await supabase.from("staff").update({ clinic_id: targetId }).eq("id", staffRec.id)
+              }
+            })()
+          }
 
           // Priority resolution:
           // 1. If staff table has an explicit designation (other than default community_health_worker if metadata is nurse or clinical officer)
@@ -102,11 +137,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             designation = (staffRec.designation as ClinicalDesignation) || metaDesignation || (staffRec.role === "admin" ? "administrator" : "community_health_worker")
           }
 
+          const resolvedClinicName = staffRec.clinics?.name || metaClinicName || null
+
           setProfile({
             id: staffRec.id,
             name: staffRec.name,
             role: staffRec.role,
             clinic_id: staffRec.clinic_id,
+            clinic_name: resolvedClinicName,
+            clinics: staffRec.clinics || null,
             designation,
           })
         } else if (mounted) {

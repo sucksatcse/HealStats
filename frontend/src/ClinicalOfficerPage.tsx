@@ -201,9 +201,11 @@ const Icons = {
 export default function ClinicalOfficerPage({
   onLogout,
   onNavigate,
+  hideNavbar = false,
 }: {
   onLogout?: () => void
   onNavigate?: (page: string) => void
+  hideNavbar?: boolean
 }) {
   const { profile } = useAuth()
   const { t } = useTranslation()
@@ -655,13 +657,16 @@ export default function ClinicalOfficerPage({
       )}
 
       {/* App Navbar */}
-      <AppNavbar
-        variant="app"
-        userInitials={profile?.name ? profile.name.slice(0, 2).toUpperCase() : "CO"}
-        userColor="teal"
-        onLogout={onLogout}
-        onProfile={() => onNavigate?.("dashboard")}
-      />
+      {!hideNavbar && (
+        <AppNavbar
+          variant="app"
+          showSearch={false}
+          userInitials={profile?.name ? profile.name.slice(0, 2).toUpperCase() : "CO"}
+          userColor="teal"
+          onLogout={onLogout}
+          onProfile={() => onNavigate?.("dashboard")}
+        />
+      )}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header Banner */}
@@ -672,12 +677,14 @@ export default function ClinicalOfficerPage({
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-800/60 border border-teal-500/30 text-teal-200 text-xs font-semibold mb-3">
                 <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
                 {t("clinicalDash:badge")}
+                <span className="opacity-50">•</span>
+                <span className="text-white font-bold">{profile?.clinic_name || t("clinicalDash:generalClinic")}</span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold font-display tracking-tight text-white">
                 {t("clinicalDash:title")}
               </h1>
               <p className="text-sm text-teal-100/80 mt-1 max-w-2xl">
-                {t("clinicalDash:loggedInPre")} <strong className="text-white">{profile?.name || t("clinicalDash:clinicalOfficer")}</strong> {t("clinicalDash:loggedInPost")}
+                {t("clinicalDash:loggedInPre")} <strong className="text-white">{profile?.name || t("clinicalDash:clinicalOfficer")}</strong> {t("clinicalDash:loggedInAt")} <strong className="text-white underline decoration-teal-400/50">{profile?.clinic_name || t("clinicalDash:assignedClinic")}</strong>{t("clinicalDash:loggedInTail")}
               </p>
             </div>
             <div className="flex items-center gap-3">

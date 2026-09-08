@@ -1,5 +1,22 @@
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { divIcon } from "leaflet"
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMapEvents,
+} from "react-leaflet"
+import { useTheme } from "./ThemeContext"
+import { fetchClinicMapData, type ClinicMapEntry } from "./lib/adminService"
+import {
+  BANGLADESH_BOUNDS,
+  BANGLADESH_CENTER,
+  hasCoordinates,
+} from "./lib/clinicMapUtils"
+import "leaflet/dist/leaflet.css"
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -123,6 +140,15 @@ const Icon = {
       <path strokeLinecap="round" d="M8 4.5v3.75l2.5 1.5" />
     </svg>
   ),
+  gps: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+      <circle cx="12" cy="12" r="7" />
+      <line x1="12" y1="1" x2="12" y2="5" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="1" y1="12" x2="5" y2="12" />
+      <line x1="19" y1="12" x2="23" y2="12" />
+    </svg>
+  ),
 }
 
 // ── Data ───────────────────────────────────────────────────────────────────────
@@ -138,17 +164,18 @@ const INCIDENT_TYPES = [
   "Other emergency",
 ]
 
-const INCIDENT_KEY: Record<string, string> = {
-  "Cyclone / Storm surge": "it_cyclone",
-  "Monsoon flood": "it_flood",
-  "Building collapse": "it_collapse",
-  "Road traffic accident (mass)": "it_rta",
-  "Boat / ferry capsize": "it_boat",
-  "Fire": "it_fire",
-  "Disease outbreak cluster": "it_outbreak",
-  "Chemical / industrial exposure": "it_chemical",
-  "Other emergency": "it_other",
-}
+// Parallel translation keys for the canonical incident-type values above
+const INCIDENT_TYPE_KEYS = [
+  "it_cyclone",
+  "it_flood",
+  "it_collapse",
+  "it_rta",
+  "it_boat",
+  "it_fire",
+  "it_outbreak",
+  "it_chemical",
+  "it_other",
+]
 
 const SEVERITY_LEVELS = [
   {
@@ -177,24 +204,180 @@ const SEVERITY_LEVELS = [
   },
 ]
 
-// Approximate coastal / delta clinic pins for the mock map
-const MAP_PINS = [
-  { id: "char-fasson", label: "Char Fasson", x: 38, y: 58 },
-  { id: "hatiya", label: "Hatiya Island", x: 55, y: 68 },
-  { id: "sandwip", label: "Sandwip", x: 64, y: 74 },
-  { id: "monpura", label: "Monpura", x: 46, y: 72 },
-  { id: "kutubdia", label: "Kutubdia", x: 72, y: 84 },
+// Hotspot quick targets for coastal and delta disaster regions
+const HOTSPOTS: { label: string; coords: [number, number] }[] = [
+  { label: "Monpura", coords: [22.3000, 90.9667] },
+  { label: "Char Fasson", coords: [22.1852, 90.7121] },
+  { label: "Hatiya", coords: [22.3667, 91.1167] },
+  { label: "Sandwip", coords: [22.5000, 91.4333] },
+  { label: "Kutubdia", coords: [21.8167, 91.8500] },
+  { label: "Cox's Bazar", coords: [21.4272, 92.0058] },
+  { label: "Khulna Delta", coords: [22.8456, 89.5403] },
 ]
+
+const emergencyPinIcon = divIcon({
+  className: "hs-emergency-incident-marker",
+  html: `
+    <div style="position:relative; width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+      <span style="position:absolute; width:34px; height:34px; border-radius:50%; background:rgba(239,68,68,0.4); animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
+      <span style="position:relative; width:26px; height:26px; border-radius:50%; background:#dc2626; border:2.5px solid #ffffff; box-shadow:0 3px 8px rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; color:white; font-size:13px; font-weight:bold;">
+        !
+      </span>
+    </div>
+  `,
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -17],
+})
+
+const clinicMarkerIcon = divIcon({
+  className: "hs-clinic-facility-marker",
+  html: `
+    <div style="position:relative; width:16px; height:16px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+      <span style="width:12px; height:12px; border-radius:50%; background:#0d9488; border:2px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.35); display:block;"></span>
+    </div>
+  `,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -8],
+})
+
+function MapEventsHandler({
+  focusCoords,
+  onMapClick,
+}: {
+  focusCoords: [number, number] | null
+  onMapClick: (lat: number, lng: number) => void
+}) {
+  const map = useMapEvents({
+    click(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng)
+    },
+  })
+
+  useEffect(() => {
+    if (focusCoords) {
+      map.flyTo(focusCoords, Math.max(map.getZoom(), 10), {
+        animate: true,
+        duration: 0.6,
+      })
+    }
+  }, [focusCoords, map])
+
+  return null
+}
 
 export default function EmergencyReportPage() {
   const { t } = useTranslation()
+  const { dark } = useTheme()
   const [incidentType, setIncidentType] = useState("")
   const [location, setLocation] = useState<string | null>(null)
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null)
+  const [clinics, setClinics] = useState<ClinicMapEntry[]>([])
+  const [loadingClinics, setLoadingClinics] = useState(true)
+  const [locating, setLocating] = useState(false)
   const [affected, setAffected] = useState("")
   const [severity, setSeverity] = useState("critical")
   const [notes, setNotes] = useState("")
   const [photos, setPhotos] = useState<string[]>([])
   const [submitted, setSubmitted] = useState(false)
+  const [reportRef, setReportRef] = useState(() => `EMG-2026-${Math.floor(1000 + Math.random() * 9000)}`)
+
+  const handleSubmit = () => {
+    if (!canSubmit) return
+    const reportData = {
+      id: reportRef,
+      reference: reportRef,
+      incidentType,
+      location: location || t("emergencyReport:unknownLocation"),
+      locationCoords,
+      affected,
+      severity,
+      notes,
+      photos,
+      filedAt: new Date().toISOString(),
+      displayDate: now,
+    }
+    try {
+      const existing = localStorage.getItem("healstats_emergency_reports")
+      const list = existing ? JSON.parse(existing) : []
+      localStorage.setItem("healstats_emergency_reports", JSON.stringify([reportData, ...list]))
+    } catch (e) {
+      console.warn("[HealStats] Failed to save emergency report to local cache", e)
+    }
+    setSubmitted(true)
+  }
+
+  useEffect(() => {
+    let active = true
+    fetchClinicMapData()
+      .then((res) => {
+        if (active && res.clinics) {
+          setClinics(res.clinics)
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingClinics(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const mappedClinics = useMemo(
+    () =>
+      clinics.filter((c): c is ClinicMapEntry & { latitude: number; longitude: number } =>
+        hasCoordinates(c)
+      ),
+    [clinics]
+  )
+
+  const handleSelectLocation = (lat: number, lng: number, customLabel?: string) => {
+    let label = customLabel
+    if (!label) {
+      let closestClinic: ClinicMapEntry | null = null
+      let minDist = Infinity
+      for (const c of mappedClinics) {
+        const dLat = (c.latitude - lat) * 111
+        const dLng = (c.longitude - lng) * 111 * Math.cos((lat * Math.PI) / 180)
+        const dist = Math.hypot(dLat, dLng)
+        if (dist < minDist) {
+          minDist = dist
+          closestClinic = c
+        }
+      }
+      if (closestClinic && minDist <= 15) {
+        label = `${closestClinic.name} (${minDist < 1 ? "<1km" : `~${minDist.toFixed(1)}km`})`
+      } else {
+        label = `${t("emergencyReport:gpsPrefix")} ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`
+      }
+    }
+
+    setLocation(label)
+    setLocationCoords({ lat, lng })
+    setFocusCoords([lat, lng])
+  }
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert(t("emergencyReport:geolocationUnsupported"))
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false)
+        handleSelectLocation(pos.coords.latitude, pos.coords.longitude, t("emergencyReport:myLocation"))
+      },
+      (err) => {
+        setLocating(false)
+        console.warn("Geolocation failed", err)
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    )
+  }
 
   const now = new Date().toLocaleString("en-GB", {
     day: "numeric",
@@ -213,7 +396,6 @@ export default function EmergencyReportPage() {
   }
 
   if (submitted) {
-    const pinLabel = MAP_PINS.find((p) => p.id === location)?.label ?? t("emergencyReport:unknown")
     return (
       <div className="max-w-2xl mx-auto py-6">
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-red-100 dark:border-red-900/50 shadow-xl shadow-red-900/5 overflow-hidden">
@@ -230,9 +412,12 @@ export default function EmergencyReportPage() {
           </div>
           <div className="px-8 py-6 space-y-3">
             {[
-              [t("emergencyReport:refLabel"), "EMG-2026-0834"],
-              [t("emergencyReport:incidentLabel"), incidentType ? t(`emergencyReport:${INCIDENT_KEY[incidentType]}`) : ""],
-              [t("emergencyReport:locationLabel"), pinLabel],
+              [t("emergencyReport:refLabel"), reportRef],
+              [t("emergencyReport:incidentLabel"), incidentType ? t(`emergencyReport:${INCIDENT_TYPE_KEYS[INCIDENT_TYPES.indexOf(incidentType)]}`) : incidentType],
+              [t("emergencyReport:locationLabel"), location ?? t("emergencyReport:unknown")],
+              ...(locationCoords
+                ? [[t("emergencyReport:gpsCoordinates"), `${locationCoords.lat.toFixed(4)}°N, ${locationCoords.lng.toFixed(4)}°E`]]
+                : []),
               [t("emergencyReport:affectedLabel"), affected],
               [
                 t("emergencyReport:severityLabel"),
@@ -257,12 +442,14 @@ export default function EmergencyReportPage() {
                 setSubmitted(false)
                 setIncidentType("")
                 setLocation(null)
+                setLocationCoords(null)
                 setAffected("")
                 setSeverity("critical")
                 setNotes("")
                 setPhotos([])
+                setReportRef(`EMG-2026-${Math.floor(1000 + Math.random() * 9000)}`)
               }}
-              className="w-full py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-semibold text-sm transition-colors"
+              className="w-full py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-semibold text-sm transition-colors cursor-pointer"
             >
               {t("emergencyReport:fileAnother")}
             </button>
@@ -322,9 +509,9 @@ export default function EmergencyReportPage() {
               <option value="" disabled>
                 {t("emergencyReport:selectIncident")}
               </option>
-              {INCIDENT_TYPES.map((it) => (
-                <option key={it} value={it}>
-                  {t(`emergencyReport:${INCIDENT_KEY[it]}`)}
+              {INCIDENT_TYPES.map((tp, ti) => (
+                <option key={tp} value={tp}>
+                  {t(`emergencyReport:${INCIDENT_TYPE_KEYS[ti]}`)}
                 </option>
               ))}
             </select>
@@ -336,89 +523,154 @@ export default function EmergencyReportPage() {
 
         {/* Location map pin selector */}
         <Field label={t("emergencyReport:fLocation")} required icon={Icon.pin}>
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-800/40">
-            <div className="relative aspect-[16/9] bg-gradient-to-br from-sky-50 to-teal-50">
-              <svg
-                viewBox="0 0 100 56"
-                className="absolute inset-0 w-full h-full"
-                preserveAspectRatio="none"
-              >
-                {/* water */}
-                <rect width="100" height="56" fill="#e6f4f6" />
-                {/* delta landmass */}
-                <path
-                  d="M0 0 H100 V30 C88 33 80 30 70 36 C60 42 52 40 44 46 C36 52 24 50 14 54 C8 56 4 54 0 56 Z"
-                  fill="#dcefe3"
-                />
-                {/* rivers */}
-                <path
-                  d="M30 0 C34 14 26 22 32 34 C36 44 30 50 34 56"
-                  stroke="#bfe3ea"
-                  strokeWidth="1.6"
-                  fill="none"
-                />
-                <path
-                  d="M62 0 C58 12 66 20 60 30 C56 38 62 46 58 56"
-                  stroke="#bfe3ea"
-                  strokeWidth="1.6"
-                  fill="none"
-                />
-              </svg>
-
-              {/* pins */}
-              {MAP_PINS.map((p) => {
-                const active = location === p.id
-                return (
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-900">
+            {/* Quick Hotspot selector & GPS locate toolbar */}
+            <div className="px-3.5 py-2.5 bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto max-w-full py-0.5">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mr-1 flex-shrink-0">
+                  {t("emergencyReport:quickFocus")}
+                </span>
+                {HOTSPOTS.map((h) => (
                   <button
-                    key={p.id}
+                    key={h.label}
                     type="button"
-                    onClick={() => setLocation(p.id)}
-                    className="absolute -translate-x-1/2 -translate-y-full group focus:outline-none"
-                    style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                    aria-label={t("emergencyReport:selectAria", { name: p.label })}
+                    onClick={() => handleSelectLocation(h.coords[0], h.coords[1], h.label)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-medium bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition-colors flex-shrink-0 cursor-pointer shadow-2xs"
                   >
-                    {active && (
-                      <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-red-500/25 animate-ping" />
-                    )}
-                    <span
-                      className={`relative block transition-all ${
-                        active
-                          ? "text-red-600 scale-125"
-                          : "text-slate-400 group-hover:text-red-400 group-hover:scale-110"
-                      }`}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-6 h-6 drop-shadow"
-                      >
-                        <path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z" />
-                        <circle cx="12" cy="9" r="2.5" fill="white" />
-                      </svg>
-                    </span>
-                    <span
-                      className={`absolute left-1/2 -translate-x-1/2 mt-0.5 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded transition-opacity ${
-                        active
-                          ? "bg-red-600 text-white opacity-100"
-                          : "bg-white/90 text-slate-500 opacity-0 group-hover:opacity-100"
-                      }`}
-                    >
-                      {p.label}
-                    </span>
+                    {h.label}
                   </button>
-                )
-              })}
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLocateMe}
+                disabled={locating}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/60 border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer flex-shrink-0 ml-auto"
+                title={t("emergencyReport:pinpointTitle")}
+              >
+                {locating ? (
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-teal-600 border-t-transparent animate-spin" />
+                ) : (
+                  Icon.gps
+                )}
+                <span>{locating ? t("emergencyReport:acquiringGps") : t("emergencyReport:locateMe")}</span>
+              </button>
             </div>
-            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs">
-              {location ? (
-                <span className="flex items-center gap-1.5 text-red-700 dark:text-red-400 font-semibold">
-                  <span className="text-red-500">{Icon.pin}</span>
-                  {t("emergencyReport:selected", { name: MAP_PINS.find((p) => p.id === location)?.label })}
-                </span>
+
+            {/* Interactive Leaflet Map container */}
+            <div className="relative w-full h-[360px] sm:h-[420px] bg-slate-100 dark:bg-slate-950">
+              {loadingClinics && (
+                <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 shadow-md border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 backdrop-blur-sm">
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
+                  <span>{t("emergencyReport:loadingClinics")}</span>
+                </div>
+              )}
+
+              <MapContainer
+                center={BANGLADESH_CENTER}
+                zoom={7}
+                minZoom={6}
+                maxZoom={18}
+                maxBounds={BANGLADESH_BOUNDS}
+                maxBoundsViscosity={0.8}
+                scrollWheelZoom={true}
+                touchZoom={true}
+                dragging={true}
+                className="w-full h-full z-0 font-sans"
+              >
+                <TileLayer
+                  key={dark ? "dark-tiles" : "light-tiles"}
+                  url={
+                    dark
+                      ? "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+                      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  }
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  maxZoom={19}
+                />
+
+                <MapEventsHandler
+                  focusCoords={focusCoords}
+                  onMapClick={(lat, lng) => handleSelectLocation(lat, lng)}
+                />
+
+                {/* Realtime Clinic markers */}
+                {mappedClinics.map((clinic) => (
+                  <Marker
+                    key={clinic.id}
+                    position={[clinic.latitude, clinic.longitude]}
+                    icon={clinicMarkerIcon}
+                    eventHandlers={{
+                      click: () => handleSelectLocation(clinic.latitude, clinic.longitude, clinic.name),
+                    }}
+                  >
+                    <Tooltip direction="top" offset={[0, -6]}>
+                      <div className="font-sans text-xs">
+                        <strong className="block text-slate-900 font-semibold">{clinic.name}</strong>
+                        <span className="text-slate-500">{clinic.zone || clinic.address || t("emergencyReport:communityFacility")}</span>
+                        <span className="block text-[10px] text-teal-600 font-medium mt-0.5">{t("emergencyReport:clickToSet")}</span>
+                      </div>
+                    </Tooltip>
+                  </Marker>
+                ))}
+
+                {/* Selected Emergency Incident Location Marker */}
+                {locationCoords && (
+                  <Marker
+                    position={[locationCoords.lat, locationCoords.lng]}
+                    icon={emergencyPinIcon}
+                  >
+                    <Popup maxWidth={260} className="font-sans">
+                      <div className="p-1">
+                        <div className="flex items-center gap-1.5 text-red-600 font-bold text-xs uppercase tracking-wide mb-1">
+                          <span className="w-2 h-2 rounded-full bg-red-600" />
+                          <span>{t("emergencyReport:incidentLocationTag")}</span>
+                        </div>
+                        <h4 className="font-semibold text-sm text-slate-900 mb-0.5">
+                          {location}
+                        </h4>
+                        <p className="text-[11px] font-mono text-slate-500">
+                          {locationCoords.lat.toFixed(5)}°N, {locationCoords.lng.toFixed(5)}°E
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )}
+              </MapContainer>
+            </div>
+
+            {/* Bottom Coordinates & Location Confirmation Bar */}
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+              {locationCoords ? (
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse flex-shrink-0" />
+                  <span className="font-semibold text-red-700 dark:text-red-400">
+                    {location}
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">
+                    [{locationCoords.lat.toFixed(4)}°, {locationCoords.lng.toFixed(4)}°]
+                  </span>
+                </div>
               ) : (
-                <span className="text-slate-400 dark:text-slate-500">
-                  {t("emergencyReport:tapPin")}
-                </span>
+                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                  <span className="text-red-500">{Icon.pin}</span>
+                  <span>{t("emergencyReport:clickMapHint")}</span>
+                </div>
+              )}
+
+              {locationCoords && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocation(null)
+                    setLocationCoords(null)
+                    setFocusCoords(null)
+                  }}
+                  className="text-xs text-slate-500 hover:text-red-600 dark:hover:text-red-400 font-medium transition-colors cursor-pointer ml-auto"
+                >
+                  {t("emergencyReport:clearLocation")}
+                </button>
               )}
             </div>
           </div>
@@ -546,7 +798,7 @@ export default function EmergencyReportPage() {
         {/* Submit */}
         <div className="pt-2 sticky bottom-0">
           <button
-            onClick={() => canSubmit && setSubmitted(true)}
+            onClick={handleSubmit}
             disabled={!canSubmit}
             className={`w-full flex items-center justify-center gap-3 rounded-2xl py-5 text-base font-bold uppercase tracking-wide transition-all ${
               canSubmit

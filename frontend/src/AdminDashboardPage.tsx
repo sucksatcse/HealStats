@@ -21,8 +21,6 @@ import AlertsCenterPage from "./AlertsCenterPage";
 import ClinicOpsPanel from "./ClinicOpsPanel";
 import OutbreakDetectionPage from "./OutbreakDetectionPage";
 import EmergencyTriagePage from "./EmergencyTriagePage";
-import NurseDashboardPage from "./NurseDashboardPage";
-import ClinicalOfficerPage from "./ClinicalOfficerPage";
 
 // ── Icons (lucide-style, matching DashboardPage) ────────────────────────────────
 const Icon = {
@@ -147,17 +145,6 @@ const NAV_ITEMS = [
       <path strokeLinecap="round" strokeLinejoin="round" d="M14.86 15.08a20 20 0 004.55-1.09A7.47 7.47 0 0117 8.13V7.5a5 5 0 00-10 0v.63a7.47 7.47 0 01-1.93 5.86 20 20 0 004.55 1.09m5.24 0a20.2 20.2 0 01-5.24 0m5.24 0a2.5 2.5 0 01-5.24 0" />
     </svg>
   ), badge: "3" },
-  { id: "nurse-station", labelKey: "nav_nurseStation", icon: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 3.5v13M3.5 10h13" />
-      <rect x="2.5" y="2.5" width="15" height="15" rx="3" strokeWidth={1.5} />
-    </svg>
-  ), badge: "Vitals" },
-  { id: "clinical-station", labelKey: "nav_clinicalStation", icon: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ), badge: "Rx" },
   { id: "settings", labelKey: "nav_settings", icon: Icon.settings },
 ];
 
@@ -324,7 +311,6 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("7d");
   const [emergency, setEmergency] = useState(false);
-  const [adminSearch, setAdminSearch] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [patientDetailReturnNav, setPatientDetailReturnNav] = useState<"patients" | "flagged" | "emergency" | "outbreak" | "emergency-triage">("patients");
@@ -630,9 +616,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
         <AppNavbar
           variant="app"
           onSidebarOpen={() => setSidebarOpen(true)}
-          searchValue={adminSearch}
-          onSearchChange={setAdminSearch}
-          searchPlaceholder={t("adminDash:searchPlaceholder")}
+          showSearch={false}
           isOnline={typeof navigator !== "undefined" ? navigator.onLine : true}
           onlineText={typeof navigator !== "undefined" && navigator.onLine ? t("adminDash:systemConnected") : t("adminDash:offline")}
           onNotifications={() => setActiveNav("alerts")}
@@ -657,8 +641,6 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             : activeNav === "profile" ? t("adminDash:bc_profile")
             : activeNav === "ops-map" ? t("adminDash:bc_opsMap")
             : activeNav === "outbreak" ? t("adminDash:bc_outbreak")
-            : activeNav === "nurse-station" ? t("adminDash:bc_nurseStation")
-            : activeNav === "clinical-station" ? t("adminDash:bc_clinicalStation")
             : t("adminDash:bc_overview")
           }
         />
@@ -669,7 +651,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
         {/* All other content views */}
         {activeNav !== "ops-map" && (
         <main className={`flex-1 overflow-y-auto px-4 lg:px-8 py-6 space-y-6 transition-colors duration-500 ${
-          emergency && !["staff", "staff-profile", "patients", "patient-detail", "sync", "flagged", "analytics", "resources", "alerts", "settings", "outbreak", "profile", "nurse-station", "clinical-station"].includes(activeNav)
+          emergency && !["staff", "staff-profile", "patients", "patient-detail", "sync", "flagged", "analytics", "resources", "alerts", "settings", "outbreak", "profile"].includes(activeNav)
             ? "bg-gradient-to-b from-red-50 to-slate-50"
             : ""
         }`}>
@@ -760,20 +742,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             />
           )}
 
-          {activeNav === "nurse-station" && (
-            <NurseDashboardPage
-              onLogout={onLogout}
-              onNavigate={(target) => setActiveNav(target)}
-            />
-          )}
-          {activeNav === "clinical-station" && (
-            <ClinicalOfficerPage
-              onLogout={onLogout}
-              onNavigate={(target) => setActiveNav(target)}
-            />
-          )}
-
-          {!["staff", "staff-profile", "patients", "patient-detail", "sync", "flagged", "analytics", "outbreak", "resources", "alerts", "settings", "emergency-triage", "profile", "nurse-station", "clinical-station"].includes(activeNav) && (<>
+          {!["staff", "staff-profile", "patients", "patient-detail", "sync", "flagged", "analytics", "outbreak", "resources", "alerts", "settings", "emergency-triage", "profile"].includes(activeNav) && (<>
 
           {/* Outbreak Surveillance Alert Banner (Task 14.5) */}
           {outbreakAnalysis && outbreakAnalysis.clusters.length > 0 && (
