@@ -22,6 +22,9 @@ import { useAuth } from "./AuthContext"
 import HeroScrollFade from "./HeroScrollFade"
 import PublicHealthStats from "./PublicHealthStats"
 import { fetchPublicHealthMetrics, type PublicHealthStatsData } from "./lib/publicStatsService"
+import CareersPage from "./CareersPage"
+import PrivacyPolicyPage from "./PrivacyPolicyPage"
+import AppFooter from "./AppFooter"
 
 /* ══════════════════════════════════════════════════════════════════════════════
    Landing page translations — en / bn
@@ -282,11 +285,17 @@ type AppPage =
   | "button-states"
   | "record-saved"
   | "sync-progress"
+  | "careers"
+  | "privacy"
 
 function pageToPath(p: AppPage): string {
   switch (p) {
     case "landing":
       return "/"
+    case "careers":
+      return "/careers"
+    case "privacy":
+      return "/privacy"
     case "login":
       return "/login"
     case "signup":
@@ -315,6 +324,8 @@ function pageToPath(p: AppPage): string {
 
 function pathToPage(path: string): AppPage {
   const clean = path.replace(/\/+$/, "")
+  if (clean === "/careers") return "careers"
+  if (clean === "/privacy" || clean === "/privacy-policy") return "privacy"
   if (clean === "/admin") return "admin-login"
   if (clean === "/login") return "login"
   if (clean === "/signup") return "signup"
@@ -684,6 +695,26 @@ export default function App() {
         <ChatWidget />
       </>
     )
+  if (page === "careers")
+    return (
+      <>
+        <CareersPage
+          onBack={() => setPage("landing")}
+          onNavigate={(targetPage) => setPage(targetPage as AppPage)}
+        />
+        <ChatWidget />
+      </>
+    )
+  if (page === "privacy")
+    return (
+      <>
+        <PrivacyPolicyPage
+          onBack={() => setPage("landing")}
+          onNavigate={(targetPage) => setPage(targetPage as AppPage)}
+        />
+        <ChatWidget />
+      </>
+    )
 
   /* ── Landing page ── */
   return (
@@ -878,131 +909,10 @@ export default function App() {
         </section>
 
         {/* ─── Footer ─── */}
-        <footer style={{background: '#0a1f1d', borderTop: '1px solid rgba(148,163,184,0.12)'}} className="text-slate-300 py-14">
-          <div className="max-w-7xl mx-auto px-6 lg:px-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-7 h-7 rounded-md bg-teal-600 flex items-center justify-center shadow-sm">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth={2.2}
-                    className="w-4 h-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                    />
-                  </svg>
-                </div>
-                <span className="font-display text-lg text-white">
-                  HealStats
-                </span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
-                Offline-first electronic health records for the world{"'"}s
-                underserved clinics.
-              </p>
-            </div>
-
-            {[
-              {
-                heading: "Product",
-                links: [
-                  "Features",
-                  "Security",
-                  "Integrations",
-                  "Changelog",
-                ],
-              },
-              {
-                heading: "Resources",
-                links: [
-                  "Documentation",
-                  "Navbar Demo",
-                  "Design System",
-                  "System States",
-                  "Loading States",
-                  "Button States",
-                  "Save Success",
-                  "Sync Progress",
-                ],
-              },
-              {
-                heading: "Organization",
-                links: [
-                  "About",
-                  "Blog",
-                  "Careers",
-                  "Contact",
-                  "Privacy Policy",
-                ],
-              },
-            ].map(({ heading, links }) => (
-              <div key={heading}>
-                <p className="text-xs font-bold uppercase tracking-widest text-teal-400 mb-4">
-                  {heading}
-                </p>
-                <ul className="space-y-2.5">
-                  {links.map((link) => (
-                    <li key={link}>
-                      {[
-                        "System States",
-                        "Design System",
-                        "Navbar Demo",
-                        "Loading States",
-                        "Button States",
-                        "Save Success",
-                        "Sync Progress",
-                      ].includes(link) ? (
-                        <button
-                          onClick={() =>
-                            setPage(
-                              link === "Design System"
-                                ? "design-system"
-                                : link === "Navbar Demo"
-                                  ? "navbar-demo"
-                                  : link === "Loading States"
-                                    ? "loading-states"
-                                    : link === "Button States"
-                                      ? "button-states"
-                                      : link === "Save Success"
-                                        ? "record-saved"
-                                        : link === "Sync Progress"
-                                          ? "sync-progress"
-                                          : "system-states",
-                            )
-                          }
-                          className="text-sm text-teal-300 hover:text-white transition-colors text-left focus-visible:outline-none focus-visible:underline cursor-pointer"
-                        >
-                          {link}
-                        </button>
-                      ) : (
-                        <a
-                          href={link === "Features" ? "#features" : "#"}
-                          className="text-sm text-teal-300 hover:text-white transition-colors focus-visible:outline-none focus-visible:underline"
-                        >
-                          {link}
-                        </a>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-12 pt-6 border-t border-teal-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400">
-            <p className="text-xs text-slate-400">
-              © 2026 HealStats. Open-source under the MPL 2.0 license.
-            </p>
-            <p className="text-xs text-slate-400">
-              Built for healthcare workers who keep going, no matter what.
-            </p>
-          </div>
-        </footer>
+        <AppFooter
+          activePage="landing"
+          onNavigate={(targetPage) => setPage(targetPage as AppPage)}
+        />
       </div>
       <ChatWidget />
     </>
