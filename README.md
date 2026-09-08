@@ -247,8 +247,8 @@ npm install     # or: pnpm install
 ### 2. Environment variables
 Create `frontend/.env` (or project-root `.env`, per your setup) with **your** Supabase values — use placeholders here, never commit real keys:
 ```env
-VITE_SUPABASE_URL="https://<your-project-ref>.supabase.co"
-VITE_SUPABASE_ANON_KEY="<your-anon-or-publishable-key>"
+VITE_SUPABASE_URL=SUPABASE_URL
+VITE_SUPABASE_ANON_KEY=SUPABASE_ANON_KEY
 ```
 Only the anon/publishable key belongs in the frontend.
 
