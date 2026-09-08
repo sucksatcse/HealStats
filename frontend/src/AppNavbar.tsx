@@ -28,6 +28,9 @@ interface AppNavbarProps {
   activeNav?: string
   onNavChange?: (id: string) => void
 
+  /* Optional logo click handler (e.g. navigate home from a sub-page) */
+  onLogoClick?: () => void
+
   /* landing CTA callbacks — omit to hide the button */
   onPatientLookup?: () => void
   onGetStarted?: () => void
@@ -171,6 +174,7 @@ export default function AppNavbar({
   userInitials,
   userColor = "teal",
   breadcrumb,
+  onLogoClick,
 }: AppNavbarProps) {
   const { lang, toggleLang } = useLang()
   const { dark, toggleDark } = useTheme()
@@ -542,7 +546,7 @@ export default function AppNavbar({
 
   /* ─── Shared logo with subtle hover animation (scale 1 -> 1.04) and initial reveal ─── */
   const logo = (
-    <a href="#" aria-label="HealStats" className="hs-navbar-logo hs-animate-logo group flex items-center gap-2.5 flex-shrink-0">
+    <a href="#" aria-label="HealStats" onClick={(e) => { if (onLogoClick) { e.preventDefault(); onLogoClick() } }} className="hs-navbar-logo hs-animate-logo group flex items-center gap-2.5 flex-shrink-0">
       <div className="hs-navbar-logo-icon w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm shadow-teal-600/25 group-hover:bg-teal-700 transition-all">
         <svg
           viewBox="0 0 24 24"

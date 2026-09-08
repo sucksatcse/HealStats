@@ -40,6 +40,14 @@ export default function CareersPage({ onBack, onNavigate }: CareersPageProps) {
   const { lang } = useLang()
   const { profile, signOut } = useAuth()
 
+  // Navigate to the landing page, then scroll to the target section after it mounts
+  const goToLandingSection = (sectionId: string) => {
+    onNavigate("landing")
+    setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" })
+    }, 120)
+  }
+
   // State
   const [staffList, setStaffList] = useState<PublicStaffMember[]>([])
   const [totalCount, setTotalCount] = useState(0)
@@ -239,6 +247,14 @@ export default function CareersPage({ onBack, onNavigate }: CareersPageProps) {
       {/* ── Public App Navbar ── */}
       <AppNavbar
         variant="landing"
+        onLogoClick={() => onNavigate("landing")}
+        navItems={[
+          { id: "features", label: "Features", labelBn: "বৈশিষ্ট্য", onClick: () => goToLandingSection("features") },
+          { id: "how-it-works", label: "How It Works", labelBn: "কীভাবে কাজ করে", onClick: () => goToLandingSection("how-it-works-detail") },
+          { id: "coverage", label: "Coverage", labelBn: "কভারেজ", onClick: () => goToLandingSection("coverage") },
+          { id: "testimonials", label: "Testimonials", labelBn: "প্রশংসাপত্র", onClick: () => goToLandingSection("testimonials") },
+          { id: "patient-lookup", label: "Check My Visit", labelBn: "ভিজিট দেখুন", onClick: () => onNavigate("patient-lookup") },
+        ]}
         onGetStarted={() => onNavigate("signup")}
         onLogin={() => onNavigate("login")}
         onSignUp={() => onNavigate("signup")}
