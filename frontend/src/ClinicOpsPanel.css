@@ -1,0 +1,102 @@
+.hs-ops-map {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--an-bg);
+  color: var(--an-text-primary);
+  font-size: 0.875rem;
+}
+.hs-map-toolbar, .hs-map-search, .hs-clinic-editor, .hs-map-selection, .hs-map-legend {
+  padding: 1rem;
+  border-bottom: 1px solid var(--an-border);
+  background: var(--an-surface-solid);
+}
+.hs-map-toolbar, .hs-map-actions, .hs-map-search-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.hs-map-toolbar { justify-content: space-between; }
+.hs-map-toolbar h2, .hs-clinic-editor h3, .hs-map-unmapped h3 { font-weight: 700; }
+.hs-map-toolbar p, .hs-map-muted, .hs-map-legend p { color: var(--an-text-secondary); font-size: 0.75rem; }
+.hs-map-search label { display: block; font-weight: 600; margin-bottom: 0.375rem; }
+.hs-map-search input, .hs-editor-fields input {
+  border: 1px solid var(--an-border-strong);
+  border-radius: 0.5rem;
+  padding: 0.625rem;
+  background: var(--an-surface-solid);
+  color: var(--an-text-primary);
+  min-width: 0;
+  width: 100%;
+}
+.hs-map-search input { flex: 1 1 15rem; }
+.hs-map-button {
+  border: 1px solid var(--an-border-strong);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--an-surface-solid);
+  color: var(--an-text-primary);
+}
+.hs-map-button.primary { background: #0f766e; color: white; border-color: #0f766e; }
+.hs-ops-map button:disabled { opacity: 0.5; cursor: not-allowed; }
+.hs-ops-map :is(button, input, a):focus-visible { outline: 2px solid var(--an-accent); outline-offset: 3px; }
+.hs-ops-map button:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--an-accent); }
+.hs-map-button[aria-pressed="true"] { background: var(--an-accent-light); }
+.hs-map-notice { padding: 0.75rem 1rem; background: var(--an-accent-light); color: var(--an-text-primary); }
+.hs-map-muted { margin-top: 0.5rem; }
+.hs-map-muted a { text-decoration: underline; }
+.hs-map-search-results { display: grid; gap: 0.25rem; margin-top: 0.75rem; max-height: 13rem; overflow: auto; }
+.hs-map-search-results button { text-align: left; padding: 0.625rem; border: 1px solid var(--an-border); border-radius: 0.5rem; overflow-wrap: anywhere; }
+.hs-map-body { display: flex; min-width: 0; }
+.hs-map-sidebar { width: 272px; flex-shrink: 0; border-right: 1px solid var(--an-border); background: var(--an-surface-solid); }
+.hs-map-sidebar-content { padding: 0.75rem; display: grid; align-content: start; gap: 0.75rem; max-height: 75vh; overflow: auto; }
+.hs-map-list-toggle { display: none; }
+.hs-map-counts { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.75rem; }
+.hs-map-status { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.375rem; }
+.hs-map-filters { display: flex; gap: 0.25rem; }
+.hs-map-filters button { flex: 1; padding: 0.375rem; border-radius: 0.375rem; }
+.hs-map-filters button[aria-pressed="true"] { background: #0f766e; color: white; }
+.hs-map-clinic-list { display: grid; gap: 0.375rem; }
+.hs-map-clinic-list button { padding: 0.625rem; text-align: left; display: grid; gap: 0.25rem; border: 1px solid var(--an-border); border-radius: 0.5rem; overflow-wrap: anywhere; }
+.hs-map-clinic-list button[aria-pressed="true"] { border-color: var(--an-accent); background: var(--an-accent-light); }
+.hs-map-clinic-list button > span { font-size: 0.75rem; }
+.hs-map-unmapped { border-top: 1px solid var(--an-border); padding-top: 0.75rem; font-size: 0.75rem; }
+.hs-map-unmapped button { display: block; text-align: left; text-decoration: underline; padding: 0.5rem 0; }
+.hs-map-canvas-column { min-width: 0; flex: 1; }
+.hs-leaflet-map { height: clamp(360px, 58vh, 720px); width: 100%; z-index: 0; background: var(--an-surface); font-family: inherit; }
+.hs-leaflet-map.is-placing { cursor: crosshair; }
+.hs-clinic-marker { display: grid; place-items: center; background: transparent; }
+.hs-clinic-marker > span { display: block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 5px #0008; }
+.hs-clinic-marker.is-selected > span { outline: 3px solid #0f766e; outline-offset: 2px; }
+.hs-clinic-marker.is-spotlit > span { outline: 3px dashed #64748b; outline-offset: 5px; }
+.hs-clinic-marker.is-draft > span { border-radius: 3px; transform: rotate(45deg); }
+.hs-leaflet-map :is(.leaflet-popup-content-wrapper, .leaflet-popup-tip, .leaflet-tooltip) { background: var(--an-surface-solid); color: var(--an-text-primary); }
+.hs-leaflet-map .leaflet-tooltip { max-width: 260px; white-space: normal; }
+.hs-leaflet-map .leaflet-popup-content { max-width: 220px; margin: 0.75rem; }
+.hs-leaflet-map .leaflet-control-zoom a { background: var(--an-surface-solid); color: var(--an-text-primary); }
+.hs-leaflet-map .leaflet-control-attribution { background: var(--an-surface-solid); color: var(--an-text-primary); font-size: 10px; max-width: calc(100vw - 6rem); }
+.hs-leaflet-map .leaflet-control-attribution a { color: var(--an-accent); }
+.hs-clinic-details p { margin: 0.3rem 0; font-size: 0.75rem; overflow-wrap: anywhere; }
+.hs-clinic-details dl { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0.5rem 0; }
+.hs-clinic-details dt { font-size: 0.7rem; color: var(--an-text-secondary); }
+.hs-clinic-details dd { font-weight: 700; }
+.hs-map-selection .hs-map-actions { margin-top: 0.75rem; }
+.hs-map-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.75rem; }
+.hs-map-legend p { width: 100%; }
+.hs-editor-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin: 0.75rem 0; }
+.hs-editor-fields label { font-weight: 600; }
+.hs-clinic-editor .hs-map-actions { margin-top: 0.75rem; }
+.hs-map-tile-error { position: absolute; bottom: 2rem; left: 0.5rem; right: 0.5rem; z-index: 800; padding: 0.5rem; background: var(--an-surface-solid); color: var(--an-text-primary); font-size: 0.75rem; }
+.hs-map-tile-error button { margin-left: 0.5rem; text-decoration: underline; }
+@media (max-width: 767px) {
+  .hs-map-body { flex-direction: column; }
+  .hs-map-sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--an-border); }
+  .hs-map-list-toggle { display: block; width: calc(100% - 1.5rem); margin: 0.75rem; }
+  .hs-map-sidebar-content { display: none; max-height: 20rem; }
+  .hs-map-sidebar-content.is-open { display: grid; }
+  .hs-map-toolbar, .hs-map-search, .hs-clinic-editor, .hs-map-selection, .hs-map-legend { padding: 0.75rem; }
+}

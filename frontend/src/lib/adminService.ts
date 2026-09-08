@@ -4,6 +4,7 @@
  * Uses the real database schema — no mock data.
  */
 import { supabase } from './supabase';
+import { hasCoordinates } from './clinicMapUtils';
 import {
   type StaffRole,
   type StaffRow,
@@ -1268,36 +1269,145 @@ export async function fetchEmergencyTriageQueue(clinicId?: string | null): Promi
 // TASK 16 — CLINIC MAP / GEOGRAPHIC COVERAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const CLINIC_MAP_COLUMNS = 'id, name, zone, address, latitude, longitude';
+const MAP_PAGE_SIZE = 1000;
+
+/** Only coordinate-column errors warrant legacy fallback, never permission/network errors. */
+function isMissingClinicCoordinates(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const { code, message } = error as { code?: string; message?: string };
+  return (code === '42703' || code === 'PGRST204') &&
+    typeof message === 'string' && /\b(latitude|longitude)\b/i.test(message);
+}
+
+/**
+ * Every caller must order by a unique key. Advance by the actual returned size
+ * and stop only on an empty page, including when the server cap is below 1000.
+ * Offset pagination is not a transaction snapshot during concurrent edits.
+ */
+async function fetchMapRows<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<{ data: T[] }> {
+  const rows: T[] = [];
+  for (;;) {
+    const { data, error } = await page(rows.length, rows.length + MAP_PAGE_SIZE - 1);
+    if (error) throw error;
+    if (!data) throw new Error('Missing clinic map query result.');
+    if (data.length === 0) return { data: rows };
+    rows.push(...data);
+  }
+}
+
+async function fetchMapClinics() {
+  const read = (columns: string) => fetchMapRows<ClinicRow>((from, to) =>
+    supabase.from('clinics').select(columns)
+      .order('name', { ascending: true }).order('id', { ascending: true })
+      .range(from, to).returns<ClinicRow[]>(),
+  );
+  try {
+    return { ...await read(CLINIC_MAP_COLUMNS), coordinatesAvailable: true };
+  } catch (error) {
+    if (!isMissingClinicCoordinates(error)) throw error;
+    const { data } = await read('id, name, zone, address');
+    return {
+      data: data.map((clinic) => ({ ...clinic, latitude: null, longitude: null })),
+      coordinatesAvailable: false,
+    };
+  }
+}
+
+/**
+ * Application-layer guard only: deployed RLS must independently authorize writes.
+ * Never grants access from metadata or UI state, never geocodes, never queues offline.
+ */
+export async function saveClinic(input: {
+  id?: string;
+  name: string;
+  zone: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}): Promise<{ data: ClinicRow | null; error: string | null }> {
+  if (!input.name.trim()) return { data: null, error: 'map:clinicNameRequired' };
+  if (!hasCoordinates(input)) return { data: null, error: 'map:invalidCoordinates' };
+  if (input.id !== undefined && !input.id.trim()) return { data: null, error: 'map:saveError' };
+
+  // Fail closed for missing/ambiguous profiles and failed identity/profile lookups.
+  try {
+    const { data: auth, error: authError } = await supabase.auth.getUser();
+    if (authError || !auth.user) return { data: null, error: 'map:adminRequired' };
+    const { data: staff, error: staffError } = await supabase.from('staff')
+      .select('role, designation, is_active')
+      .eq('auth_user_id', auth.user.id)
+      .maybeSingle();
+    if (staffError || staff?.role !== 'admin' || staff.is_active === false ||
+      staff.designation === 'nurse' || staff.designation === 'clinical_officer') {
+      return { data: null, error: 'map:adminRequired' };
+    }
+  } catch {
+    return { data: null, error: 'map:adminRequired' };
+  }
+
+  const payload = {
+    name: input.name.trim(),
+    zone: input.zone.trim(),
+    address: input.address.trim(),
+    latitude: input.latitude,
+    longitude: input.longitude,
+  };
+  try {
+    const mutation = input.id === undefined
+      ? supabase.from('clinics').insert(payload)
+      : supabase.from('clinics').update(payload).eq('id', input.id);
+    const { data, error } = await mutation.select(CLINIC_MAP_COLUMNS).single();
+    if (error) throw error;
+    if (!data) return { data: null, error: 'map:saveError' };
+    return { data: data as ClinicRow, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: isMissingClinicCoordinates(error) ? 'map:migrationRequired' : 'map:saveError',
+    };
+  }
+}
+
 /**
  * Fetches every clinic together with real, aggregated operational metrics for the
  * Ops Map: patient counts, recent visit activity, pending-sync backlog and recent
- * high-risk cases. Uses only columns that exist in the schema — no invented
- * coordinates or device status. Individual query failures are tolerated.
+ * high-risk visits. Loads stored coordinates only (never geocodes); legacy schemas
+ * remain readable but not editable. Any query failure invalidates the whole map.
+ * Pending counts cover server rows only, not records held on offline devices.
  */
 export async function fetchClinicMapData(): Promise<ClinicMapData> {
   const now = Date.now();
   const day7 = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [clinicsRes, patientsRes, recentVisitsRes, pendingRes] = await Promise.allSettled([
-    supabase.from('clinics').select('id, name, zone, address').order('name'),
-    supabase.from('patients').select('id, clinic_id'),
+    fetchMapClinics(),
+    fetchMapRows((from, to) => supabase.from('patients').select('id, clinic_id')
+      .order('id', { ascending: true }).range(from, to)),
     // Visits in the last 7 days, joined to their patient's clinic
-    supabase
+    fetchMapRows((from, to) => supabase
       .from('visits')
       .select('created_at, synced_at, urgency_score, patients!inner(clinic_id)')
-      .gte('created_at', day7),
+      .gte('created_at', day7)
+      .order('id', { ascending: true }).range(from, to)),
     // All-time pending-sync visits (synced_at IS NULL)
-    supabase
+    fetchMapRows((from, to) => supabase
       .from('visits')
       .select('id, patients!inner(clinic_id)')
-      .is('synced_at', null),
+      .is('synced_at', null)
+      .order('id', { ascending: true }).range(from, to)),
   ]);
 
-  if (clinicsRes.status !== 'fulfilled' || clinicsRes.value.error || !clinicsRes.value.data) {
+  if (clinicsRes.status !== 'fulfilled' || patientsRes.status !== 'fulfilled' ||
+    recentVisitsRes.status !== 'fulfilled' || pendingRes.status !== 'fulfilled') {
     return {
       clinics: [],
+      coordinatesAvailable: clinicsRes.status === 'fulfilled'
+        ? clinicsRes.value.coordinatesAvailable : undefined,
       totals: { clinics: 0, patients: 0, visitsLast7d: 0, pendingSync: 0 },
-      error: 'Failed to load clinics from the database.',
+      error: 'Failed to load clinic map data.',
     };
   }
 
@@ -1373,6 +1483,8 @@ export async function fetchClinicMapData(): Promise<ClinicMapData> {
       name: c.name,
       zone: c.zone,
       address: c.address,
+      latitude: c.latitude ?? null,
+      longitude: c.longitude ?? null,
       patientCount: patientCounts.get(c.id) ?? 0,
       visitsLast24h: last24h,
       visitsLast7d: last7d,
@@ -1388,6 +1500,7 @@ export async function fetchClinicMapData(): Promise<ClinicMapData> {
 
   return {
     clinics: entries,
+    coordinatesAvailable: clinicsRes.value.coordinatesAvailable,
     totals: {
       clinics: entries.length,
       patients: totalPatients,

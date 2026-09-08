@@ -37,7 +37,7 @@ HealStats is an offline-first healthcare record and disaster-response platform d
 | Emergency Mode | Disaster Response | Implemented | High |
 | Outbreak Detection | Disaster Response | Implemented | Medium |
 | Emergency Triage Queue | Disaster Response | Implemented | High |
-| Clinic Coverage Map | Administration | Implemented | Medium |
+| Clinic Operations Map | Administration | In Progress (Leaflet verified with mocks; database activation pending) | Medium |
 | Bangla/English | Accessibility | Implemented (partial page coverage) | Critical |
 | Dark Mode | UI/UX | Implemented | High |
 | Motion & Animation | UI/UX | Implemented | Medium |
@@ -252,10 +252,14 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ## 12.5 Clinic Operations Map
 
-- **Status**: Implemented
+- **Status**: In Progress — implementation verified with mocked services; coordinate migration/backfill and production geocoding proxy deployment remain pending.
 - **Purpose**: A geographic overview of the clinic network so administrators can see where care is being delivered and which clinics have gone quiet.
-- **Capabilities**: Wired to live Supabase data via `adminService.fetchClinicMapData()`. For every clinic it aggregates real patient counts, visit activity (last 24 hours / last 7 days), pending-sync backlog (`synced_at IS NULL`), recent high-risk cases (urgency ≥ 4) and the last visit time. Clinics are plotted on a hand-drawn Bangladesh SVG map by matching their `zone`/`name` against a district coordinate lookup (presentation-layer geocoding — the schema has **no** latitude/longitude and none was added). Each clinic is coloured by an honest activity status derived from visit recency: **Active** (visit in 24h), **Recent** (visit in 7d) or **Quiet** (no visits in 7d). Includes searchable/filterable sidebar, a quiet-clinic spotlight, hover tooltips, a per-clinic detail bar, loading/empty/error states and manual refresh.
-- **Limitations**: No real per-clinic device/network status exists in the schema, so the map deliberately shows clinical *activity* rather than connectivity. Clinics whose `zone`/`name` does not match a known district are listed as "not on map" instead of being given a fabricated location. English-only, consistent with the other admin views.
+- **Map**: React Leaflet + Leaflet render stored latitude/longitude on OpenStreetMap standard tiles (light) or CARTO dark tiles (dark), with attribution, zoom controls, scroll/pinch zoom and drag/pan. No paid API keys. Initial view and panning envelope cover Bangladesh; this rectangle is not a national border polygon. No district-name coordinate guessing remains in the admin map. The public `ClinicsMapSection.tsx` is unchanged and intentionally static.
+- **Operations**: All/Active/Recent/Quiet filters, quiet spotlight, clinic-name/zone search, fly-to selection, shared hover/popup/selected summaries, refresh, loading/error/empty/tile-error states, EN/BN labels and dark mode. Below 768px the clinic sidebar stacks above the map and collapses. Missing, partial, non-finite, or out-of-envelope coordinates never produce pins; the Not on Map list remains available independently of filters.
+- **Data**: `fetchClinicMapData()` paginates clinics, patients, seven-day visits, and all-time server-pending visits. Failed metrics produce an error, not false zero counts. Activity is visit recency, **not connectivity**. High risk counts seven-day visits with urgency ≥4, not distinct patients; pending sync excludes records still confined to devices. Last visit refers only to the seven-day query window. This is a manually refreshed snapshot, not a realtime subscription.
+- **Clinic editor**: Admin-only create/edit controls capture name, zone, address and coordinates through numeric inputs, click-to-place, draggable draft marker or explicitly submitted address search. `saveClinic()` validates identity/staff authorization and coordinate bounds before online Supabase insert/update; no offline clinic-write queue. The prepared migration adds nullable paired latitude/longitude with bounds checks. Before it is applied, legacy clinic reads work, all clinics remain unpinned, and editing is disabled with a migration-needed notice.
+- **Place search/backfill**: Explicit place search uses an authenticated shared Node proxy for Nominatim, never autocomplete. One application-wide process queues uncached requests ≥1100ms apart, persists positive/empty results, and applies provider cooldowns. A separate operator tool checkpoints one-time clinic zone/address lookups and requires human verification of the actual clinic position before a separate apply stage; district centroids are not automatically accepted. No lookup, migration, backfill or real clinic write was executed in this task.
+- **Deployment limits**: Production needs the single-process proxy and persistent private cache plus separately authorized migration/backfill. Free tile/geocoding services are online, best-effort, policy-limited services, not offline-map storage. Application guards do not substitute for deployed RLS; clinic-write permissions must be reviewed before live use. See README setup notes.
 
 ---
 

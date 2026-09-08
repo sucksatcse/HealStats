@@ -6,7 +6,7 @@
 >
 > **Status legend:** ⬜ open · 🟡 partial · ✅ done
 >
-> Last updated: 2026-09-05 (auth hardening; ARIA sweep, unit tests, CI, PWA/service worker added; dashboard placeholders removed)
+> Last updated: 2026-09-08 (interactive admin map implementation and deployment prerequisites)
 
 ---
 
@@ -76,15 +76,16 @@
 
 ## 6. Testing (Task 22)
 
-- 🟡 **E2E covers safe/read-only flows only.** Playwright suite covers auth
-  (sign-in/logout), landing (desktop+mobile), i18n persistence, dark-mode
-  persistence, and the chatbot — via the demo-login bypass (no real DB writes).
+- 🟡 **E2E uses network mocks, not live writes or application auth bypasses.**
+  53 Playwright tests cover authentication, landing, i18n/theme, profiles,
+  chatbot and the interactive map (including mocked clinic creation/editing).
 - ⬜ **DB-mutating journeys not covered** (need an isolated test database):
   patient registration, visit/vitals submission, offline queue + reconnect sync,
   OCR save, admin staff CRUD, and flagged/triage/outbreak/map with real data.
-- ✅ **Unit tests** added (Vitest) for pure logic (`urgencyFromScore`,
-  `urgencyScoreRange`, `shortId`, `initials`, `parseOcrText`) — 13 tests. Service
-  modules that call Supabase (`adminService`/`chatbotService`) still need mocked tests.
+- ✅ **96 Vitest tests + 28 Node tests** cover existing pure helpers plus map
+  coordinates/filtering, mocked map service reads/writes, geocoding client,
+  shared proxy limits/cache/auth and prepared backfill safety. Other service
+  branches and real deployment security still need coverage.
 - ✅ **CI pipeline** added (`.github/workflows/ci.yml`): type-check, build, unit
   tests and Playwright E2E on push/PR.
 
@@ -115,10 +116,26 @@
 
 ## 9. Map (Task 16)
 
-- ⬜ **No geographic coordinates in the schema.** Clinics are placed by matching
-  `zone`/`name` to an in-app district lookup; unmatched clinics are listed as
-  "not on map" rather than given a fabricated location. Real lat/lng columns +
-  a map provider would be needed for true geolocation.
+- 🟡 **Leaflet replacement verified; live activation pending.** Nullable latitude/
+  longitude migration is prepared but unapplied. Missing schema falls back to
+  the clinic list with all pins omitted and editing disabled; missing or invalid
+  coordinates never cause inferred district placement. The public SVG coverage
+  map remains unchanged and static.
+- ⬜ **Coordinate backfill requires explicit operator execution and review.**
+  The prepared one-time Nominatim lookup sends clinic zone/address only, caches
+  results and requires human confirmation of actual clinic position before a
+  separate conditional apply step. No live lookup or write was performed.
+- ⬜ **Production place search requires the single-process Node proxy** behind
+  `/api/geocode`, private persistent cache/disk lock and active-admin Supabase
+  authorization. Static hosting/preview alone is insufficient. Shared 1/sec
+  provider limits preclude independent replicas or simultaneous backfill.
+- ℹ️ **Metrics are a manually refreshed snapshot:** high-risk counts seven-day
+  visits, not distinct patients; pending sync excludes other devices' local queues;
+  last-visit timestamps cover only the fetched seven-day window. Query pagination
+  is not a consistent snapshot during concurrent writes. No offline clinic-write
+  queue, offline tile download, or exact national-border polygon is provided.
+- ⬜ **Verify deployed clinic-write RLS** before activating creation/editing with
+  real data. Existing client-side admin checks are not database enforcement.
 - ℹ️ The map intentionally shows **clinical activity** (visit recency), not device
   connectivity, because the schema tracks no per-clinic device status.
 

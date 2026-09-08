@@ -86,7 +86,7 @@ Records never block on the network: when offline, mutations are queued locally i
 | **Emergency Mode** | Crisis console: zones, triage queue, responders, SOS broadcast. | 🟢 Implemented |
 | **Outbreak detection** | Threshold-based symptom-cluster early-warning surveillance. | 🟢 Implemented |
 | **Emergency triage queue** | Red/Yellow/Green bands, clinical status workflow, drill-down. | 🟢 Implemented |
-| **Clinic operations map** | Bangladesh map of clinics with live activity from real data. | 🟢 Implemented |
+| **Clinic operations map** | Leaflet zoom/pan, real coordinates, clinic/place search, activity filters and admin location editor. | 🟡 Tested with mocks; coordinate migration/backfill and production proxy pending |
 | **AI assistant** | Data-grounded chatbot (no fabrication); role/clinic scoped. | 🟢 Implemented |
 | **Bilingual UI** | English/Bangla via i18next; persisted; core flows translated. | 🟢 Implemented (partial deep-page coverage) |
 | **Dark mode** | App-wide light/dark theme with no-flash load. | 🟢 Implemented |
@@ -244,7 +244,7 @@ cd HealStats/frontend
 npm install     # or: pnpm install
 ```
 
-### 2. Environment variables
+ ### 2. Environment variables
 Create `frontend/.env` (or project-root `.env`, per your setup) with **your** Supabase values — use placeholders here, never commit real keys:
 ```env
 VITE_SUPABASE_URL=SUPABASE_URL
@@ -260,6 +260,23 @@ In the Supabase SQL Editor, run the migrations in `supabase/migrations/` (start 
 npm run dev
 ```
 The app starts at `http://localhost:8443/`.
+
+### Admin map setup — prepared, not deployed
+
+The admin Ops Map uses Leaflet/react-leaflet with OpenStreetMap standard tiles and CARTO dark tiles, without paid keys. The public coverage map remains intentionally static. **No database migration or backfill was applied during implementation.**
+
+1. **Database prerequisite:** an authorized operator must review and apply only [the coordinate migration](supabase/migrations/20260908000000_add_clinic_coordinates.sql) to the intended environment. Do not run all historical migrations blindly. Existing clinic coordinates start null; the map never substitutes district centroids. Before this migration, clinic listings still load but location editing is disabled.
+2. **Clinic locations:** administrators can create/edit clinics inside Ops Map using coordinate inputs, map placement, or explicit address search. Verify the actual clinic location before saving any geocoded candidate. Saving is online-only and checks the authenticated staff role. Database-level authorization/RLS must be separately verified; the MVP's disabled-RLS state is not made secure by UI checks.
+3. **Geocoding development:** Vite dev exposes `/api/geocode` through the shared Node middleware, using the existing root environment configuration. Search requires an active administrator. There is no external request while typing and no background geocoding on map load.
+4. **Geocoding production:** deploy [the standalone server](frontend/server/geocoding.mjs) using the `geocoding:serve` package script, with Node 22+. Reverse-proxy `/api/geocode` on the app origin to this server (default bind `127.0.0.1:4600`). `vite preview` and static hosting alone do **not** provide it. Backend-only configuration: `SUPABASE_URL`, `SUPABASE_ANON_KEY`; optional `HOST`, `PORT`, `NOMINATIM_URL`, `NOMINATIM_USER_AGENT` (set identifying operator contact), and `NOMINATIM_CACHE_PATH` (private persistent disk). Never put service-role keys in `VITE_` variables.
+5. **Rate limit and cache:** run **one proxy process for the entire application**, not replicas with separate caches. It serializes uncached requests ≥1100ms apart and persists successful and empty results. Provider 429/503 responses cause cooldown without automatic retries. Keep the cache private and stable across deployments. The exclusive lifetime disk lock also prevents a backfill from running alongside the proxy; after a crash, verify the owner process has stopped before manually removing its lock directory.
+6. **One-time backfill (operator action only):** [the backfill tool](frontend/scripts/backfill-clinic-coordinates.mjs) prints instructions without accessing anything when called with no arguments or `--help`. Separate `--lookup --allow-clinic-address-sharing` reads missing-coordinate clinics and shares only zone/address with Nominatim, checkpointing results without DB writes. Every candidate requires human review, even a single match. Set `reviewed`, `selectedId`, `clinicLocationConfirmed`, `reviewedBy`, and `reviewedAt` in the private checkpoint after independently verifying the actual clinic. A separate `--apply` conditionally writes reviewed coordinates only while both stored coordinates remain null and address/zone are unchanged. No automatic retries of ambiguous writes. Stop the proxy before either stage; use the same persistent cache path. Operator credentials are read from backend environment variables, never CLI arguments. See the tool's `--help` for the admin-session or service-role operator options. Lookup stops at 1000 new queries or 23 hours; do not schedule it as recurring work.
+
+**Provider policy:** Follow [Nominatim's usage policy](https://operations.osmfoundation.org/policies/nominatim/) (one request/sec across the app, explicit user searches, caching, no autocomplete, small one-time bulk use only) and [OSM's tile policy](https://operations.osmfoundation.org/policies/tiles/) (visible attribution, browser caching, no offline/bulk tile downloads). Do not submit patient/private information. For larger or recurring geocoding workloads, use a suitable self-hosted provider rather than the public Nominatim instance. The free services are best-effort online dependencies; errors are shown without fabricating locations.
+
+**Map semantics:** Active = visit in 24h; Recent = visit in 7d but not 24h; Quiet = no seven-day visits. High-risk counts visits, not unique patients. Pending sync covers server rows only, not remote device queues. Last-visit display is limited to the seven-day query window. Data refresh is manual, not a live subscription. The latitude/longitude bounds are a rectangular validation envelope, not exact national borders.
+
+**Validation:** `test:unit` includes 96 Vitest and 28 Node proxy/backfill tests; 53 Playwright tests pass with map APIs, database writes, and tiles intercepted locally. This validates implementation behavior, not live deployment or RLS enforcement. No real tile/geocoding requests or DB writes are needed for automated tests.
 
 ---
 

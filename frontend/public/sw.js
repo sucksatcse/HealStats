@@ -26,6 +26,7 @@ self.addEventListener("fetch", (event) => {
   const req = event.request
   // Only same-origin GET requests are handled; everything else is untouched.
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return
+  if (new URL(req.url).pathname.startsWith("/api/")) return
 
   event.respondWith(
     (async () => {
