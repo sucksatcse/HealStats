@@ -643,13 +643,16 @@ export default function NurseDashboardPage({
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-700/60 border border-teal-500/30 text-teal-200 text-xs font-semibold mb-3">
                 <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
-                Nurse Station & Clinical Triage
+                <span>Nurse Station & Clinical Triage</span>
+                <span className="opacity-50">•</span>
+                <span className="text-white font-bold">{profile?.clinic_name || "General Clinic"}</span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold font-display tracking-tight text-white">
                 Clinical Vitals & Urgency Management
               </h1>
               <p className="text-sm text-teal-100/80 mt-1 max-w-2xl">
-                Logged in as <strong className="text-white">{profile?.name || "Staff Nurse"}</strong> (Clinical Officer / Nurse). Record patient vitals, document visit notes, and adjust triage urgency synced live with Admin.
+                Logged in as <strong className="text-white">{profile?.name || "Staff Nurse"}</strong> at{" "}
+                <strong className="text-white underline decoration-teal-400/50">{profile?.clinic_name || "Assigned Clinic"}</strong>. Record patient vitals, document visit notes, and adjust triage urgency synced live with Admin.
               </p>
             </div>
             <div className="flex items-center gap-3">
