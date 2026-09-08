@@ -87,7 +87,8 @@ export async function fetchPublicStaffList(): Promise<{
     const apiRes = await fetch('/api/public/staff', {
       headers: { Accept: 'application/json' },
     });
-    if (apiRes.ok) {
+    const contentType = apiRes.headers.get('content-type') || '';
+    if (apiRes.ok && contentType.includes('application/json')) {
       const json = await apiRes.json();
       if (Array.isArray(json.data) && json.data.length > 0) {
         return {
