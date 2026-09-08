@@ -21,10 +21,11 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       {
-        name: "healstats-geocoding-dev",
+        name: "healstats-dev-apis",
         async configureServer(server) {
           // Dev only: no configurePreviewServer, no server secrets in define/client code.
           const env = {
+            ...loadEnv(mode, path.resolve(__dirname, "./"), ""),
             ...loadEnv(mode, path.resolve(__dirname, "../"), ""),
             ...process.env,
           }
@@ -41,6 +42,18 @@ export default defineConfig(({ mode }) => {
           server.httpServer?.once("close", () => {
             void middleware.close()
           })
+
+          const { createPublicStaffMiddleware } = await import(
+            pathToFileURL(path.resolve(__dirname, "server/publicStaffApi.mjs")).href
+          )
+          const publicStaffMiddleware = createPublicStaffMiddleware({
+            supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL,
+            supabaseSecretKey:
+              env.SUPABASE_SECRET_KEY || env.VITE_SUPABASE_SECRET_KEY,
+            supabaseAnonKey:
+              env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_PUBLISHABLE_KEY,
+          })
+          server.middlewares.use(publicStaffMiddleware)
         },
       },
     ],

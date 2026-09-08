@@ -395,7 +395,6 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [synced, setSynced] = useState(false)
-  const [searchValue, setSearchValue] = useState("")
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
     null,
   )
@@ -524,14 +523,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
     }
   })
 
-  const filteredPatients = recentCards.filter(
-    (p) =>
-      searchValue === "" ||
-      p.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      p.displayId.toLowerCase().includes(searchValue.toLowerCase()) ||
-      (p.diagnosis ?? "").toLowerCase().includes(searchValue.toLowerCase()) ||
-      (p.village ?? "").toLowerCase().includes(searchValue.toLowerCase()),
-  )
+  const filteredPatients = recentCards
 
   return (
     <div
@@ -659,9 +651,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
         <AppNavbar
           variant="app"
           onSidebarOpen={() => setSidebarOpen(true)}
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
-          searchPlaceholder={t.searchPlaceholder}
+          showSearch={false}
           isOnline={isOnline}
           onlineText={t.online}
           offlineText={t.offline}
@@ -838,12 +828,7 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                       icon: Icon.search,
                       color:
                         "bg-white dark:bg-slate-900 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800",
-                      action: () => {
-                        const el = document.querySelector(
-                          "input",
-                        ) as HTMLInputElement
-                        el?.focus()
-                      },
+                      action: () => setActiveNav("patients"),
                     },
                     {
                       label: t.syncNow,
@@ -903,11 +888,6 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                     <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">
                       {t.recentTitle}
                     </h2>
-                    {searchValue && (
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                        {t.showing(filteredPatients.length, searchValue)}
-                      </p>
-                    )}
                   </div>
                   <button
                     onClick={() => setActiveNav("patients")}
@@ -924,9 +904,11 @@ export default function DashboardPage({ onLogout }: DashboardPageProps) {
                       {Icon.search}
                     </div>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                      {t.noMatch(searchValue)}
+                      {lang === "bn" ? "কোনো সাম্প্রতিক রোগী পাওয়া যায়নি" : "No recent patients found"}
                     </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t.tryHint}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                      {lang === "bn" ? "নতুন রোগীর ভিজিট এখানে প্রদর্শিত হবে" : "Patient visits recorded at this clinic will appear here"}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">

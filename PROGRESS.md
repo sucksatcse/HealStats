@@ -2,6 +2,14 @@
 
 This document provides a comprehensive and highly detailed breakdown of every single file, configuration, and feature implemented in the project thus far.
 
+## Latest Public Website & Team Directory Update — 2026-09-09
+- **Careers / Our Team Directory (`CareersPage.tsx`)**: Built a public-facing staff and team directory accessible via `/careers` and from the website footer under **Organization > Careers**.
+- **Live Supabase Data Integration (`publicStaffService.ts` & `publicStaffApi.mjs`)**: Dynamically fetches active staff records and linked clinics from `public.staff` and `public.clinics` with privacy safeguards: queries only public-safe fields (`name`, `email`, `role`, `designation`, `clinics(name, zone, address)`), omitting auth UUIDs, internal tokens, and administrative metadata.
+- **Privacy Policy Page (`PrivacyPolicyPage.tsx`)**: Created a comprehensive, healthcare-grade Privacy Policy page accessible via `/privacy` and from the footer under **Organization > Privacy Policy**. Grounded directly in `README.md` architecture: documents zero data commercialization, 100% on-device OCR (Tesseract.js), strict clinic-scoping, IndexedDB local sandbox, grounded AI triage limits, disaster cluster aggregation, and patient rights under Bangladesh MOHFW and WHO digital health guidelines.
+- **Footer Cleanup (`AppFooter.tsx`)**: Removed redundant `Integrations` and `Changelog` links from the `PRODUCT` section, preserving only active `Features` and `Security` items, while adding interactive route handlers for `Privacy Policy` and `Careers`.
+- **Dynamic Search & Filtering**: Multi-field client-side search across staff names, designations, roles, clinics, and email addresses, with dedicated dropdown filters for **Role**, **Designation**, and **Clinic**, plus an instant "Clear Filters" reset trigger.
+- **Pagination, Skeleton Loading & Error States**: Standard 16-card pagination with responsive windowing, 8-card shimmer skeleton loading states, empty search state with filter reset, and API failure state with retry connection.
+
 ## Latest Map Update — 2026-09-08
 - **Homepage Interactive Coverage Map**: Integrated Leaflet interactive map into public homepage coverage section ([`ClinicsMapSection.tsx`](file:///i:/HealStats/frontend/src/ClinicsMapSection.tsx)). Added an accessible view toggle allowing visitors to switch between the **Interactive Map** (live OpenStreetMap tiles, real Supabase clinic markers, activity indicators, popups, and dark mode tiles) and the simplified **Overview Map** (stylized SVG Bangladesh outline).
 - **Coordinate migration APPLIED & ACTIVATED**: Operator authorized and executed the prepared coordinate migration (`20260908000000_add_clinic_coordinates.sql`) and `auth.users` token cleanup in target development database (`ckcovsgmiykenokkvxrk.supabase.co`).

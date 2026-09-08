@@ -39,6 +39,7 @@ interface AppNavbarProps {
   /* app-header props */
   onSidebarOpen?: () => void
   onProfile?: () => void
+  showSearch?: boolean
   searchValue?: string
   onSearchChange?: (value: string) => void
   searchPlaceholder?: string
@@ -158,6 +159,7 @@ export default function AppNavbar({
   onLogout,
   onSidebarOpen,
   onProfile,
+  showSearch,
   searchValue = "",
   onSearchChange,
   searchPlaceholder = "Search…",
@@ -598,18 +600,20 @@ export default function AppNavbar({
         )}
 
         {/* Search */}
-        <div className="relative flex-1 max-w-xs sm:max-w-sm">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
-            <SearchIcon />
-          </span>
-          <input
-            type="text"
-            value={searchValue}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
-          />
-        </div>
+        {(showSearch ?? Boolean(onSearchChange)) && (
+          <div className="relative flex-1 max-w-xs sm:max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
+              <SearchIcon />
+            </span>
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+            />
+          </div>
+        )}
 
         {/* Optional App PillNav for quick section switching */}
         {navItems && navItems.length > 0 && (
