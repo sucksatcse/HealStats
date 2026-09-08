@@ -321,7 +321,6 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("7d");
   const [emergency, setEmergency] = useState(false);
-  const [adminSearch, setAdminSearch] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [patientDetailReturnNav, setPatientDetailReturnNav] = useState<"patients" | "flagged" | "emergency" | "outbreak" | "emergency-triage">("patients");
@@ -627,9 +626,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
         <AppNavbar
           variant="app"
           onSidebarOpen={() => setSidebarOpen(true)}
-          searchValue={adminSearch}
-          onSearchChange={setAdminSearch}
-          searchPlaceholder="Search clinics, staff, records…"
+          showSearch={false}
           isOnline={typeof navigator !== "undefined" ? navigator.onLine : true}
           onlineText={typeof navigator !== "undefined" && navigator.onLine ? "System Connected" : "Offline"}
           onNotifications={() => setActiveNav("alerts")}
@@ -761,12 +758,14 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             <NurseDashboardPage
               onLogout={onLogout}
               onNavigate={(target) => setActiveNav(target)}
+              hideNavbar={true}
             />
           )}
           {activeNav === "clinical-station" && (
             <ClinicalOfficerPage
               onLogout={onLogout}
               onNavigate={(target) => setActiveNav(target)}
+              hideNavbar={true}
             />
           )}
 

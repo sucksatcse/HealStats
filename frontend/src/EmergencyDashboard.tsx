@@ -329,6 +329,7 @@ export default function EmergencyDashboard({
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [showBroadcastModal, setShowBroadcastModal] = useState(false)
   const [toast, setToast] = useState("")
+  const [fieldReports, setFieldReports] = useState<any[]>([])
 
   const flash = (msg: string) => {
     setToast(msg)
@@ -355,6 +356,14 @@ export default function EmergencyDashboard({
 
   useEffect(() => {
     loadMetrics()
+    try {
+      const saved = localStorage.getItem("healstats_emergency_reports")
+      if (saved) {
+        setFieldReports(JSON.parse(saved))
+      }
+    } catch {
+      // ignore
+    }
   }, [profile?.clinic_id])
 
   return (
@@ -447,6 +456,55 @@ export default function EmergencyDashboard({
               </div>
             ))}
           </div>
+
+          {/* Dispatched Field Emergency Reports */}
+          {fieldReports.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+                  <h2 className="font-semibold text-red-950 dark:text-red-200 text-base">
+                    Dispatched Field Incident Reports ({fieldReports.length})
+                  </h2>
+                </div>
+                <span className="text-xs text-red-600 dark:text-red-400 font-semibold uppercase tracking-wider">
+                  Live Field Telemetry
+                </span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-3.5">
+                {fieldReports.slice(0, 4).map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="p-4 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/40 shadow-xs space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/60 px-2 py-0.5 rounded">
+                        {rep.reference}
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        {rep.displayDate || "Just now"}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {rep.incidentType} — {rep.location}
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                        Severity: <strong className="text-red-700 dark:text-red-400 uppercase">{rep.severity}</strong> · People affected: <strong>{rep.affected}</strong>
+                        {rep.locationCoords && ` · GPS: [${rep.locationCoords.lat.toFixed(4)}°, ${rep.locationCoords.lng.toFixed(4)}°]`}
+                      </p>
+                      {rep.notes && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1 bg-white/70 dark:bg-slate-900/50 p-2 rounded-lg">
+                          "{rep.notes}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Active zones */}
           <div>

@@ -2,6 +2,11 @@
 
 This document provides a comprehensive and highly detailed breakdown of every single file, configuration, and feature implemented in the project thus far.
 
+## Latest Emergency & UI Update — 2026-09-08
+- **Emergency Report Realtime Leaflet Map**: Replaced the static SVG mock map in `EmergencyReportPage.tsx` with an interactive Leaflet map featuring live Supabase clinic nodes (`fetchClinicMapData`), click-to-pin coordinate detection with closest facility distance estimation, coastal disaster hotspot quick-focus chips (*Monpura*, *Char Fasson*, *Hatiya*, *Sandwip*, *Kutubdia*, *Cox's Bazar*, *Khulna*), GPS device geolocation (`navigator.geolocation`), and dark mode tile switching.
+- **Cross-Console Emergency Reporting Pipeline**: Field emergency incident reports submitted by nurses/workers persist to local cache and surface in the Admin console under Notifications (`AlertsCenterPage.tsx`) and the Emergency Operations Dashboard (`EmergencyDashboard.tsx`).
+- **Navbar Search Cleanup**: Removed redundant/non-functional search bars across Admin Dashboard views (`AdminDashboardPage.tsx`), Worker Portal (`DashboardPage.tsx`), and Nurse Station (`NurseDashboardPage.tsx`), routing quick-action searches to dedicated patient lists.
+
 ## Latest Map Update — 2026-09-08
 - **Homepage Interactive Coverage Map**: Integrated Leaflet interactive map into public homepage coverage section ([`ClinicsMapSection.tsx`](file:///i:/HealStats/frontend/src/ClinicsMapSection.tsx)). Added an accessible view toggle allowing visitors to switch between the **Interactive Map** (live OpenStreetMap tiles, real Supabase clinic markers, activity indicators, popups, and dark mode tiles) and the simplified **Overview Map** (stylized SVG Bangladesh outline).
 - **Coordinate migration APPLIED & ACTIVATED**: Operator authorized and executed the prepared coordinate migration (`20260908000000_add_clinic_coordinates.sql`) and `auth.users` token cleanup in target development database (`ckcovsgmiykenokkvxrk.supabase.co`).

@@ -275,6 +275,29 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
         }
       })
 
+      // 1b. Live field emergency reports submitted by clinic nurses/workers
+      try {
+        const savedReports = localStorage.getItem("healstats_emergency_reports")
+        if (savedReports) {
+          const reports = JSON.parse(savedReports)
+          reports.slice(0, 10).forEach((rep: any) => {
+            liveAlerts.push({
+              id: `field-report-${rep.id}`,
+              kind: "emergency",
+              title: `Field SOS: ${rep.incidentType} · ${rep.location}`,
+              message: `Ref: ${rep.reference} · Severity: ${rep.severity.toUpperCase()} · ${rep.affected} people affected${rep.locationCoords ? ` · GPS: [${rep.locationCoords.lat.toFixed(4)}°, ${rep.locationCoords.lng.toFixed(4)}°]` : ""}${rep.notes ? ` · Notes: ${rep.notes}` : ""}`,
+              time: rep.displayDate || "Recent field report",
+              group: "Today",
+              read: false,
+              cta: "View in Ops Map",
+              actionUrl: "ops-map",
+            })
+          })
+        }
+      } catch {
+        // ignore
+      }
+
       // 2. Fetch live clinical alerts from Supabase if configured and online
       if (supabaseConfigured && navigator.onLine) {
         try {

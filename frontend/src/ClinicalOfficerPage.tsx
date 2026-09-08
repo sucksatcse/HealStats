@@ -201,9 +201,11 @@ const Icons = {
 export default function ClinicalOfficerPage({
   onLogout,
   onNavigate,
+  hideNavbar = false,
 }: {
   onLogout?: () => void
   onNavigate?: (page: string) => void
+  hideNavbar?: boolean
 }) {
   const { profile } = useAuth()
   const { lang } = useLang()
@@ -642,13 +644,16 @@ export default function ClinicalOfficerPage({
       )}
 
       {/* App Navbar */}
-      <AppNavbar
-        variant="app"
-        userInitials={profile?.name ? profile.name.slice(0, 2).toUpperCase() : "CO"}
-        userColor="teal"
-        onLogout={onLogout}
-        onProfile={() => onNavigate?.("dashboard")}
-      />
+      {!hideNavbar && (
+        <AppNavbar
+          variant="app"
+          showSearch={false}
+          userInitials={profile?.name ? profile.name.slice(0, 2).toUpperCase() : "CO"}
+          userColor="teal"
+          onLogout={onLogout}
+          onProfile={() => onNavigate?.("dashboard")}
+        />
+      )}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header Banner */}
