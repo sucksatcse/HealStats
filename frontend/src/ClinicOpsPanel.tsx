@@ -226,12 +226,9 @@ function TileStatus({ dark }: { dark: boolean }) {
     <>
       <TileLayer
         key={`${dark}-${attempt}`}
-        url={
-          dark
-            ? "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-            : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        }
-        attribution={dark ? CARTO_ATTRIBUTION : OSM_ATTRIBUTION}
+        className={dark ? "leaflet-dark-tiles" : ""}
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={OSM_ATTRIBUTION}
         maxZoom={19}
         eventHandlers={{ tileerror: () => setFailed(true) }}
       />

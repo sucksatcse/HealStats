@@ -377,11 +377,8 @@ export default function ClinicsMapSection() {
               >
                 <TileLayer
                   key={dark ? "dark-tiles" : "light-tiles"}
-                  url={
-                    dark
-                      ? "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-                      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  }
+                  className={dark ? "leaflet-dark-tiles" : ""}
+                  url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   maxZoom={19}
                 />
