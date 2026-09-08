@@ -34,12 +34,14 @@ test.describe('Mobile landing', () => {
           }),
         )
         expect(controlsFit).toBe(true)
+        const signupHeading = language === 'bn' ? 'স্বাস্থ্যকর্মী সাইন আপ' : 'Healthcare Worker Sign Up'
+        const loginHeading = language === 'bn' ? 'স্বাস্থ্যকর্মী পোর্টাল' : 'Healthcare Worker Portal'
         await header.getByRole('button', { name: signupLabel, exact: true }).click()
-        await expect(page.getByText('Healthcare Worker Sign Up')).toBeVisible()
+        await expect(page.getByText(signupHeading)).toBeVisible()
         await page.goto('/')
         if (width < 1280) await toggle.click()
         await header.getByRole('button', { name: loginLabel, exact: true }).click()
-        await expect(page.getByText('Healthcare Worker Portal')).toBeVisible()
+        await expect(page.getByText(loginHeading)).toBeVisible()
       })
     }
   }

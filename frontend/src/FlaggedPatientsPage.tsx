@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   fetchHighRiskPatients,
   fetchStaff,
@@ -191,7 +192,8 @@ const AVATAR_COLORS = [
 
 function toFlaggedPatient(
   p: import("./lib/types").PatientWithLatestVisit,
-  colorIndex: number
+  colorIndex: number,
+  t: (k: string, o?: any) => string
 ): FlaggedPatient | null {
   const visit = p.latest_visit
   const level = urgencyFromScore(visit?.urgency_score)
@@ -202,15 +204,15 @@ function toFlaggedPatient(
   const initials = (parts.length > 1 ? parts[0][0] + parts[1][0] : p.name.slice(0, 2)).toUpperCase()
 
   // Format relative time from created_at
-  let flaggedAt = "Unknown"
+  let flaggedAt = t("flagged:unknown")
   let flaggedTimestamp = 0
   if (visit?.created_at) {
     flaggedTimestamp = new Date(visit.created_at).getTime()
     const diff = Date.now() - flaggedTimestamp
     const mins = Math.floor(diff / 60000)
-    if (mins < 60) flaggedAt = `${Math.max(1, mins)}m ago`
-    else if (mins < 1440) flaggedAt = `${Math.floor(mins / 60)}h ago`
-    else flaggedAt = `${Math.floor(mins / 1440)}d ago`
+    if (mins < 60) flaggedAt = t("flagged:minsAgo", { n: Math.max(1, mins) })
+    else if (mins < 1440) flaggedAt = t("flagged:hoursAgo", { n: Math.floor(mins / 60) })
+    else flaggedAt = t("flagged:daysAgo", { n: Math.floor(mins / 1440) })
   }
 
   // Format vitals summary from JSONB
@@ -228,13 +230,13 @@ function toFlaggedPatient(
     age: p.age ?? 0,
     gender: p.sex === "F" || p.sex === "Female" ? "F" : "M",
     village: p.village ?? "—",
-    clinicName: p.clinics?.name ?? "General Clinic",
+    clinicName: p.clinics?.name ?? t("flagged:generalClinic"),
     clinicZone: p.clinics?.zone ?? "",
     clinicId: p.clinic_id ?? "",
-    recordedBy: p.staff?.name ?? "Field Staff",
+    recordedBy: p.staff?.name ?? t("flagged:fieldStaff"),
     score: visit?.urgency_score ?? 3,
     level: level as Level,
-    symptoms: visit?.symptoms ?? "No symptom description recorded.",
+    symptoms: visit?.symptoms ?? t("flagged:noSymptomDesc"),
     symptomCategory: visit?.symptom_category ?? "",
     diagnosis: visit?.diagnosis ?? "",
     vitals: vitalsStr,
@@ -286,6 +288,7 @@ function AssignMenu({
   onAssign: (doctor: string) => void
   onUnassign: () => void
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   if (assigned) {
@@ -300,7 +303,7 @@ function AssignMenu({
         <button
           type="button"
           onClick={onUnassign}
-          title="Unassign coordinator"
+          title={t("flagged:unassignCoord")}
           className="ml-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors p-0.5 cursor-pointer"
         >
           {Icon.userRemove}
@@ -317,7 +320,7 @@ function AssignMenu({
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 px-3 py-1.5 rounded-xl shadow-sm transition-colors whitespace-nowrap cursor-pointer"
       >
         {Icon.doctor}
-        Assign Doctor
+        {t("flagged:assignDoctor")}
         {Icon.chevronDown}
       </button>
 
@@ -326,11 +329,11 @@ function AssignMenu({
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 z-20 w-60 max-h-64 overflow-y-auto bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xl py-1.5 animate-slide-up">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3.5 py-1.5">
-              Available Staff & Doctors
+              {t("flagged:availableStaff")}
             </p>
             {staffList.length === 0 ? (
               <p className="text-xs text-slate-400 px-3.5 py-2 italic">
-                No active staff found
+                {t("flagged:noActiveStaff")}
               </p>
             ) : (
               staffList.map((s) => (
@@ -430,6 +433,7 @@ export default function FlaggedPatientsPage({
   onViewPatient?: (patientId: string) => void
 } = {}) {
   const { profile } = useAuth()
+  const { t } = useTranslation()
   const [patients, setPatients] = useState<FlaggedPatient[]>([])
   const [staffList, setStaffList] = useState<StaffWithClinic[]>([])
   const [clinics, setClinics] = useState<ClinicRow[]>([])
@@ -473,7 +477,7 @@ export default function FlaggedPatientsPage({
       } else {
         const mapped: FlaggedPatient[] = []
         highRiskRes.data.forEach((p, i) => {
-          const f = toFlaggedPatient(p, i)
+          const f = toFlaggedPatient(p, i, t)
           if (f) mapped.push(f)
         })
         setPatients(mapped)
@@ -488,7 +492,7 @@ export default function FlaggedPatientsPage({
       }
     } catch (err) {
       console.error("[FlaggedPatientsPage] loadData error:", err)
-      setFetchError("Failed to connect to triage database.")
+      setFetchError(t("flagged:errConnect"))
     } finally {
       setIsLoading(false)
     }
@@ -507,7 +511,7 @@ export default function FlaggedPatientsPage({
     } catch (err) {
       console.error("Storage error:", err)
     }
-    flash(`${patientName} assigned to ${doctorName}`)
+    flash(t("flagged:toastAssigned", { name: patientName, doctor: doctorName }))
   }
 
   const handleUnassign = (patientId: string, patientName: string) => {
@@ -519,7 +523,7 @@ export default function FlaggedPatientsPage({
     } catch (err) {
       console.error("Storage error:", err)
     }
-    flash(`Unassigned ${patientName}`)
+    flash(t("flagged:toastUnassigned", { name: patientName }))
   }
 
   // Filter & Search
@@ -611,7 +615,7 @@ export default function FlaggedPatientsPage({
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    flash("High-risk patients exported to CSV")
+    flash(t("flagged:toastExported"))
   }
 
   return (
@@ -624,11 +628,11 @@ export default function FlaggedPatientsPage({
           </div>
           <div>
             <h1 className="font-display text-2xl text-red-950 dark:text-red-100 leading-tight">
-              High-Risk & Flagged Patients
+              {t("flagged:title")}
             </h1>
             {isLoading ? (
               <p className="text-sm text-red-700/80 dark:text-red-400/80 mt-0.5">
-                Querying clinical triage feed…
+                {t("flagged:querying")}
               </p>
             ) : fetchError ? (
               <p className="text-sm text-red-700 dark:text-red-400 mt-0.5">
@@ -636,11 +640,11 @@ export default function FlaggedPatientsPage({
               </p>
             ) : (
               <p className="text-sm text-red-700/90 dark:text-red-300 mt-0.5">
-                <span className="font-bold">{patients.length} total flagged</span> ·{" "}
-                <span className="font-semibold text-red-700 dark:text-red-300">{criticalCount} critical</span> ·{" "}
-                <span className="font-semibold text-orange-700 dark:text-orange-300">{highCount} high</span> ·{" "}
-                <span className="font-semibold text-amber-700 dark:text-amber-300">{moderateCount} moderate</span> ·{" "}
-                <span className="font-semibold">{unassignedTotal} awaiting assignment</span>
+                <span className="font-bold">{t("flagged:totalFlagged", { count: patients.length })}</span> ·{" "}
+                <span className="font-semibold text-red-700 dark:text-red-300">{t("flagged:critical", { count: criticalCount })}</span> ·{" "}
+                <span className="font-semibold text-orange-700 dark:text-orange-300">{t("flagged:high", { count: highCount })}</span> ·{" "}
+                <span className="font-semibold text-amber-700 dark:text-amber-300">{t("flagged:moderate", { count: moderateCount })}</span> ·{" "}
+                <span className="font-semibold">{t("flagged:awaitingAssignment", { count: unassignedTotal })}</span>
               </p>
             )}
           </div>
@@ -654,11 +658,11 @@ export default function FlaggedPatientsPage({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-800/80 bg-white dark:bg-slate-900 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {Icon.download}
-            Export CSV
+            {t("flagged:exportCsv")}
           </button>
           <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-red-700 dark:text-red-300 bg-white/80 dark:bg-slate-900/80 border border-red-200 dark:border-red-900/50 px-3 py-1.5 rounded-full">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            Live Priority Stream
+            {t("flagged:livePriorityStream")}
           </span>
         </div>
       </div>
@@ -674,7 +678,7 @@ export default function FlaggedPatientsPage({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search patient, ID, village, symptoms…"
+              placeholder={t("flagged:searchPh")}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </div>
@@ -690,7 +694,7 @@ export default function FlaggedPatientsPage({
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
             >
-              All ({patients.length})
+              {t("flagged:all")} ({patients.length})
             </button>
             <button
               type="button"
@@ -701,7 +705,7 @@ export default function FlaggedPatientsPage({
                   : "text-slate-500 dark:text-slate-400 hover:text-red-600"
               }`}
             >
-              Critical ({criticalCount})
+              {t("urgency:Critical")} ({criticalCount})
             </button>
             <button
               type="button"
@@ -712,7 +716,7 @@ export default function FlaggedPatientsPage({
                   : "text-slate-500 dark:text-slate-400 hover:text-orange-600"
               }`}
             >
-              High ({highCount})
+              {t("urgency:High")} ({highCount})
             </button>
             <button
               type="button"
@@ -723,17 +727,17 @@ export default function FlaggedPatientsPage({
                   : "text-slate-500 dark:text-slate-400 hover:text-amber-600"
               }`}
             >
-              Moderate ({moderateCount})
+              {t("urgency:Moderate")} ({moderateCount})
             </button>
           </div>
 
           {/* Clinic filter dropdown */}
           {clinics.length > 0 && (
             <FilterDropdown
-              label="Clinic"
+              label={t("flagged:filterClinic")}
               value={clinicFilter}
               options={[
-                { label: "All Clinics", value: "all" },
+                { label: t("flagged:allClinics"), value: "all" },
                 ...clinics.map((c) => ({
                   label: `${c.name} ${c.zone ? `(${c.zone})` : ""}`,
                   value: c.id,
@@ -745,12 +749,12 @@ export default function FlaggedPatientsPage({
 
           {/* Assignment filter dropdown */}
           <FilterDropdown
-            label="Assignment"
+            label={t("flagged:filterAssignment")}
             value={assignmentFilter}
             options={[
-              { label: "All Cases", value: "all" },
-              { label: "Unassigned", value: "unassigned" },
-              { label: "Assigned", value: "assigned" },
+              { label: t("flagged:assignAll"), value: "all" },
+              { label: t("flagged:assignUnassigned"), value: "unassigned" },
+              { label: t("flagged:assignAssigned"), value: "assigned" },
             ]}
             onChange={(v) => setAssignmentFilter(v as "all" | "assigned" | "unassigned")}
           />
@@ -762,17 +766,13 @@ export default function FlaggedPatientsPage({
               onClick={clearAllFilters}
               className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 px-2 py-1 transition-colors cursor-pointer"
             >
-              Reset filters
+              {t("flagged:resetFilters")}
             </button>
           )}
         </div>
 
         <p className="text-xs text-slate-400">
-          Showing{" "}
-          <span className="font-semibold text-slate-600 dark:text-slate-300">
-            {filteredPatients.length}
-          </span>{" "}
-          priority patient{filteredPatients.length !== 1 ? "s" : ""}
+          {t("flagged:showing", { count: filteredPatients.length })}
         </p>
       </div>
 
@@ -807,7 +807,7 @@ export default function FlaggedPatientsPage({
         <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-5 py-4 flex items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-red-800 dark:text-red-300">
-              Error querying high-risk patients
+              {t("flagged:errTitle")}
             </p>
             <p className="text-xs text-red-600 dark:text-red-400">{fetchError}</p>
           </div>
@@ -816,7 +816,7 @@ export default function FlaggedPatientsPage({
             onClick={loadData}
             className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
-            Retry
+            {t("flagged:retry")}
           </button>
         </div>
       )}
@@ -831,10 +831,10 @@ export default function FlaggedPatientsPage({
                 {Icon.check}
               </div>
               <h3 className="font-display text-lg text-teal-950 dark:text-white">
-                No High-Risk Patients Flagged
+                {t("flagged:noFlaggedTitle")}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                All patient visits currently in the database are within stable or low urgency thresholds (scores 1–2).
+                {t("flagged:noFlaggedBody")}
               </p>
             </div>
           )}
@@ -846,17 +846,17 @@ export default function FlaggedPatientsPage({
                 {Icon.search}
               </div>
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                No flagged patients match your filters
+                {t("flagged:noMatchTitle")}
               </p>
               <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                Try searching a different keyword or resetting your urgency and clinic filters.
+                {t("flagged:noMatchBody")}
               </p>
               <button
                 type="button"
                 onClick={clearAllFilters}
                 className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 hover:bg-teal-100 transition-colors cursor-pointer"
               >
-                Clear all filters
+                {t("flagged:clearAll")}
               </button>
             </div>
           )}
@@ -868,19 +868,19 @@ export default function FlaggedPatientsPage({
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                      Patient & Clinic
+                      {t("flagged:colPatient")}
                     </th>
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                      Urgency Score
+                      {t("flagged:colScore")}
                     </th>
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                      Symptoms & Diagnosis
+                      {t("flagged:colSymptoms")}
                     </th>
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                      Flagged Time
+                      {t("flagged:colFlagged")}
                     </th>
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-right">
-                      Assignment & Detail
+                      {t("flagged:colAssignment")}
                     </th>
                   </tr>
                 </thead>
@@ -905,7 +905,7 @@ export default function FlaggedPatientsPage({
                               type="button"
                               onClick={() => onViewPatient?.(r.rawId)}
                               className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-teal-400 transition-all ${r.color}`}
-                              title="View Patient Details"
+                              title={t("flagged:viewDetails")}
                             >
                               {r.initials}
                             </button>
@@ -918,7 +918,7 @@ export default function FlaggedPatientsPage({
                                 {r.name}
                               </button>
                               <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                                {r.age}y · {r.gender} · {r.village} · ID: {r.id}
+                                {t("flagged:patientMeta", { age: r.age, gender: r.gender === "F" ? t("flagged:genderF") : t("flagged:genderM"), village: r.village, id: r.id })}
                               </p>
                               <p className="text-[11px] font-medium text-teal-700 dark:text-teal-400 truncate mt-0.5">
                                 {r.clinicName} {r.clinicZone ? `(${r.clinicZone})` : ""}
@@ -942,7 +942,7 @@ export default function FlaggedPatientsPage({
                               <span
                                 className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border mb-1.5 ${meta.chip}`}
                               >
-                                {r.level}
+                                {t(`urgency:${r.level}`)}
                               </span>
                               <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div
@@ -961,7 +961,7 @@ export default function FlaggedPatientsPage({
                           </p>
                           {r.diagnosis && (
                             <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 mt-1">
-                              Dx: {r.diagnosis}
+                              {t("flagged:dxPrefix", { dx: r.diagnosis })}
                             </p>
                           )}
                           {r.vitals && (
@@ -980,7 +980,7 @@ export default function FlaggedPatientsPage({
                               {r.flaggedAt}
                             </span>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
-                              Intake: {r.recordedBy}
+                              {t("flagged:intakePrefix", { name: r.recordedBy })}
                             </p>
                           </div>
                         </td>
@@ -999,7 +999,7 @@ export default function FlaggedPatientsPage({
                                 type="button"
                                 onClick={() => onViewPatient(r.rawId)}
                                 className="p-2 rounded-xl text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                title="View Patient Details"
+                                title={t("flagged:viewDetails")}
                               >
                                 {Icon.eye}
                               </button>

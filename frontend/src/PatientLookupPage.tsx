@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Icons (large, simple) ────────────────────────────────────────────────────────
 const Icon = {
@@ -173,6 +174,7 @@ interface PatientLookupPageProps {
 }
 
 export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
+  const { t } = useTranslation()
   const [id, setId] = useState("")
   const [record, setRecord] = useState<VisitRecord | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -224,7 +226,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
             onClick={onBack}
             className="flex items-center gap-1 text-sm font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-white transition-colors"
           >
-            {Icon.back} Home
+            {Icon.back} {t("patients:home")}
           </button>
         </div>
       </header>
@@ -238,11 +240,10 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 {Icon.clipboard}
               </div>
               <h1 className="font-display text-3xl sm:text-4xl text-teal-950 dark:text-white leading-tight mb-3">
-                Check Your Visit
+                {t("patients:lookupTitle")}
               </h1>
               <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto">
-                Type your Patient ID number to see your last visit and your next
-                visit date.
+                {t("patients:lookupSubtitle")}
               </p>
             </div>
 
@@ -251,7 +252,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 htmlFor="pid"
                 className="block text-lg font-semibold text-teal-950 dark:text-white mb-3"
               >
-                Your Patient ID
+                {t("patients:yourPatientId")}
               </label>
               <input
                 id="pid"
@@ -267,8 +268,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 className="w-full text-center text-2xl sm:text-3xl font-bold tracking-wider uppercase text-teal-900 dark:text-white dark:bg-slate-900 placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:font-normal border-2 border-teal-200 dark:border-teal-800 rounded-2xl px-4 py-5 focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15 transition-all"
               />
               <p className="text-sm text-slate-400 dark:text-slate-500 mt-3 text-center">
-                Your ID is on your clinic card. It looks like{" "}
-                <span className="font-semibold text-slate-500 dark:text-slate-400">PT-00412</span>.
+                {t("patients:idHint", { example: "PT-00412" })}
               </p>
 
               {notFound && (
@@ -278,11 +278,10 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                   </span>
                   <div>
                     <p className="font-bold text-lg leading-tight">
-                      We could not find that ID
+                      {t("patients:notFoundTitle")}
                     </p>
                     <p className="text-base mt-1 leading-snug">
-                      Please check the number and try again, or ask a health
-                      worker for help.
+                      {t("patients:notFoundBody")}
                     </p>
                   </div>
                 </div>
@@ -294,13 +293,13 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 className="w-full mt-6 flex items-center justify-center gap-3 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 text-white text-xl font-bold py-5 rounded-2xl shadow-lg shadow-teal-600/20 transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:shadow-none"
               >
                 {Icon.search}
-                Show My Visit
+                {t("patients:showMyVisit")}
               </button>
             </div>
 
             {/* Try-it hint */}
             <p className="text-center text-sm text-slate-400 dark:text-slate-500 mt-6">
-              Try:{" "}
+              {t("patients:tryPrefix")}{" "}
               <button
                 onClick={() => setId("PT-00412")}
                 className="font-semibold text-teal-600 dark:text-teal-400 underline"
@@ -324,7 +323,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 {Icon.person}
               </div>
               <div>
-                <p className="text-base text-slate-500 dark:text-slate-400">Visit summary for</p>
+                <p className="text-base text-slate-500 dark:text-slate-400">{t("patients:visitSummaryFor")}</p>
                 <h1 className="font-display text-3xl text-teal-950 dark:text-white leading-tight">
                   {record.name}
                 </h1>
@@ -336,16 +335,16 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
               <SummaryCard
                 icon={Icon.calendar}
                 tone="teal"
-                label="Your last visit"
+                label={t("patients:lastVisitLabel")}
                 value={record.lastVisit}
-                sub={`at ${record.clinic}`}
+                sub={t("patients:atClinic", { clinic: record.clinic })}
               />
 
               {/* Diagnosis */}
               <SummaryCard
                 icon={Icon.clipboard}
                 tone="violet"
-                label="What we found"
+                label={t("patients:whatWeFound")}
                 value={record.diagnosis}
                 sub={record.advice}
               />
@@ -355,13 +354,13 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
                 icon={record.status === "well" ? Icon.heart : Icon.next}
                 tone={record.status === "well" ? "green" : "amber"}
                 label={
-                  record.status === "well" ? "You are well" : "Come back on"
+                  record.status === "well" ? t("patients:youAreWell") : t("patients:comeBackOn")
                 }
                 value={record.nextVisit}
                 sub={
                   record.status === "well"
-                    ? "No follow-up needed right now."
-                    : "Please come to the clinic on this day."
+                    ? t("patients:noFollowup")
+                    : t("patients:comeOnDay")
                 }
               />
             </div>
@@ -373,10 +372,10 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
               </span>
               <div>
                 <p className="font-semibold text-teal-950 dark:text-white text-base leading-tight">
-                  Need help?
+                  {t("patients:needHelp")}
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Call your clinic or ask a health worker.
+                  {t("patients:helpBody")}
                 </p>
               </div>
             </div>
@@ -385,7 +384,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
               onClick={reset}
               className="w-full mt-6 flex items-center justify-center gap-2 border-2 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200 hover:bg-white dark:hover:bg-slate-800 text-lg font-bold py-4 rounded-2xl transition-colors"
             >
-              {Icon.back} Check Another ID
+              {Icon.back} {t("patients:checkAnother")}
             </button>
           </>
         )}
@@ -393,7 +392,7 @@ export default function PatientLookupPage({ onBack }: PatientLookupPageProps) {
 
       <footer className="py-6 text-center">
         <p className="text-sm text-slate-400 dark:text-slate-500">
-          Your information is private and safe.
+          {t("patients:privacyNote")}
         </p>
       </footer>
     </div>

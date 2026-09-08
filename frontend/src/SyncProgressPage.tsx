@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // Geometry for the circular progress ring
 const SIZE = 176
@@ -7,6 +8,7 @@ const R = (SIZE - STROKE) / 2
 const CIRC = 2 * Math.PI * R
 
 export default function SyncProgressPage({ onDone }: { onDone?: () => void }) {
+  const { t } = useTranslation()
   const [pct, setPct] = useState(0)
   const [done, setDone] = useState(false)
 
@@ -103,7 +105,7 @@ export default function SyncProgressPage({ onDone }: { onDone?: () => void }) {
                   {pct}%
                 </span>
                 <span className="text-[11px] font-medium text-slate-400 mt-1">
-                  {synced} of {total} records
+                  {t("sync:recordsOf", { synced, total })}
                 </span>
               </>
             )}
@@ -114,17 +116,16 @@ export default function SyncProgressPage({ onDone }: { onDone?: () => void }) {
         {done ? (
           <>
             <h1 className="font-display text-3xl text-teal-950 mb-2">
-              All records synced
+              {t("sync:allSyncedTitle")}
             </h1>
             <p className="text-slate-500 leading-relaxed mb-8">
-              {total} patient records are safely backed up to the district
-              server.
+              {t("sync:allSyncedBody", { total })}
             </p>
           </>
         ) : (
           <>
             <h1 className="font-display text-2xl text-teal-950 mb-2 flex items-center justify-center">
-              Syncing records
+              {t("sync:syncingRecords")}
               <span className="inline-flex ml-0.5">
                 <span className="animate-dot" style={{ animationDelay: "0s" }}>
                   .
@@ -144,8 +145,7 @@ export default function SyncProgressPage({ onDone }: { onDone?: () => void }) {
               </span>
             </h1>
             <p className="text-slate-500 leading-relaxed mb-8">
-              Keep this device connected — your work is being backed up safely.
-              You can leave this screen; syncing continues in the background.
+              {t("sync:syncingBody")}
             </p>
           </>
         )}
@@ -153,7 +153,7 @@ export default function SyncProgressPage({ onDone }: { onDone?: () => void }) {
         {/* Connection chip */}
         <div className="inline-flex items-center gap-2 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-100 rounded-full px-3 py-1.5 mb-8">
           <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-          Connected · District Server
+          {t("sync:connectedServer")}
         </div>
 
         {/* Action */}
@@ -163,7 +163,7 @@ export default function SyncProgressPage({ onDone }: { onDone?: () => void }) {
               onClick={onDone}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-teal-600 text-white shadow-sm shadow-teal-600/20 transition-all duration-150 hover:bg-teal-700 hover:scale-[1.03] active:bg-teal-800 active:scale-[0.97]"
             >
-              Done
+              {t("sync:done")}
               <svg
                 viewBox="0 0 16 16"
                 fill="none"

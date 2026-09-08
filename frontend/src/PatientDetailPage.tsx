@@ -70,6 +70,14 @@ const fmtTime = (iso: string) => {
   }
 }
 
+const CAT_KEY: Record<string, string> = {
+  "diarrhea/gastrointestinal": "cat_gi",
+  "fever": "cat_fever",
+  "respiratory": "cat_respiratory",
+  "skin/rash": "cat_skin",
+  "other": "cat_other",
+}
+
 const categoryLabel = (v: string | null) =>
   SYMPTOM_CATEGORIES.find((c) => c.value === v)?.label ?? v ?? "—"
 
@@ -182,7 +190,7 @@ function UrgencyBadge({
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        <span>Level 5 · {t("urgency.Critical", "Critical")}</span>
+        <span>{t("profile:level", "Level")} 5 · {t("urgency:Critical", "Critical")}</span>
       </span>
     )
   }
@@ -203,7 +211,7 @@ function UrgencyBadge({
           <line x1="12" y1="9" x2="12" y2="13" />
           <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
-        <span>Level 4 · {t("urgency.High", "High")}</span>
+        <span>{t("profile:level", "Level")} 4 · {t("urgency:High", "High")}</span>
       </span>
     )
   }
@@ -223,7 +231,7 @@ function UrgencyBadge({
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
         </svg>
-        <span>Level 3 · {t("urgency.Moderate", "Moderate")}</span>
+        <span>{t("profile:level", "Level")} 3 · {t("urgency:Moderate", "Moderate")}</span>
       </span>
     )
   }
@@ -242,7 +250,7 @@ function UrgencyBadge({
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
-        <span>Level 2 · {t("urgency.Low", "Low")}</span>
+        <span>{t("profile:level", "Level")} 2 · {t("urgency:Low", "Low")}</span>
       </span>
     )
   }
@@ -261,16 +269,16 @@ function UrgencyBadge({
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
         <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
-      <span>Level 1 · {t("urgency.Stable", "Stable")}</span>
+      <span>{t("profile:level", "Level")} 1 · {t("urgency:Stable", "Stable")}</span>
     </span>
   )
 }
 
 // ── Tab bar definition ─────────────────────────────────────────────────────────
 const TABS = [
-  { id: "vitals", labelKey: "profile.vitalsHistory", defaultLabel: "Vitals History" },
-  { id: "visits", labelKey: "profile.visitHistory", defaultLabel: "Visit History" },
-  { id: "diagnosis", labelKey: "profile.diagnoses", defaultLabel: "Diagnoses" },
+  { id: "vitals", labelKey: "profile:vitalsHistory", defaultLabel: "Vitals History" },
+  { id: "visits", labelKey: "profile:visitHistory", defaultLabel: "Visit History" },
+  { id: "diagnosis", labelKey: "profile:diagnoses", defaultLabel: "Diagnoses" },
 ]
 
 // ── Skeleton Loader ───────────────────────────────────────────────────────────
@@ -385,12 +393,12 @@ export default function PatientDetailPage({
         const p = localPatientRecord.payload
         setPatient({
           id: p.id || localPatientRecord.id,
-          name: p.name || "Unnamed Patient",
+          name: p.name || t("profile:unnamedPatient", "Unnamed Patient"),
           age: p.age ?? null,
           sex: p.sex ?? null,
           village: p.village ?? null,
           created_at: p.created_at || new Date(localPatientRecord.createdAt).toISOString(),
-          clinics: p.clinic_id ? { name: "Local Clinic (Pending Sync)" } : null,
+          clinics: p.clinic_id ? { name: t("profile:localClinicPending", "Local Clinic (Pending Sync)") } : null,
           isOfflinePending: true,
         })
 
@@ -411,7 +419,7 @@ export default function PatientDetailPage({
             diagnosis: v.payload?.diagnosis || null,
             urgency_score: v.payload?.urgency_score ?? null,
             synced_at: null,
-            staff: { name: "You (Saved locally)" },
+            staff: { name: t("profile:youSavedLocally", "You (Saved locally)") },
           }))
 
         setVisits(localVisits)
@@ -433,7 +441,10 @@ export default function PatientDetailPage({
       )
     } else {
       setError(
-        "Patient record not found. This record may have been removed or belongs to a clinic outside your access scope.",
+        t(
+          "profile:recordNotFound",
+          "Patient record not found. This record may have been removed or belongs to a clinic outside your access scope.",
+        ),
       )
     }
     setLoading(false)
@@ -453,10 +464,13 @@ export default function PatientDetailPage({
   const diagnosed = visits.filter((v) => v.diagnosis && v.diagnosis.trim())
 
   const sexDisplay = (s: string | null) => {
-    if (s === "F") return t("profile.female", "Female")
-    if (s === "M") return t("profile.male", "Male")
-    return s || t("profile.unspecified", "Unspecified")
+    if (s === "F") return t("profile:female", "Female")
+    if (s === "M") return t("profile:male", "Male")
+    return s || t("profile:unspecified", "Unspecified")
   }
+
+  const catLabel = (v: string | null) =>
+    v && CAT_KEY[v] ? t(`vitals:${CAT_KEY[v]}`) : categoryLabel(v)
 
   // ── No Patient Selected State ─────────────────────────────────────────────
   if (!patientId) {
@@ -468,10 +482,10 @@ export default function PatientDetailPage({
           </svg>
         </div>
         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-          No patient selected
+          {t("profile:noPatientSelected", "No patient selected")}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm">
-          Select a patient from the records directory or register a new intake to view their complete profile.
+          {t("profile:noPatientSelectedBody", "Select a patient from the records directory or register a new intake to view their complete profile.")}
         </p>
         {onBack && (
           <button
@@ -479,7 +493,7 @@ export default function PatientDetailPage({
             onClick={onBack}
             className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer"
           >
-            ← {t("profile.backToRecords", "Back to Records")}
+            ← {t("profile:backToRecords", "Back to Records")}
           </button>
         )}
       </div>
@@ -504,7 +518,7 @@ export default function PatientDetailPage({
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            {t("profile.backToRecords", "Back to Records")}
+            {t("profile:backToRecords", "Back to Records")}
           </button>
         )}
         <div
@@ -519,10 +533,10 @@ export default function PatientDetailPage({
             </svg>
           </div>
           <h2 className="font-bold text-lg text-red-900 dark:text-red-200">
-            Unable to load patient profile
+            {t("profile:unableToLoad", "Unable to load patient profile")}
           </h2>
           <p className="text-sm mt-1.5 max-w-md text-red-700 dark:text-red-300">
-            {error || "Record could not be retrieved from the central database."}
+            {error || t("profile:recordNotRetrieved", "Record could not be retrieved from the central database.")}
           </p>
           <div className="flex items-center gap-3 mt-6">
             <button
@@ -533,7 +547,7 @@ export default function PatientDetailPage({
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 8A6 6 0 1 1 8 2M14 2v6h-6" />
               </svg>
-              {t("profile.retry", "Retry")}
+              {t("profile:retry", "Retry")}
             </button>
             {onBack && (
               <button
@@ -541,7 +555,7 @@ export default function PatientDetailPage({
                 onClick={onBack}
                 className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors cursor-pointer"
               >
-                {t("profile.backToRecords", "Back to Records")}
+                {t("profile:backToRecords", "Back to Records")}
               </button>
             )}
           </div>
@@ -563,12 +577,12 @@ export default function PatientDetailPage({
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            {t("profile.backToRecords", "Back to Records")}
+            {t("profile:backToRecords", "Back to Records")}
           </button>
           {patient.isOfflinePending && (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              {t("profile.savedLocally", "Saved locally (Pending Sync)")}
+              {t("profile:savedLocally", "Saved locally (Pending Sync)")}
             </span>
           )}
         </div>
@@ -607,27 +621,27 @@ export default function PatientDetailPage({
                 {/* Sub-identity pill strip */}
                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <span className="font-semibold text-slate-700 dark:text-slate-200">
-                    {patient.age ?? "—"} yrs
+                    {patient.age ?? "—"} {t("profile:yrs", "yrs")}
                   </span>
                   <span>·</span>
                   <span>{sexDisplay(patient.sex)}</span>
                   <span>·</span>
-                  <span>{patient.village ?? "Village unrecorded"}</span>
+                  <span>{patient.village ?? t("profile:villageUnrecorded", "Village unrecorded")}</span>
                   <span>·</span>
                   <button
                     type="button"
                     onClick={copyPatientUuid}
                     className="inline-flex items-center gap-1 font-mono text-[11px] text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800/60 px-2 py-0.5 rounded cursor-pointer transition-colors"
-                    title={`Click to copy full UUID: ${patient.id}`}
+                    title={t("profile:clickCopyUuid", { id: patient.id })}
                   >
-                    <span>ID: {shortId(patient.id)}</span>
+                    <span>{t("profile:idShort", "ID")}: {shortId(patient.id)}</span>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-3 h-3">
                       <rect x="5" y="5" width="8" height="8" rx="1.5" />
                       <path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" />
                     </svg>
                     {copiedUuid && (
                       <span className="text-[10px] text-emerald-600 font-bold ml-0.5">
-                        {t("profile.copied", "Copied")}
+                        {t("profile:copied", "Copied")}
                       </span>
                     )}
                   </button>
@@ -638,7 +652,7 @@ export default function PatientDetailPage({
                   <UrgencyBadge score={latestVisit?.urgency_score ?? null} size="md" />
                   {latestVisit?.symptom_category && (
                     <span className="text-[11px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 px-2.5 py-0.5 rounded-full">
-                      {categoryLabel(latestVisit.symptom_category)}
+                      {catLabel(latestVisit.symptom_category)}
                     </span>
                   )}
                   {patient.clinics?.name && (
@@ -660,7 +674,7 @@ export default function PatientDetailPage({
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v10M3 8h10" />
                     </svg>
-                    {t("profile.newVisit", "New Visit")}
+                    {t("profile:newVisit", "New Visit")}
                   </button>
                 </div>
               )}
@@ -670,7 +684,7 @@ export default function PatientDetailPage({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  {t("profile.registered", "Registered")}
+                  {t("profile:registered", "Registered")}
                 </p>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
                   {fmtDate(patient.created_at)}
@@ -678,26 +692,26 @@ export default function PatientDetailPage({
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  {t("profile.totalVisits", "Total Visits")}
+                  {t("profile:totalVisits", "Total Visits")}
                 </p>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
-                  {visits.length} {visits.length === 1 ? "visit" : "visits"}
+                  {t("profile:visitsCount", { count: visits.length })}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  {t("profile.lastVisit", "Last Visit")}
+                  {t("profile:lastVisit", "Last Visit")}
                 </p>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
-                  {latestVisit ? fmtDate(latestVisit.created_at) : "No visits recorded"}
+                  {latestVisit ? fmtDate(latestVisit.created_at) : t("profile:noVisitsRecorded", "No visits recorded")}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  {t("profile.clinic", "Clinic")}
+                  {t("profile:clinic", "Clinic")}
                 </p>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5 truncate">
-                  {patient.clinics?.name ?? "Assigned Clinic"}
+                  {patient.clinics?.name ?? t("profile:assignedClinic", "Assigned Clinic")}
                 </p>
               </div>
             </div>
@@ -714,7 +728,7 @@ export default function PatientDetailPage({
         >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <h2 id="patient-info-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              {t("profile.patientInfo", "Patient Information")}
+              {t("profile:patientInfo", "Patient Information")}
             </h2>
             <span className="text-[11px] text-slate-400 font-mono">
               {shortId(patient.id)}
@@ -724,15 +738,15 @@ export default function PatientDetailPage({
           <dl className="grid grid-cols-2 gap-y-3.5 gap-x-2 text-sm">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.age", "Age")}
+                {t("profile:age", "Age")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                {patient.age ? `${patient.age} years` : "—"}
+                {patient.age ? t("profile:ageYears", { count: patient.age }) : "—"}
               </dd>
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.sex", "Sex")}
+                {t("profile:sex", "Sex")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                 {sexDisplay(patient.sex)}
@@ -740,7 +754,7 @@ export default function PatientDetailPage({
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.village", "Village / Union")}
+                {t("profile:villageUnion", "Village / Union")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                 {patient.village || "—"}
@@ -748,7 +762,7 @@ export default function PatientDetailPage({
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.registered", "Registration Date")}
+                {t("profile:registrationDate", "Registration Date")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                 {fmtDate(patient.created_at)}
@@ -756,10 +770,10 @@ export default function PatientDetailPage({
             </div>
             <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Assigned Clinic / Facility
+                {t("profile:assignedClinicFacility", "Assigned Clinic / Facility")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                {patient.clinics?.name || "Primary Healthcare Facility"}
+                {patient.clinics?.name || t("profile:primaryFacility", "Primary Healthcare Facility")}
                 {patient.clinics?.zone && (
                   <span className="ml-1.5 text-xs font-normal text-slate-500">
                     ({patient.clinics.zone})
@@ -769,7 +783,7 @@ export default function PatientDetailPage({
             </div>
             <div className="col-span-2">
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Patient UUID (Internal ID)
+                {t("profile:patientUuidInternal", "Patient UUID (Internal ID)")}
               </dt>
               <dd className="font-mono text-xs text-slate-500 dark:text-slate-400 mt-0.5 break-all select-all">
                 {patient.id}
@@ -785,7 +799,7 @@ export default function PatientDetailPage({
         >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <h2 id="latest-health-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              {t("profile.latestHealthInfo", "Latest Health Information")}
+              {t("profile:latestHealthInfo", "Latest Health Information")}
             </h2>
             {latestVisit && (
               <span className="text-xs text-slate-400">
@@ -797,10 +811,10 @@ export default function PatientDetailPage({
           {!latestVisit ? (
             <div className="py-8 text-center">
               <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                {t("profile.noVisits", "No visits recorded yet")}
+                {t("profile:noVisits", "No visits recorded yet")}
               </p>
               <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                No clinical encounters have been filed for this patient. Click "New Visit" above to enter vitals, chief complaints, and diagnosis.
+                {t("profile:noVisitsBody", 'No clinical encounters have been filed for this patient. Click "New Visit" above to enter vitals, chief complaints, and diagnosis.')}
               </p>
             </div>
           ) : (
@@ -809,19 +823,19 @@ export default function PatientDetailPage({
               <div className="flex flex-wrap items-start justify-between gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Latest Assessment / Diagnosis
+                    {t("profile:latestAssessment", "Latest Assessment / Diagnosis")}
                   </p>
                   <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    {latestVisit.diagnosis || "No recorded diagnosis"}
+                    {latestVisit.diagnosis || t("profile:noRecordedDiagnosis", "No recorded diagnosis")}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Presenting: {latestVisit.symptoms || "None documented"}
+                    {t("profile:presentingLabel", "Presenting")}: {latestVisit.symptoms || t("profile:noneDocumented", "None documented")}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <UrgencyBadge score={latestVisit.urgency_score} size="md" />
                   <span className="text-[11px] text-slate-400">
-                    Recorded by: {latestVisit.staff?.name ?? "Healthcare Worker"}
+                    {t("profile:recordedByLabel", "Recorded by")}: {latestVisit.staff?.name ?? t("profile:healthcareWorker", "Healthcare Worker")}
                   </span>
                 </div>
               </div>
@@ -830,30 +844,30 @@ export default function PatientDetailPage({
               {latestVitals && Object.keys(latestVitals).length > 0 ? (
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-                    Latest Measured Vitals
+                    {t("profile:latestMeasuredVitals", "Latest Measured Vitals")}
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {[
                       {
-                        label: "Blood Pressure",
+                        label: t("profile:bloodPressure", "Blood Pressure"),
                         value: latestVitals.systolic ? `${latestVitals.systolic}/${latestVitals.diastolic ?? "—"}` : null,
                         unit: "mmHg",
                         flag: (latestVitals.systolic ?? 0) >= 140,
                       },
                       {
-                        label: "Temperature",
+                        label: t("profile:temperature", "Temperature"),
                         value: latestVitals.temperature ?? null,
                         unit: "°C",
                         flag: (latestVitals.temperature ?? 0) >= 38,
                       },
                       {
-                        label: "Pulse Rate",
+                        label: t("profile:pulseRate", "Pulse Rate"),
                         value: latestVitals.pulse ?? null,
                         unit: "bpm",
                         flag: (latestVitals.pulse ?? 0) > 100,
                       },
                       {
-                        label: "Oxygen Saturation",
+                        label: t("profile:oxygenSaturation", "Oxygen Saturation"),
                         value: latestVitals.spo2 ?? null,
                         unit: "%",
                         flag: latestVitals.spo2 !== undefined && latestVitals.spo2 < 95,
@@ -877,7 +891,7 @@ export default function PatientDetailPage({
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">No vitals were recorded on the latest visit.</p>
+                <p className="text-xs text-slate-400 italic">{t("profile:noVitalsLatest", "No vitals were recorded on the latest visit.")}</p>
               )}
             </div>
           )}
@@ -909,10 +923,10 @@ export default function PatientDetailPage({
       {tab === "vitals" && vitalsHistory.length === 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {t("profile.noVitals", "No vitals recorded yet")}
+            {t("profile:noVitals", "No vitals recorded yet")}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
-            Measurements such as Blood Pressure, Pulse, Temperature, and SpO₂ entered during visits will appear here with trend sparklines.
+            {t("profile:noVitalsBody", "Measurements such as Blood Pressure, Pulse, Temperature, and SpO₂ entered during visits will appear here with trend sparklines.")}
           </p>
         </div>
       )}
@@ -925,43 +939,43 @@ export default function PatientDetailPage({
               [
                 {
                   key: "systolic",
-                  label: "Systolic BP",
+                  label: t("profile:systolicBP", "Systolic BP"),
                   unit: "mmHg",
                   color: "#ef4444",
                   min: 80,
                   max: 180,
                   flag: (n: number) => n >= 140,
-                  flagLabel: "Elevated",
+                  flagLabel: t("profile:elevated", "Elevated"),
                 },
                 {
                   key: "temperature",
-                  label: "Temperature",
+                  label: t("profile:temperature", "Temperature"),
                   unit: "°C",
                   color: "#f59e0b",
                   min: 35,
                   max: 40,
                   flag: (n: number) => n >= 38,
-                  flagLabel: "Fever",
+                  flagLabel: t("profile:fever", "Fever"),
                 },
                 {
                   key: "pulse",
-                  label: "Pulse Rate",
+                  label: t("profile:pulseRate", "Pulse Rate"),
                   unit: "bpm",
                   color: "#8b5cf6",
                   min: 40,
                   max: 140,
                   flag: (n: number) => n > 100,
-                  flagLabel: "Tachycardia",
+                  flagLabel: t("profile:tachycardia", "Tachycardia"),
                 },
                 {
                   key: "spo2",
-                  label: "Oxygen (SpO₂)",
+                  label: t("profile:oxygenSpo2", "Oxygen (SpO₂)"),
                   unit: "%",
                   color: "#0d9488",
                   min: 85,
                   max: 100,
                   flag: (n: number) => n < 95,
-                  flagLabel: "Hypoxia Risk",
+                  flagLabel: t("profile:hypoxiaRisk", "Hypoxia Risk"),
                 },
               ] as const
             ).map(({ key, label, unit, color, min, max, flag, flagLabel }) => {
@@ -971,7 +985,7 @@ export default function PatientDetailPage({
               const data = series.map((v) => v.vitals![key] as number)
               const lv = data[data.length - 1]
               const status =
-                lv === undefined ? null : flag(lv) ? flagLabel : "Normal"
+                lv === undefined ? null : flag(lv) ? flagLabel : t("profile:normal", "Normal")
 
               return (
                 <div
@@ -1015,8 +1029,8 @@ export default function PatientDetailPage({
                     ) : (
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {data.length === 0
-                          ? "Not recorded"
-                          : "Trend needs 2+ readings"}
+                          ? t("profile:notRecorded", "Not recorded")
+                          : t("profile:trendNeeds", "Trend needs 2+ readings")}
                       </span>
                     )}
                   </div>
@@ -1024,7 +1038,7 @@ export default function PatientDetailPage({
                     <span>
                       {series[0] ? fmtDate(series[0].created_at, false) : ""}
                     </span>
-                    {data.length >= 2 && <span className="font-semibold">Trend</span>}
+                    {data.length >= 2 && <span className="font-semibold">{t("profile:trend", "Trend")}</span>}
                     <span>
                       {series.length > 1
                         ? fmtDate(series[series.length - 1].created_at, false)
@@ -1040,23 +1054,23 @@ export default function PatientDetailPage({
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                All Recorded Vitals — {vitalsHistory.length} visit{vitalsHistory.length === 1 ? "" : "s"}
+                {t("profile:allRecordedVitals", "All Recorded Vitals")} — {t("profile:visitsCount", { count: vitalsHistory.length })}
               </h3>
-              <span className="text-xs text-slate-400">Oldest → Newest</span>
+              <span className="text-xs text-slate-400">{t("profile:oldestNewest", "Oldest → Newest")}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
                     {[
-                      "Date",
-                      "Sys / Dia (mmHg)",
-                      "Temp (°C)",
-                      "Pulse (bpm)",
-                      "Weight (kg)",
-                      "SpO₂ (%)",
-                      "Resp (/min)",
-                      "MUAC (cm)",
+                      t("profile:colDate", "Date"),
+                      t("profile:colSysDia", "Sys / Dia (mmHg)"),
+                      t("profile:colTemp", "Temp (°C)"),
+                      t("profile:colPulse", "Pulse (bpm)"),
+                      t("profile:colWeight", "Weight (kg)"),
+                      t("profile:colSpo2", "SpO₂ (%)"),
+                      t("profile:colResp", "Resp (/min)"),
+                      t("profile:colMuac", "MUAC (cm)"),
                     ].map((h) => (
                       <th
                         key={h}
@@ -1086,7 +1100,7 @@ export default function PatientDetailPage({
                           </span>
                           {isLatest && (
                             <span className="ml-2 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 px-1.5 py-0.5 rounded-full">
-                              Latest
+                              {t("profile:latestBadge", "Latest")}
                             </span>
                           )}
                         </td>
@@ -1135,10 +1149,10 @@ export default function PatientDetailPage({
       {tab === "visits" && visits.length === 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {t("profile.noVisits", "No visits recorded yet")}
+            {t("profile:noVisits", "No visits recorded yet")}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
-            Use “New Visit” to record an intake visit, vitals, symptoms, and clinical assessment for this patient.
+            {t("profile:visitsBody", 'Use “New Visit” to record an intake visit, vitals, symptoms, and clinical assessment for this patient.')}
           </p>
         </div>
       )}
@@ -1147,15 +1161,15 @@ export default function PatientDetailPage({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
             <span>
-              {visits.length} recorded clinical encounter{visits.length === 1 ? "" : "s"}
+              {t("profile:encountersCount", { count: visits.length })}
             </span>
             {visits.every((v) => v.synced_at) ? (
               <span className="text-teal-600 dark:text-teal-400 font-medium">
-                ✓ All synchronized with central database
+                {t("profile:allSynced", "✓ All synchronized with central database")}
               </span>
             ) : (
               <span className="text-amber-600 dark:text-amber-400 font-medium">
-                {visits.filter((v) => !v.synced_at).length} pending sync
+                {t("profile:pendingSyncCount", { count: visits.filter((v) => !v.synced_at).length })}
               </span>
             )}
           </div>
@@ -1202,22 +1216,22 @@ export default function PatientDetailPage({
                             <UrgencyBadge score={v.urgency_score} size="sm" />
                             {v.symptom_category && (
                               <span className="text-[10px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
-                                {categoryLabel(v.symptom_category)}
+                                {catLabel(v.symptom_category)}
                               </span>
                             )}
                             {v.synced_at ? (
                               <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                                ✓ Synced
+                                {t("profile:syncedTag", "✓ Synced")}
                               </span>
                             ) : (
                               <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                                Pending sync
+                                {t("profile:pendingSyncTag", "Pending sync")}
                               </span>
                             )}
                           </div>
                           <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">
-                            {v.diagnosis ? `Dx: ${v.diagnosis} — ` : ""}
-                            {v.symptoms || "No chief complaint documented"}
+                            {v.diagnosis ? t("profile:dxPrefix", { dx: v.diagnosis }) : ""}
+                            {v.symptoms || t("profile:noChiefComplaint", "No chief complaint documented")}
                           </p>
                         </div>
                         <svg
@@ -1238,52 +1252,52 @@ export default function PatientDetailPage({
                         <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-4 grid sm:grid-cols-2 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
                           <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                              Attending Clinician
+                              {t("profile:attendingClinician", "Attending Clinician")}
                             </p>
                             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                              {v.staff?.name ?? "Healthcare Provider"}
+                              {v.staff?.name ?? t("profile:healthcareProvider", "Healthcare Provider")}
                             </p>
                           </div>
                           <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                              Symptom Category
+                              {t("profile:symptomCategory", "Symptom Category")}
                             </p>
                             <p className="text-sm text-slate-700 dark:text-slate-200">
-                              {categoryLabel(v.symptom_category)}
+                              {catLabel(v.symptom_category)}
                             </p>
                           </div>
                           <div className="sm:col-span-2">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                              Presenting Symptoms / Chief Complaint
+                              {t("profile:presentingChief", "Presenting Symptoms / Chief Complaint")}
                             </p>
                             <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                              {v.symptoms || "None recorded"}
+                              {v.symptoms || t("profile:noneRecorded", "None recorded")}
                             </p>
                           </div>
                           <div className="sm:col-span-2">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                              Diagnosis / Clinical Assessment
+                              {t("profile:diagnosisAssessment", "Diagnosis / Clinical Assessment")}
                             </p>
                             <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                              {v.diagnosis || "No formal diagnosis documented on this visit"}
+                              {v.diagnosis || t("profile:noFormalDiagnosis", "No formal diagnosis documented on this visit")}
                             </p>
                           </div>
                           {v.vitals && Object.keys(v.vitals).length > 0 && (
                             <div className="sm:col-span-2">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-                                Measured Vitals
+                                {t("profile:measuredVitals", "Measured Vitals")}
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {(
                                   [
-                                    ["systolic", "BP Sys", "mmHg"],
-                                    ["diastolic", "BP Dia", "mmHg"],
-                                    ["temperature", "Temp", "°C"],
-                                    ["pulse", "Pulse", "bpm"],
-                                    ["spo2", "SpO₂", "%"],
-                                    ["respRate", "Resp", "/min"],
-                                    ["weight", "Weight", "kg"],
-                                    ["muac", "MUAC", "cm"],
+                                    ["systolic", t("profile:vBpSys", "BP Sys"), "mmHg"],
+                                    ["diastolic", t("profile:vBpDia", "BP Dia"), "mmHg"],
+                                    ["temperature", t("profile:vTemp", "Temp"), "°C"],
+                                    ["pulse", t("profile:vPulse", "Pulse"), "bpm"],
+                                    ["spo2", t("profile:vSpo2", "SpO₂"), "%"],
+                                    ["respRate", t("profile:vResp", "Resp"), "/min"],
+                                    ["weight", t("profile:vWeight", "Weight"), "kg"],
+                                    ["muac", t("profile:vMuac", "MUAC"), "cm"],
                                   ] as const
                                 )
                                   .filter(([k]) => v.vitals?.[k] !== undefined)
@@ -1323,10 +1337,10 @@ export default function PatientDetailPage({
       {tab === "diagnosis" && diagnosed.length === 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-14 text-center">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {t("profile.noDiagnoses", "No diagnoses recorded yet")}
+            {t("profile:noDiagnoses", "No diagnoses recorded yet")}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
-            Clinical assessments and diagnoses entered during intake encounters will be summarized chronologically here.
+            {t("profile:diagnosesBody", "Clinical assessments and diagnoses entered during intake encounters will be summarized chronologically here.")}
           </p>
         </div>
       )}
@@ -1347,19 +1361,19 @@ export default function PatientDetailPage({
                     <UrgencyBadge score={v.urgency_score} size="sm" />
                     {v.symptom_category && (
                       <span className="text-[10px] font-medium bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800 px-2 py-0.5 rounded-full">
-                        {categoryLabel(v.symptom_category)}
+                        {catLabel(v.symptom_category)}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    {fmtTime(v.created_at)} · Recorded by {v.staff?.name ?? "Attending Clinician"}
+                    {fmtTime(v.created_at)} · {t("profile:recordedByShort", { name: v.staff?.name ?? t("profile:attendingClinician", "Attending Clinician") })}
                   </p>
                 </div>
               </div>
               <div className="p-5 grid sm:grid-cols-2 gap-5">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-                    Diagnosis / Clinical Assessment
+                    {t("profile:diagnosisAssessment", "Diagnosis / Clinical Assessment")}
                   </p>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
                     {v.diagnosis}
@@ -1367,10 +1381,10 @@ export default function PatientDetailPage({
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-                    Presenting Symptoms
+                    {t("profile:presentingSymptoms", "Presenting Symptoms")}
                   </p>
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 p-3.5 whitespace-pre-line">
-                    {v.symptoms || "No symptoms recorded"}
+                    {v.symptoms || t("profile:noSymptoms", "No symptoms recorded")}
                   </p>
                 </div>
               </div>

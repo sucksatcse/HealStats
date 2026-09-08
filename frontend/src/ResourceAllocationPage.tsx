@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -256,6 +257,7 @@ const SEVERITY: Record<Zone["severity"], {
 }
 
 export default function ResourceAllocationPage() {
+  const { t } = useTranslation()
   const [zones, setZones] = useState<Zone[]>(INITIAL_ZONES)
   const [reserve, setReserve] = useState<Record<Kind, number>>(INITIAL_RESERVE)
   const [activeZone, setActiveZone] = useState<string | null>(null)
@@ -335,10 +337,10 @@ export default function ResourceAllocationPage() {
         </div>
         <div className="flex-1 min-w-[200px] relative">
           <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-white/20 rounded-full px-2 py-0.5">
-            Crisis Operations
+            {t("resource:crisisOps")}
           </span>
           <h1 className="font-display text-2xl text-white mt-1.5 leading-tight">
-            Resource Allocation
+            {t("resource:title")}
           </h1>
         </div>
       </div>
@@ -348,15 +350,15 @@ export default function ResourceAllocationPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              Central Reserve Pool
+              {t("resource:reservePool")}
             </h2>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-              Kayes District Command · available for dispatch
+              {t("resource:reserveSubtitle")}
             </p>
           </div>
           <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900/50 rounded-full px-2.5 py-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />{" "}
-            Depot online
+            {t("resource:depotOnline")}
           </span>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -375,7 +377,7 @@ export default function ResourceAllocationPage() {
                     {k.icon}
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-                    {k.label}
+                    {t(`resource:kind_${k.key}`)}
                   </span>
                 </div>
                 <p
@@ -386,10 +388,10 @@ export default function ResourceAllocationPage() {
                   {reserve[k.key]}
                 </p>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                  {k.unit} in reserve
+                  {t("resource:inReserve", { unit: t(`resource:unit_${k.key}`) })}
                 </p>
                 <div className="mt-2.5 pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 dark:text-slate-500">Zone coverage</span>
+                  <span className="text-slate-400 dark:text-slate-500">{t("resource:zoneCoverage")}</span>
                   <span
                     className={`font-bold ${
                       cov >= 90
@@ -412,10 +414,10 @@ export default function ResourceAllocationPage() {
       <div className="flex items-center gap-2 mb-3">
         <span className="text-red-600 dark:text-red-400">{Icon.pin}</span>
         <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">
-          Affected Zones
+          {t("resource:affectedZones")}
         </h2>
         <span className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 dark:text-red-400 dark:bg-red-950/40 dark:border-red-900/50 px-2 py-0.5 rounded-full">
-          {zones.length} under response
+          {t("resource:underResponse", { count: zones.length })}
         </span>
       </div>
 
@@ -442,7 +444,7 @@ export default function ResourceAllocationPage() {
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${s.chip}`}
                     >
-                      {z.severity}
+                      {t(`resource:sev_${z.severity}`)}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
@@ -464,7 +466,7 @@ export default function ResourceAllocationPage() {
                             className={`flex items-center gap-1 font-medium ${k.accent}`}
                           >
                             {k.icon}
-                            {k.label.split(" ")[k.label.split(" ").length - 1]}
+                            {t(`resource:short_${k.key}`)}
                           </span>
                           <span
                             className={`font-bold ${
@@ -488,7 +490,7 @@ export default function ResourceAllocationPage() {
                             short ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
                           }`}
                         >
-                          {short ? `short ${need - have}` : "fully met"}
+                          {short ? t("resource:shortBy", { n: need - have }) : t("resource:fullyMet")}
                         </p>
                       </div>
                     )
@@ -499,7 +501,7 @@ export default function ResourceAllocationPage() {
                 <div className="flex-shrink-0">
                   {allocated ? (
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900/50 px-4 py-2.5 rounded-xl">
-                      {Icon.check} Dispatched
+                      {Icon.check} {t("resource:dispatched")}
                     </span>
                   ) : (
                     <button
@@ -516,11 +518,11 @@ export default function ResourceAllocationPage() {
                       }`}
                     >
                       {fullyMet ? (
-                        <>{Icon.check} Met</>
+                        <>{Icon.check} {t("resource:met")}</>
                       ) : isOpen ? (
-                        <>{Icon.x} Close</>
+                        <>{Icon.x} {t("resource:close")}</>
                       ) : (
-                        <>Allocate {Icon.arrow}</>
+                        <>{t("resource:allocate")} {Icon.arrow}</>
                       )}
                     </button>
                   )}
@@ -531,7 +533,7 @@ export default function ResourceAllocationPage() {
               {isOpen && (
                 <div className="border-t border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-800/40 px-5 py-5 animate-slide-up">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">
-                    Dispatch from reserve to {z.name}
+                    {t("resource:dispatchFrom", { zone: z.name })}
                   </p>
                   <div className="grid sm:grid-cols-3 gap-4">
                     {KINDS.map((k) => {
@@ -551,10 +553,10 @@ export default function ResourceAllocationPage() {
                             </span>
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight">
-                                {k.label}
+                                {t(`resource:kind_${k.key}`)}
                               </p>
                               <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                                {reserve[k.key]} in reserve
+                                {t("resource:inReserveN", { n: reserve[k.key] })}
                               </p>
                             </div>
                           </div>
@@ -571,7 +573,7 @@ export default function ResourceAllocationPage() {
                                 +{draft[k.key]}
                               </p>
                               <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                of {gap} needed
+                                {t("resource:ofNeeded", { n: gap })}
                               </p>
                             </div>
                             <button
@@ -584,7 +586,7 @@ export default function ResourceAllocationPage() {
                           </div>
                           {capped && (
                             <p className="text-[10px] text-red-500 dark:text-red-400 font-medium mt-2 text-center">
-                              Reserve limits this dispatch
+                              {t("resource:reserveLimits")}
                             </p>
                           )}
                         </div>
@@ -594,28 +596,14 @@ export default function ResourceAllocationPage() {
 
                   <div className="flex flex-wrap items-center justify-between gap-3 mt-5">
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Dispatching{" "}
-                      <span className="font-semibold text-slate-700 dark:text-slate-200">
-                        {draft.staff}
-                      </span>{" "}
-                      staff ·
-                      <span className="font-semibold text-slate-700 dark:text-slate-200">
-                        {" "}
-                        {draft.supplies}
-                      </span>{" "}
-                      kits ·
-                      <span className="font-semibold text-slate-700 dark:text-slate-200">
-                        {" "}
-                        {draft.ambulances}
-                      </span>{" "}
-                      ambulances
+                      {t("resource:dispatching", { staff: draft.staff, supplies: draft.supplies, ambulances: draft.ambulances })}
                     </p>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setActiveZone(null)}
                         className="text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 px-4 py-2.5 rounded-xl transition-colors"
                       >
-                        Cancel
+                        {t("resource:cancel")}
                       </button>
                       <button
                         onClick={() => confirmAllocate(z)}
@@ -624,7 +612,7 @@ export default function ResourceAllocationPage() {
                         }
                         className="flex items-center gap-1.5 text-sm font-bold text-white bg-gradient-to-r from-red-600 to-orange-600 px-5 py-2.5 rounded-xl shadow-lg shadow-red-600/25 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:hover:translate-y-0 disabled:shadow-none"
                       >
-                        {Icon.check} Confirm Dispatch
+                        {Icon.check} {t("resource:confirmDispatch")}
                       </button>
                     </div>
                   </div>

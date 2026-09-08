@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import Tesseract from "tesseract.js"
 import { parseOcrText, OcrField } from "./lib/ocrParser"
 import { supabase } from "./lib/supabase"
@@ -81,6 +82,7 @@ function ExtractedField({
   confirmed: boolean
   onToggle: () => void
 }) {
+  const { t } = useTranslation()
   const tier = getConfidenceTier(field.confidence)
   const s = CONFIDENCE_STYLE[tier]
 
@@ -97,7 +99,7 @@ function ExtractedField({
       {/* Label row */}
       <div className="flex items-center justify-between mb-2">
         <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-          {field.label}
+          {t(`digitize:field.${field.key}`, field.label)}
         </label>
         <div className="flex items-center gap-2">
           {/* Confidence chip */}
@@ -105,12 +107,12 @@ function ExtractedField({
             className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${s.badge} ${s.badgeText}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${s.bar}`} />
-            {field.confidence}% confidence
+            {t("digitize:confidencePct", { n: field.confidence })}
           </div>
           {/* Confirm toggle */}
           <button
             onClick={onToggle}
-            title={confirmed ? "Mark as unreviewed" : "Confirm this field"}
+            title={confirmed ? t("digitize:markUnreviewed") : t("digitize:confirmField")}
             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
               confirmed
                 ? "bg-emerald-500 border-emerald-500 text-white"
@@ -178,7 +180,7 @@ function ExtractedField({
               strokeLinecap="round"
             />
           </svg>
-          Low confidence — please verify manually
+          {t("digitize:lowConfidence")}
         </p>
       )}
     </div>
@@ -188,6 +190,7 @@ function ExtractedField({
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function DigitizePage() {
   const { profile } = useAuth()
+  const { t } = useTranslation()
   const [stage, setStage] = useState<"upload" | "scanning" | "review" | "saved">("upload")
   const [dragging, setDragging] = useState(false)
   const [imageURL, setImageURL] = useState<string | null>(null)
@@ -345,11 +348,11 @@ export default function DigitizePage() {
       }
 
       setStage("saved")
-      setToast(isOffline ? "Record saved locally — will sync when connected" : "Record synced successfully")
+      setToast(isOffline ? t("digitize:toastSavedLocal") : t("digitize:toastSynced"))
       setTimeout(() => setToast(null), 3500)
     } catch (err) {
       console.error(err)
-      setToast("Failed to save record.")
+      setToast(t("digitize:toastFailed"))
       setTimeout(() => setToast(null), 3500)
     } finally {
       setIsSaving(false)
@@ -388,22 +391,21 @@ export default function DigitizePage() {
         </div>
         <div>
           <h2 className="font-display text-3xl text-teal-950 dark:text-white mb-2">
-            Record Digitized!
+            {t("digitize:recordDigitized")}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
-            <strong className="text-teal-700 dark:text-teal-300">
-              {fieldValues["patientName"] || "The patient"}
-            </strong>
-            's paper record has been digitized and saved. {savedOffline ? "It will sync to the central server automatically." : "It has been synced successfully."}
+            {t(savedOffline ? "digitize:savedDescOffline" : "digitize:savedDescSynced", {
+              name: fieldValues["patientName"] || t("digitize:fallbackName"),
+            })}
           </p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-left w-full max-w-sm">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
-            Extracted Summary
+            {t("digitize:summaryTitle")}
           </p>
           {[
-            ["Patient", fieldValues["patientName"]],
-            ["Diagnosis", fieldValues["diagnosis"]],
+            [t("digitize:sumPatient"), fieldValues["patientName"]],
+            [t("digitize:sumDiagnosis"), fieldValues["diagnosis"]],
           ].map(([k, v]) => {
             if (!v) return null;
             return (
@@ -421,7 +423,7 @@ export default function DigitizePage() {
             onClick={handleReset}
             className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
           >
-            Digitize Another
+            {t("digitize:digitizeAnother")}
           </button>
         </div>
       </div>
@@ -454,11 +456,10 @@ export default function DigitizePage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Digitize Paper Record
+            {t("digitize:title")}
           </h1>
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
-            Upload a photo or scan — AI will extract the fields for you to
-            review.
+            {t("digitize:subtitle")}
           </p>
         </div>
         {stage !== "upload" && (
@@ -479,7 +480,7 @@ export default function DigitizePage() {
                 d="M3 3l10 10M13 3L3 13"
               />
             </svg>
-            Start over
+            {t("digitize:startOver")}
           </button>
         )}
       </div>
@@ -497,8 +498,8 @@ export default function DigitizePage() {
           
           {ocrFailed && stage === "upload" && (
             <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl p-5 text-center">
-              <p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">OCR could not identify useful information.</p>
-              <p className="text-sm text-red-600 dark:text-red-400 mb-3">Please enter the patient details manually.</p>
+              <p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">{t("digitize:ocrFailedTitle")}</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-3">{t("digitize:ocrFailedBody")}</p>
             </div>
           )}
 
@@ -564,31 +565,31 @@ export default function DigitizePage() {
                     dragging ? "text-teal-700 dark:text-teal-300" : "text-slate-700 dark:text-slate-200"
                   }`}
                 >
-                  {dragging ? "Drop to scan" : "Drop your photo or scan here"}
+                  {dragging ? t("digitize:dropToScan") : t("digitize:dropHere")}
                 </p>
                 <p className="text-sm text-slate-400 dark:text-slate-500">
-                  or{" "}
+                  {t("digitize:or")}{" "}
                   <span className="text-teal-600 dark:text-teal-400 font-semibold underline underline-offset-2">
-                    browse files
+                    {t("digitize:browseFiles")}
                   </span>
                 </p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-                  Supports JPG, PNG, HEIC, PDF · Max 20 MB
+                  {t("digitize:supports")}
                 </p>
               </div>
 
               {/* Supported formats */}
               <div className="flex items-center gap-3">
                 {[
-                  "📄 Printed forms",
-                  "📷 Photos of paper",
-                  "🔍 Scanned docs",
-                ].map((t) => (
+                  t("digitize:chipPrinted"),
+                  t("digitize:chipPhotos"),
+                  t("digitize:chipScanned"),
+                ].map((chip) => (
                   <span
-                    key={t}
+                    key={chip}
                     className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg"
                   >
-                    {t}
+                    {chip}
                   </span>
                 ))}
               </div>
@@ -611,7 +612,7 @@ export default function DigitizePage() {
               <div className="px-5 py-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    Scanning document…
+                    {t("digitize:scanningDoc")}
                   </p>
                   <span className="text-sm font-bold text-teal-600 dark:text-teal-400">
                     {scanProgress}%
@@ -625,10 +626,10 @@ export default function DigitizePage() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {[
-                    "Loading OCR Engine",
-                    "Detecting text regions",
-                    "Extracting fields",
-                    "Validating output",
+                    t("digitize:stepLoading"),
+                    t("digitize:stepDetecting"),
+                    t("digitize:stepExtracting"),
+                    t("digitize:stepValidating"),
                   ].map((step, i) => {
                     const done = scanProgress > (i + 1) * 25
                     const active = scanProgress > i * 25 && !done
@@ -657,13 +658,13 @@ export default function DigitizePage() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Source document
+                  {t("digitize:sourceDoc")}
                 </p>
                 <button
                   onClick={() => inputRef.current?.click()}
                   className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors"
                 >
-                  Replace
+                  {t("digitize:replace")}
                 </button>
                 <input
                   ref={inputRef}
@@ -698,39 +699,37 @@ export default function DigitizePage() {
                       d="M2 7l3 3 7-7"
                     />
                   </svg>
-                  {totalFields} fields extracted
+                  {t("digitize:fieldsExtracted", { count: totalFields })}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  {
-                    ocrFields.filter(
+                  {t("digitize:highConfidence", {
+                    count: ocrFields.filter(
                       (f) => getConfidenceTier(f.confidence) === "high",
-                    ).length
-                  }{" "}
-                  high confidence
+                    ).length,
+                  })}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  {
-                    ocrFields.filter(
+                  {t("digitize:mediumConf", {
+                    count: ocrFields.filter(
                       (f) => getConfidenceTier(f.confidence) === "medium",
-                    ).length
-                  }{" "}
-                  medium
+                    ).length,
+                  })}
                 </div>
                 {lowConfidenceCount > 0 && (
                   <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
                     <span className="w-2 h-2 rounded-full bg-red-400" />
-                    {lowConfidenceCount} low — review carefully
+                    {t("digitize:lowReview", { count: lowConfidenceCount })}
                   </div>
                 )}
                 <span className="ml-auto text-[10px] text-teal-600 dark:text-teal-400 font-medium">
-                  Avg{" "}
-                  {Math.round(
-                    ocrFields.reduce((s, f) => s + f.confidence, 0) /
-                      Math.max(1, totalFields),
-                  )}
-                  % confidence
+                  {t("digitize:avgConfidence", {
+                    pct: Math.round(
+                      ocrFields.reduce((s, f) => s + f.confidence, 0) /
+                        Math.max(1, totalFields),
+                    ),
+                  })}
                 </span>
               </div>
             </div>
@@ -740,14 +739,14 @@ export default function DigitizePage() {
           {stage === "upload" && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
-                Tips for best results
+                {t("digitize:tipsTitle")}
               </p>
               <ul className="space-y-2">
                 {[
-                  "Place document flat on a dark surface",
-                  "Ensure all text is in frame and in focus",
-                  "Use good lighting — avoid shadows across text",
-                  "Works with handwritten and printed records",
+                  t("digitize:tip1"),
+                  t("digitize:tip2"),
+                  t("digitize:tip3"),
+                  t("digitize:tip4"),
                 ].map((tip, i) => (
                   <li
                     key={i}
@@ -771,15 +770,15 @@ export default function DigitizePage() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-0.5">
-                  Review Extracted Fields
+                  {t("digitize:reviewTitle")}
                 </h2>
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Correct any errors, then confirm each field before saving.
+                  {t("digitize:reviewSubtitle")}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  {confirmedCount}/{totalFields} confirmed
+                  {t("digitize:confirmedCount", { done: confirmedCount, total: totalFields })}
                 </p>
                 <div className="w-28 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
@@ -823,7 +822,7 @@ export default function DigitizePage() {
                 disabled={allConfirmed}
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 disabled:opacity-40 disabled:pointer-events-none px-4 py-2.5 rounded-xl transition-all"
               >
-                Confirm all fields
+                {t("digitize:confirmAll")}
               </button>
               <button
                 onClick={handleSave}
@@ -834,7 +833,7 @@ export default function DigitizePage() {
                     : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
                 }`}
               >
-                {isSaving ? "Saving..." : (
+                {isSaving ? t("digitize:saving") : (
                   <>
                     <svg
                       viewBox="0 0 16 16"
@@ -850,8 +849,8 @@ export default function DigitizePage() {
                       />
                     </svg>
                     {allConfirmed
-                      ? "Save Record"
-                      : `Confirm ${totalFields - confirmedCount} more to save`}
+                      ? t("digitize:saveRecord")
+                      : t("digitize:confirmMore", { count: totalFields - confirmedCount })}
                   </>
                 )}
               </button>

@@ -11,7 +11,7 @@ import bn from './locales/bn'
 export const SUPPORTED_LANGUAGES = ['en', 'bn'] as const
 export type AppLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
-export const NAMESPACES = ['common', 'navigation', 'urgency', 'map', 'chatbot', 'errors'] as const
+export const NAMESPACES = ['common', 'navigation', 'urgency', 'map', 'chatbot', 'errors', 'auth', 'patients', 'vitals', 'newPatient', 'records', 'triage', 'digitize', 'profile', 'patientForm', 'sync', 'emergencyReport', 'emergencyTriage', 'settings', 'syncMonitor', 'analytics', 'alerts', 'resource', 'emergencyDashboard', 'outbreak', 'staff', 'flagged', 'adminDash', 'nurseDash', 'clinicalDash'] as const
 
 i18n
   .use(LanguageDetector)

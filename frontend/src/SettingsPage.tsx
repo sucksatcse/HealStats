@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -196,21 +197,25 @@ const inputCls =
 const ROLE_ROWS = [
   {
     role: "Clinical Officer",
+    key: "co",
     desc: "Full clinical access — diagnose, prescribe, edit records",
     perms: { records: true, prescribe: true, admin: false },
   },
   {
     role: "Nurse",
+    key: "nurse",
     desc: "Record vitals, view histories, add visit notes",
     perms: { records: true, prescribe: false, admin: false },
   },
   {
     role: "Community Health Worker",
+    key: "chw",
     desc: "Register patients, capture vitals in the field",
     perms: { records: true, prescribe: false, admin: false },
   },
   {
     role: "District Administrator",
+    key: "admin",
     desc: "Manage staff, facilities, and system configuration",
     perms: { records: true, prescribe: false, admin: true },
   },
@@ -245,6 +250,7 @@ const NOTIF_ROWS = [
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [facility, setFacility] = useState({
     name: "Kayes District Clinic",
     id: "CLINIC-0142",
@@ -281,31 +287,31 @@ export default function SettingsPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Facility Settings
+            {t("settings:title")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Configure clinic details, access, alerts, and data handling
+            {t("settings:subtitle")}
           </p>
         </div>
         <button
-          onClick={() => flash("Settings saved successfully")}
+          onClick={() => flash(t("settings:savedToast"))}
           className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5"
         >
           {Icon.save}
-          Save Changes
+          {t("settings:saveChanges")}
         </button>
       </div>
 
       {/* Facility Info */}
       <Card
         icon={Icon.facility}
-        title="Facility Info"
-        desc="Basic details for this clinic location."
+        title={t("settings:facilityInfo")}
+        desc={t("settings:facilityInfoDesc")}
       >
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Facility Name
+              {t("settings:fName")}
             </label>
             <input
               value={facility.name}
@@ -315,7 +321,7 @@ export default function SettingsPage() {
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Address
+              {t("settings:fAddress")}
             </label>
             <input
               value={facility.address}
@@ -325,7 +331,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Contact Phone
+              {t("settings:fPhone")}
             </label>
             <input
               value={facility.phone}
@@ -335,7 +341,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Contact Email
+              {t("settings:fEmail")}
             </label>
             <input
               value={facility.email}
@@ -345,7 +351,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Facility ID
+              {t("settings:fId")}
             </label>
             <input
               value={facility.id}
@@ -355,7 +361,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Timezone
+              {t("settings:fTimezone")}
             </label>
             <div className="relative">
               <select
@@ -383,15 +389,15 @@ export default function SettingsPage() {
       {/* User Roles & Permissions */}
       <Card
         icon={Icon.roles}
-        title="User Roles & Permissions"
-        desc="Control what each role can do in the system."
+        title={t("settings:rolesTitle")}
+        desc={t("settings:rolesDesc")}
       >
         {/* Column headers */}
         <div className="hidden sm:grid grid-cols-[1fr_80px_80px_80px] gap-2 px-1 pb-2 mb-1 border-b border-slate-100 dark:border-slate-800">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-            Role
+            {t("settings:colRole")}
           </span>
-          {["Records", "Prescribe", "Admin"].map((h) => (
+          {[t("settings:colRecords"), t("settings:colPrescribe"), t("settings:colAdmin")].map((h) => (
             <span
               key={h}
               className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center"
@@ -407,9 +413,9 @@ export default function SettingsPage() {
               className="grid sm:grid-cols-[1fr_80px_80px_80px] gap-y-3 gap-x-2 items-center py-3.5"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{r.role}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t(`settings:role_${r.key}`)}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
-                  {r.desc}
+                  {t(`settings:role_${r.key}Desc`)}
                 </p>
               </div>
               {(["records", "prescribe", "admin"] as const).map((perm) => (
@@ -418,7 +424,7 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 sm:justify-center"
                 >
                   <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 capitalize sm:hidden w-16">
-                    {perm}
+                    {t(`settings:col${perm.charAt(0).toUpperCase()}${perm.slice(1)}`)}
                   </span>
                   <Toggle
                     on={r.perms[perm]}
@@ -434,8 +440,8 @@ export default function SettingsPage() {
       {/* Notification Preferences */}
       <Card
         icon={Icon.bell}
-        title="Notification Preferences"
-        desc="Choose which alerts your team receives."
+        title={t("settings:notifTitle")}
+        desc={t("settings:notifDesc")}
       >
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {notifs.map((n, i) => (
@@ -444,9 +450,9 @@ export default function SettingsPage() {
               className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{n.label}</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t(`settings:notif_${n.key}`)}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
-                  {n.desc}
+                  {t(`settings:notif_${n.key}Desc`)}
                 </p>
               </div>
               <Toggle on={n.on} onChange={() => toggleNotif(i)} />
@@ -458,18 +464,18 @@ export default function SettingsPage() {
       {/* Data Backup / Export */}
       <Card
         icon={Icon.backup}
-        title="Data Backup & Export"
-        desc="Manage how patient data is backed up and exported."
+        title={t("settings:backupTitle")}
+        desc={t("settings:backupDesc")}
       >
         {/* Toggles */}
         <div className="divide-y divide-slate-100 dark:divide-slate-800 mb-5">
           <div className="flex items-center justify-between gap-4 pb-3.5">
             <div>
               <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Automatic cloud backup
+                {t("settings:autoBackup")}
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Encrypt and push local records to central servers on a schedule
+                {t("settings:autoBackupDesc")}
               </p>
             </div>
             <Toggle on={autoBackup} onChange={() => setAutoBackup((v) => !v)} />
@@ -477,10 +483,10 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-4 py-3.5 last:pb-0">
             <div>
               <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Back up over Wi-Fi only
+                {t("settings:wifiOnly")}
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Avoid using mobile data for large backups in the field
+                {t("settings:wifiOnlyDesc")}
               </p>
             </div>
             <Toggle on={wifiOnly} onChange={() => setWifiOnly((v) => !v)} />
@@ -494,10 +500,10 @@ export default function SettingsPage() {
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-300">
-              Last backup completed
+              {t("settings:lastBackup")}
             </p>
             <p className="text-xs text-emerald-700 dark:text-emerald-400">
-              Today at 04:00 · 12,847 records · encrypted
+              {t("settings:lastBackupInfo")}
             </p>
           </div>
         </div>
@@ -505,32 +511,31 @@ export default function SettingsPage() {
         {/* Export actions */}
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => flash("Export started — CSV will download shortly")}
+            onClick={() => flash(t("settings:toastCsv"))}
             className="flex items-center gap-2 text-sm font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800 px-4 py-2.5 rounded-xl transition-colors"
           >
             {Icon.download}
-            Export as CSV
+            {t("settings:exportCsv")}
           </button>
           <button
-            onClick={() => flash("Export started — PDF will download shortly")}
+            onClick={() => flash(t("settings:toastPdf"))}
             className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-teal-700 dark:hover:text-teal-300 px-4 py-2.5 rounded-xl transition-colors"
           >
             {Icon.download}
-            Export as PDF
+            {t("settings:exportPdf")}
           </button>
           <button
-            onClick={() => flash("Manual backup queued")}
+            onClick={() => flash(t("settings:toastBackup"))}
             className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-teal-700 dark:hover:text-teal-300 px-4 py-2.5 rounded-xl transition-colors"
           >
             {Icon.cloud}
-            Back Up Now
+            {t("settings:backupNow")}
           </button>
         </div>
 
         {/* Danger note */}
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-5 leading-relaxed">
-          Exports contain protected health information. Handle downloaded files
-          according to your district data-protection policy.
+          {t("settings:dangerNote")}
         </p>
       </Card>
 

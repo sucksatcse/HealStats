@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { supabase } from "./lib/supabase"
 
 interface AdminLoginPageProps {
@@ -226,9 +227,9 @@ function ClinicIllustration() {
 
 // ── Left panel stats ───────────────────────────────────────────────────────────
 const PANEL_STATS = [
-  { value: "340+", label: "Clinics managed" },
-  { value: "12", label: "Districts covered" },
-  { value: "1.2M", label: "Patient records" },
+  { value: "340+", labelKey: "adminStatClinics" },
+  { value: "12", labelKey: "adminStatDistricts" },
+  { value: "1.2M", labelKey: "adminStatRecords" },
 ]
 
 export default function AdminLoginPage({
@@ -242,12 +243,13 @@ export default function AdminLoginPage({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [forgotSent, setForgotSent] = useState(false)
+  const { t } = useTranslation()
 
   // Simulate "forgot password" flow
   const handleForgot = (e: React.MouseEvent) => {
     e.preventDefault()
     if (!email.trim()) {
-      setError("Enter your email first, then click Forgot Password.")
+      setError(t("auth:adminForgotNeedEmail"))
       return
     }
     setForgotSent(true)
@@ -257,7 +259,7 @@ export default function AdminLoginPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim() || !password) {
-      setError("Please enter your admin email and password.")
+      setError(t("auth:adminErrCredentials"))
       return
     }
     setError("")
@@ -283,7 +285,7 @@ export default function AdminLoginPage({
       // Explicitly disallow Nurse and Clinical Officer from Admin panel
       if (metaDesignation === "nurse" || metaDesignation === "clinical_officer") {
         await supabase.auth.signOut()
-        setError("Access denied: Nurse and Clinical Officer accounts cannot access the Admin panel. Please sign in via the healthcare worker portal.")
+        setError(t("auth:adminErrClinicalDenied"))
         setLoading(false)
         return
       }
@@ -297,14 +299,14 @@ export default function AdminLoginPage({
 
       if (staff?.role !== "admin") {
         await supabase.auth.signOut()
-        setError("This account is not authorized for admin access.")
+        setError(t("auth:adminErrNotAuthorized"))
         setLoading(false)
         return
       }
 
       onLogin() // App.tsx handles the actual role routing
     } catch {
-      setError("Unable to reach the server. Check your connection and try again.")
+      setError(t("auth:errServer"))
       setLoading(false)
     } finally {
       onAuthenticatingChange?.(false)
@@ -373,7 +375,7 @@ export default function AdminLoginPage({
               Heal<span className="text-teal-300">Stats</span>
             </span>
             <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-teal-300 align-middle">
-              Admin
+              {t("auth:adminBadge")}
             </span>
           </div>
         </div>
@@ -387,24 +389,22 @@ export default function AdminLoginPage({
         <div className="relative z-10 space-y-6">
           <div>
             <h1 className="font-display text-3xl lg:text-4xl text-white leading-tight mb-3">
-              Manage every clinic,
+              {t("auth:adminHeadline1")}
               <br />
-              from one dashboard.
+              {t("auth:adminHeadline2")}
             </h1>
             <p className="text-sm text-teal-200 leading-relaxed max-w-sm">
-              The HealStats admin portal gives district health officers a
-              real-time view of sync status, patient volumes, and clinical
-              activity — online or offline.
+              {t("auth:adminPanelDesc")}
             </p>
           </div>
 
           {/* Stats strip */}
           <div className="flex items-center gap-6 pt-2 border-t border-white/10">
-            {PANEL_STATS.map(({ value, label }) => (
-              <div key={label}>
+            {PANEL_STATS.map(({ value, labelKey }) => (
+              <div key={labelKey}>
                 <p className="font-display text-2xl text-white">{value}</p>
                 <p className="text-[11px] text-teal-300 font-medium mt-0.5">
-                  {label}
+                  {t(`auth:${labelKey}`)}
                 </p>
               </div>
             ))}
@@ -433,10 +433,10 @@ export default function AdminLoginPage({
                 d="M10 4L6 8l4 4"
               />
             </svg>
-            Worker portal
+            {t("auth:adminWorkerPortal")}
           </button>
           <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-            Admin access only
+            {t("auth:adminAccessOnly")}
           </span>
         </div>
 
@@ -456,14 +456,14 @@ export default function AdminLoginPage({
                 <path strokeLinecap="round" d="M4.5 6V4.5a2.5 2.5 0 015 0V6" />
               </svg>
               <span className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider">
-                Admin Portal
+                {t("auth:adminPortalBadge")}
               </span>
             </div>
             <h2 className="font-display text-3xl text-teal-950 dark:text-white mb-1.5">
-              Sign in to admin
+              {t("auth:adminTitle")}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Authorized district health officers only.
+              {t("auth:adminSubtitle")}
             </p>
           </div>
 
@@ -483,7 +483,7 @@ export default function AdminLoginPage({
                   d="M2 8l4 4 8-8"
                 />
               </svg>
-              Password reset link sent to{" "}
+              {t("auth:adminResetSent")}{" "}
               <strong className="ml-1">{email}</strong>
             </div>
           )}
@@ -514,7 +514,7 @@ export default function AdminLoginPage({
                 htmlFor="admin-email"
                 className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5"
               >
-                Admin Email
+                {t("auth:adminEmail")}
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
@@ -533,7 +533,7 @@ export default function AdminLoginPage({
                   id="admin-email"
                   type="email"
                   autoComplete="username"
-                  placeholder="admin@healthdistrict.org"
+                  placeholder={t("auth:adminEmailPlaceholder")}
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value)
@@ -551,14 +551,14 @@ export default function AdminLoginPage({
                   htmlFor="admin-password"
                   className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400"
                 >
-                  Password
+                  {t("auth:password")}
                 </label>
                 <button
                   type="button"
                   onClick={handleForgot}
                   className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors"
                 >
-                  Forgot password?
+                  {t("auth:forgotPassword")}
                 </button>
               </div>
               <div className="relative">
@@ -578,7 +578,7 @@ export default function AdminLoginPage({
                   id="admin-password"
                   type={showPwd ? "text" : "password"}
                   autoComplete="current-password"
-                  placeholder="Enter your password"
+                  placeholder={t("auth:passwordPlaceholder")}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value)
@@ -590,7 +590,7 @@ export default function AdminLoginPage({
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-                  aria-label={showPwd ? "Hide password" : "Show password"}
+                  aria-label={showPwd ? t("auth:hidePassword") : t("auth:showPassword")}
                 >
                   {showPwd ? (
                     <svg
@@ -626,8 +626,7 @@ export default function AdminLoginPage({
 
             {/* MFA note */}
             <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
-              Multi-factor authentication may be required for admin accounts.
-              Check your authenticator app after submitting.
+              {t("auth:mfaNote")}
             </p>
 
             {/* Submit */}
@@ -657,7 +656,7 @@ export default function AdminLoginPage({
                       d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
                     />
                   </svg>
-                  Signing in…
+                  {t("auth:signingIn")}
                 </>
               ) : (
                 <>
@@ -675,7 +674,7 @@ export default function AdminLoginPage({
                       d="M7 8h4M9.5 6.5l2 1.5-2 1.5"
                     />
                   </svg>
-                  Sign In to Admin
+                  {t("auth:adminButton")}
                 </>
               )}
             </button>
@@ -688,7 +687,7 @@ export default function AdminLoginPage({
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 bg-white dark:bg-slate-900 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                or
+                {t("auth:orDivider")}
               </span>
             </div>
           </div>
@@ -722,17 +721,17 @@ export default function AdminLoginPage({
                 opacity=".5"
               />
             </svg>
-            Continue with Organisation SSO
+            {t("auth:sso")}
           </button>
         </div>
 
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            © 2026 HealStats · Admin Portal v3.2.1
+            {t("auth:adminFooter")}
           </p>
           <div className="flex items-center gap-3">
-            {["Privacy", "Terms", "Support"].map((link) => (
+            {[t("auth:linkPrivacy"), t("auth:linkTerms"), t("auth:linkSupport")].map((link) => (
               <a
                 key={link}
                 href="#"

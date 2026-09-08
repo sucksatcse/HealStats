@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -137,6 +138,11 @@ export type PatientRecord = {
 const VILLAGES = ["Diamou", "Sadiola", "Kéniéba", "Yélimané", "Nioro"]
 const GENDERS = ["Female", "Male", "Other"]
 const URGENCIES = ["Stable", "Low", "Moderate", "High", "Critical"]
+const GENDER_KEY: Record<string, string> = {
+  Female: "genderFemale",
+  Male: "genderMale",
+  Other: "genderOther",
+}
 
 // ── Reusable field components ────────────────────────────────────────────────────
 function Field({
@@ -194,10 +200,12 @@ function SelectField({
   value,
   onChange,
   options,
+  labels,
 }: {
   value: string
   onChange: (v: string) => void
   options: string[]
+  labels?: (o: string) => string
 }) {
   return (
     <div className="relative">
@@ -207,7 +215,7 @@ function SelectField({
         className={`${inputCls} appearance-none pr-9 cursor-pointer`}
       >
         {options.map((o) => (
-          <option key={o}>{o}</option>
+          <option key={o} value={o}>{labels ? labels(o) : o}</option>
         ))}
       </select>
       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
@@ -259,6 +267,7 @@ export default function PatientFormPage({
   onSave,
   onCancel,
 }: PatientFormPageProps) {
+  const { t } = useTranslation()
   const isEdit = !!patient
   const [form, setForm] = useState<PatientRecord>({
     id:
@@ -287,7 +296,7 @@ export default function PatientFormPage({
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!String(form.name).trim() || !String(form.age).toString().trim()) {
-      setError("Patient name and age are required to save the record.")
+      setError(t("patientForm:errRequired"))
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
@@ -306,23 +315,23 @@ export default function PatientFormPage({
           <span className="transition-transform group-hover:-translate-x-0.5">
             {Icon.back}
           </span>
-          Back to Patient Records
+          {t("patientForm:backToRecords")}
         </button>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-              {isEdit ? "Edit Patient Record" : "Add Patient Record"}
+              {isEdit ? t("patientForm:editTitle") : t("patientForm:addTitle")}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               {isEdit
-                ? `Updating ${patient?.name}`
-                : "Manually create a new patient record"}{" "}
+                ? t("patientForm:updating", { name: patient?.name })
+                : t("patientForm:createSubtitle")}{" "}
               · <span className="font-mono">{form.id}</span>
             </p>
           </div>
           {isEdit && (
             <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 px-3 py-1.5 rounded-full">
-              Editing existing record
+              {t("patientForm:editingBadge")}
             </span>
           )}
         </div>
@@ -350,45 +359,46 @@ export default function PatientFormPage({
         {/* Personal Info */}
         <Section
           icon={Icon.person}
-          title="Personal Info"
-          desc="Identity and contact details for the patient."
+          title={t("patientForm:secPersonalTitle")}
+          desc={t("patientForm:secPersonalDesc")}
         >
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Full Name" className="sm:col-span-2">
+            <Field label={t("patientForm:fFullName")} className="sm:col-span-2">
               <TextField
                 value={String(form.name)}
                 onChange={(v) => set("name", v)}
-                placeholder="e.g. Mariama Kouyaté"
+                placeholder={t("patientForm:phFullName")}
               />
             </Field>
-            <Field label="Age">
+            <Field label={t("patientForm:fAge")}>
               <TextField
                 type="number"
                 value={String(form.age)}
                 onChange={(v) => set("age", v)}
-                placeholder="Years"
+                placeholder={t("patientForm:phYears")}
               />
             </Field>
-            <Field label="Gender">
+            <Field label={t("patientForm:fGender")}>
               <SelectField
                 value={form.gender}
                 onChange={(v) => set("gender", v)}
                 options={GENDERS}
+                labels={(o) => t(`patientForm:${GENDER_KEY[o]}`)}
               />
             </Field>
-            <Field label="Village / Zone">
+            <Field label={t("patientForm:fVillageZone")}>
               <SelectField
                 value={form.village}
                 onChange={(v) => set("village", v)}
                 options={VILLAGES}
               />
             </Field>
-            <Field label="Phone" hint="(optional)">
+            <Field label={t("patientForm:fPhone")} hint={t("patientForm:optional")}>
               <TextField
                 type="tel"
                 value={form.phone ?? ""}
                 onChange={(v) => set("phone", v)}
-                placeholder="+223 …"
+                placeholder={t("patientForm:phPhone")}
               />
             </Field>
           </div>
@@ -397,43 +407,43 @@ export default function PatientFormPage({
         {/* Vitals */}
         <Section
           icon={Icon.heart}
-          title="Vitals"
-          desc="Latest recorded measurements for this visit."
+          title={t("patientForm:secVitalsTitle")}
+          desc={t("patientForm:secVitalsDesc")}
         >
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Field label="Height" hint="cm">
+            <Field label={t("patientForm:fHeight")} hint={t("patientForm:unitCm")}>
               <TextField
                 value={form.height ?? ""}
                 onChange={(v) => set("height", v)}
-                placeholder="e.g. 164"
+                placeholder={t("patientForm:phHeight")}
               />
             </Field>
-            <Field label="Weight" hint="kg">
+            <Field label={t("patientForm:fWeight")} hint={t("patientForm:unitKg")}>
               <TextField
                 value={form.weight ?? ""}
                 onChange={(v) => set("weight", v)}
-                placeholder="e.g. 58"
+                placeholder={t("patientForm:phWeight")}
               />
             </Field>
-            <Field label="Heart Rate" hint="bpm">
+            <Field label={t("patientForm:fHr")} hint={t("patientForm:unitBpm")}>
               <TextField
                 value={form.hr ?? ""}
                 onChange={(v) => set("hr", v)}
-                placeholder="e.g. 78"
+                placeholder={t("patientForm:phHr")}
               />
             </Field>
-            <Field label="Blood Pressure" hint="mmHg">
+            <Field label={t("patientForm:fBp")} hint={t("patientForm:unitMmhg")}>
               <TextField
                 value={form.bp ?? ""}
                 onChange={(v) => set("bp", v)}
-                placeholder="e.g. 120/80"
+                placeholder={t("patientForm:phBp")}
               />
             </Field>
-            <Field label="Temperature" hint="°C">
+            <Field label={t("patientForm:fTemp")} hint={t("patientForm:unitC")}>
               <TextField
                 value={form.temp ?? ""}
                 onChange={(v) => set("temp", v)}
-                placeholder="e.g. 37.0"
+                placeholder={t("patientForm:phTemp")}
               />
             </Field>
           </div>
@@ -442,31 +452,32 @@ export default function PatientFormPage({
         {/* Diagnosis & Treatment */}
         <Section
           icon={Icon.clipboard}
-          title="Diagnosis & Treatment"
-          desc="Clinical assessment, triage urgency, and prescribed care."
+          title={t("patientForm:secDxTitle")}
+          desc={t("patientForm:secDxDesc")}
         >
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Primary Diagnosis" className="sm:col-span-2">
+            <Field label={t("patientForm:fDiagnosis")} className="sm:col-span-2">
               <TextField
                 value={form.diagnosis ?? ""}
                 onChange={(v) => set("diagnosis", v)}
-                placeholder="e.g. Malaria (uncomplicated)"
+                placeholder={t("patientForm:phDiagnosis")}
               />
             </Field>
-            <Field label="Urgency Level">
+            <Field label={t("patientForm:fUrgency")}>
               <SelectField
                 value={form.urgency ?? "Stable"}
                 onChange={(v) => set("urgency", v)}
                 options={URGENCIES}
+                labels={(o) => t(`urgency:${o}`)}
               />
             </Field>
             <div className="hidden sm:block" />
-            <Field label="Treatment / Prescription" className="sm:col-span-2">
+            <Field label={t("patientForm:fTreatment")} className="sm:col-span-2">
               <textarea
                 value={form.treatment ?? ""}
                 onChange={(e) => set("treatment", e.target.value)}
                 rows={3}
-                placeholder="Medications, dosage, and care instructions…"
+                placeholder={t("patientForm:phTreatment")}
                 className={`${inputCls} resize-y`}
               />
             </Field>
@@ -476,15 +487,15 @@ export default function PatientFormPage({
         {/* Visit Notes */}
         <Section
           icon={Icon.notes}
-          title="Visit Notes"
-          desc="Free-text observations and follow-up guidance."
+          title={t("patientForm:secNotesTitle")}
+          desc={t("patientForm:secNotesDesc")}
         >
-          <Field label="Notes">
+          <Field label={t("patientForm:fNotes")}>
             <textarea
               value={form.notes ?? ""}
               onChange={(e) => set("notes", e.target.value)}
               rows={4}
-              placeholder="Any additional context, symptoms, or follow-up plans…"
+              placeholder={t("patientForm:phNotes")}
               className={`${inputCls} resize-y`}
             />
           </Field>
@@ -494,8 +505,7 @@ export default function PatientFormPage({
       {/* Actions */}
       <div className="flex items-center justify-between flex-wrap gap-3 pb-2">
         <p className="text-xs text-slate-400 dark:text-slate-500">
-          Records are stored locally and sync automatically when connectivity
-          returns.
+          {t("patientForm:syncNote")}
         </p>
         <div className="flex items-center gap-3">
           <button
@@ -503,14 +513,14 @@ export default function PatientFormPage({
             onClick={onCancel}
             className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 px-5 py-2.5 rounded-xl transition-colors"
           >
-            Cancel
+            {t("patientForm:cancel")}
           </button>
           <button
             type="submit"
             className="flex items-center gap-2 text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5"
           >
             {Icon.save}
-            {isEdit ? "Save Changes" : "Create Record"}
+            {isEdit ? t("patientForm:saveChanges") : t("patientForm:createRecord")}
           </button>
         </div>
       </div>

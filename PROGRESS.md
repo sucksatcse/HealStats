@@ -2,6 +2,12 @@
 
 This document provides a comprehensive and highly detailed breakdown of every single file, configuration, and feature implemented in the project thus far.
 
+## Latest i18n Update — Full application Bangla coverage
+- **Implemented**: Completed the full-application English↔Bangla translation grind. Every routed authenticated page now switches entirely to Bangla via the language toggle, finishing the three large role dashboards: `AdminDashboardPage` (`adminDash`), `NurseDashboardPage` (`nurseDash`), and `ClinicalOfficerPage` (`clinicalDash`).
+- **Nurse & Clinical dashboards**: Translated all toasts, `fetchPatients` fallback/relative-date strings, KPI cards, toolbar, filter pills, patient tables, and every drawer tab (vitals, diagnose/urgency, prescribe, notes, history). Age rendering uses `${age} ${t(yrs)}`; today/critical/high counts now compare the language-agnostic `lastVisitSort` instead of English strings. Stored canonical values (medication frequency/route, common diagnoses) stay English in the DB but display via `freqLabel`/`routeLabel`/`diag_${i}` lookup maps.
+- **Validation**: `tsc --noEmit` passes; `pnpm build` passes (210 modules); English/Bangla key parity verified per namespace via a transform-and-compare script. No database changes, commits, or pushes performed.
+- **Next**: User manual EN/BN smoke test across the dashboards, then commit when approved.
+
 ## Latest Map Update — 2026-09-08
 - **Coordinate migration authorization follow-up — BLOCKED on access**: User subsequently authorized applying only the coordinate migration to the configured development database (no backfill/geocoding/other migrations). No database connection credentials or Supabase management login are available in this session; the opened Supabase dashboard requires sign-in. Migration remains unapplied. Next: operator signs in directly, then verify the configured project before applying and checking only this migration.
 - **IN PROGRESS / activation pending**: Replaced the admin SVG map with React Leaflet, OSM light tiles and CARTO dark tiles. Real saved coordinates, zoom/pan, clinic search-to-popup, explicit place search, filters/quiet spotlight, shared summaries, responsive collapsible directory, EN/BN labels, and admin clinic creation/location editing are wired. The static public coverage component is unchanged.

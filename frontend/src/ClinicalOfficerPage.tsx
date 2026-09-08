@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { useAuth } from "./AuthContext"
-import { useLang } from "./LanguageContext"
 import AppNavbar from "./AppNavbar"
 import { supabase } from "./lib/supabase"
 import { offlineDb } from "./lib/offlineDb"
@@ -206,7 +206,20 @@ export default function ClinicalOfficerPage({
   onNavigate?: (page: string) => void
 }) {
   const { profile } = useAuth()
-  const { lang } = useLang()
+  const { t } = useTranslation()
+
+  const freqLabel = (val: string) => {
+    const map: Record<string, string> = {
+      "Once daily": t("clinicalDash:freqOnce"), "Twice daily": t("clinicalDash:freqTwice"), "Three times daily": t("clinicalDash:freqThrice"), "Four times daily": t("clinicalDash:freqFour"), "Every 8 hours": t("clinicalDash:freqEvery8"), "As needed (PRN)": t("clinicalDash:freqPrn"),
+    }
+    return map[val] || val
+  }
+  const routeLabel = (val: string) => {
+    const map: Record<string, string> = {
+      "Oral": t("clinicalDash:routeOral"), "Intravenous (IV)": t("clinicalDash:routeIv"), "Intramuscular (IM)": t("clinicalDash:routeIm"), "Topical": t("clinicalDash:routeTopical"), "Inhalation": t("clinicalDash:routeInhalation"), "Sublingual": t("clinicalDash:routeSublingual"),
+    }
+    return map[val] || val
+  }
 
   // ── States ────────────────────────────────────────────────────────────────
   const [patients, setPatients] = useState<PatientRow[]>([])
@@ -282,7 +295,7 @@ export default function ClinicalOfficerPage({
         const latestVisit = p.visits && p.visits.length > 0 ? p.visits[0] : null
         let urgency: Urgency = "Stable"
         let urgencyScore = 1
-        let lastVisit = "No visits logged"
+        let lastVisit = t("clinicalDash:noVisitsLogged")
         let lastVisitSort = 999999
 
         if (latestVisit) {
@@ -291,24 +304,24 @@ export default function ClinicalOfficerPage({
           const vDate = new Date(latestVisit.created_at)
           const diffDays = Math.floor(Math.abs(Date.now() - vDate.getTime()) / 86400000)
           lastVisitSort = diffDays
-          if (diffDays === 0) lastVisit = "Today"
-          else if (diffDays === 1) lastVisit = "Yesterday"
-          else lastVisit = `${diffDays}d ago`
+          if (diffDays === 0) lastVisit = t("clinicalDash:today")
+          else if (diffDays === 1) lastVisit = t("clinicalDash:yesterday")
+          else lastVisit = t("clinicalDash:daysAgo", { n: diffDays })
         } else if (p.created_at) {
           const cDate = new Date(p.created_at)
           const diffDays = Math.floor(Math.abs(Date.now() - cDate.getTime()) / 86400000)
           lastVisitSort = diffDays + 10
-          lastVisit = diffDays === 0 ? "Registered Today" : `Registered ${diffDays}d ago`
+          lastVisit = diffDays === 0 ? t("clinicalDash:registeredToday") : t("clinicalDash:registeredDaysAgo", { n: diffDays })
         }
 
         return {
           id: p.id ? p.id.split("-")[0].toUpperCase() : "UNKNOWN",
           rawId: p.id,
-          name: p.name || "Unnamed Patient",
+          name: p.name || t("clinicalDash:unnamedPatient"),
           age: p.age || 0,
           gender: p.sex === "Female" || p.sex === "F" ? "Female" : p.sex === "Male" || p.sex === "M" ? "Male" : "Other",
-          village: p.village || "Unknown Village",
-          clinicName: p.clinics?.name || "Unassigned Clinic",
+          village: p.village || t("clinicalDash:unknownVillage"),
+          clinicName: p.clinics?.name || t("clinicalDash:unassignedClinic"),
           clinicId: p.clinic_id,
           urgency,
           urgencyScore,
@@ -321,7 +334,7 @@ export default function ClinicalOfficerPage({
       setPatients(mapped)
     } catch (err: any) {
       console.error("[ClinicalOfficerPage] fetchPatients error:", err)
-      setError(err.message || "Failed to load clinical patient queue.")
+      setError(err.message || t("clinicalDash:errLoad"))
     } finally {
       setIsLoading(false)
     }
@@ -348,7 +361,7 @@ export default function ClinicalOfficerPage({
       setPatientVisits((data as any[]) || [])
     } catch (err: any) {
       console.error("[ClinicalOfficerPage] loadPatientVisits error:", err)
-      showToast("Could not load complete patient history", "error")
+      showToast(t("clinicalDash:couldNotLoadHistory"), "error")
     } finally {
       setIsLoadingVisits(false)
     }
@@ -385,7 +398,7 @@ export default function ClinicalOfficerPage({
     if (!selectedPatient) return
 
     if (!diagnosisForm.primaryDiagnosis.trim()) {
-      showToast("Please enter a primary diagnosis", "error")
+      showToast(t("clinicalDash:enterPrimaryDiagnosis"), "error")
       return
     }
 
@@ -428,11 +441,11 @@ export default function ClinicalOfficerPage({
           status: "pending",
           createdAt: Date.now(),
         })
-        showToast("Diagnosis saved locally (Pending Sync).", "info")
+        showToast(t("clinicalDash:diagnosisSavedLocal"), "info")
       } else {
         const { error: insErr } = await supabase.from("visits").insert([payload])
         if (insErr) throw insErr
-        showToast("Diagnosis and clinical encounter permanently saved!", "success")
+        showToast(t("clinicalDash:diagnosisSaved"), "success")
       }
 
       setPrescriptionDiagnosisRef(diagnosisForm.primaryDiagnosis.trim())
@@ -447,7 +460,7 @@ export default function ClinicalOfficerPage({
       setDrawerTab("prescribe")
     } catch (err: any) {
       console.error("[ClinicalOfficerPage] saveDiagnosis error:", err)
-      showToast(err.message || "Failed to record diagnosis", "error")
+      showToast(err.message || t("clinicalDash:failRecordDiagnosis"), "error")
     } finally {
       setIsSavingDiagnosis(false)
     }
@@ -471,7 +484,7 @@ export default function ClinicalOfficerPage({
 
   const handleRemoveMedicationRow = (id: string) => {
     if (prescriptionItems.length === 1) {
-      showToast("A prescription must have at least one medication", "info")
+      showToast(t("clinicalDash:atLeastOneMed"), "info")
       return
     }
     setPrescriptionItems((prev) => prev.filter((item) => item.id !== id))
@@ -490,17 +503,17 @@ export default function ClinicalOfficerPage({
     // Validation
     const cleanItems = prescriptionItems.filter((i) => i.medication.trim())
     if (cleanItems.length === 0) {
-      showToast("Please enter at least one valid medication name", "error")
+      showToast(t("clinicalDash:enterValidMed"), "error")
       return
     }
 
     for (const item of cleanItems) {
       if (!item.dosage.trim()) {
-        showToast(`Dosage is required for ${item.medication}`, "error")
+        showToast(t("clinicalDash:dosageRequired", { med: item.medication }), "error")
         return
       }
       if (!item.duration.trim()) {
-        showToast(`Duration is required for ${item.medication}`, "error")
+        showToast(t("clinicalDash:durationRequired", { med: item.medication }), "error")
         return
       }
     }
@@ -547,11 +560,11 @@ export default function ClinicalOfficerPage({
           status: "pending",
           createdAt: Date.now(),
         })
-        showToast("Prescription queued locally for sync.", "info")
+        showToast(t("clinicalDash:prescriptionQueued"), "info")
       } else {
         const { error: insErr } = await supabase.from("visits").insert([payload])
         if (insErr) throw insErr
-        showToast(`Prescription with ${cleanItems.length} medication(s) saved!`, "success")
+        showToast(t("clinicalDash:prescriptionSaved", { count: cleanItems.length }), "success")
       }
 
       // Reset form
@@ -572,7 +585,7 @@ export default function ClinicalOfficerPage({
       setDrawerTab("history")
     } catch (err: any) {
       console.error("[ClinicalOfficerPage] savePrescription error:", err)
-      showToast(err.message || "Failed to save prescription", "error")
+      showToast(err.message || t("clinicalDash:failSavePrescription"), "error")
     } finally {
       setIsSavingPrescription(false)
     }
@@ -618,7 +631,7 @@ export default function ClinicalOfficerPage({
   )
 
   const diagnosedCount = useMemo(() => {
-    return patients.filter((p) => p.lastVisit !== "No visits logged").length
+    return patients.filter((p) => p.lastVisitSort !== 999999).length
   }, [patients])
 
   return (
@@ -658,13 +671,13 @@ export default function ClinicalOfficerPage({
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-800/60 border border-teal-500/30 text-teal-200 text-xs font-semibold mb-3">
                 <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
-                Clinical Officer & Medical Officer Station
+                {t("clinicalDash:badge")}
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold font-display tracking-tight text-white">
-                Clinical Diagnoses, Prescriptions & Visit Management
+                {t("clinicalDash:title")}
               </h1>
               <p className="text-sm text-teal-100/80 mt-1 max-w-2xl">
-                Logged in as <strong className="text-white">{profile?.name || "Clinical Officer"}</strong> (Clinical Officer / Clinician). Diagnose patients, prescribe treatments, and review nurse-captured vitals from the central database.
+                {t("clinicalDash:loggedInPre")} <strong className="text-white">{profile?.name || t("clinicalDash:clinicalOfficer")}</strong> {t("clinicalDash:loggedInPost")}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -674,14 +687,14 @@ export default function ClinicalOfficerPage({
                 className="flex items-center gap-2 bg-teal-700/60 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-teal-500/30 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <span className={isLoading ? "animate-spin" : ""}>{Icons.refresh}</span>
-                Refresh Station
+                {t("clinicalDash:refreshStation")}
               </button>
               {onNavigate && (
                 <button
                   onClick={() => onNavigate("dashboard")}
                   className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  {Icons.arrowLeft} Back to Hub
+                  {Icons.arrowLeft} {t("clinicalDash:backToHub")}
                 </button>
               )}
             </div>
@@ -692,14 +705,14 @@ export default function ClinicalOfficerPage({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Patients in Care
+              {t("clinicalDash:kpiPatientsInCare")}
             </p>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
                 {patients.length}
               </span>
               <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
-                Active Patients
+                {t("clinicalDash:kpiActivePatients")}
               </span>
             </div>
           </div>
@@ -707,7 +720,7 @@ export default function ClinicalOfficerPage({
           <div className="bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">
-                Urgent Clinical Review
+                {t("clinicalDash:kpiUrgentReview")}
               </p>
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
             </div>
@@ -716,35 +729,35 @@ export default function ClinicalOfficerPage({
                 {urgentReviewCount}
               </span>
               <span className="text-xs text-red-600/80 dark:text-red-400/80 font-medium">
-                Critical / High
+                {t("clinicalDash:kpiCriticalHigh")}
               </span>
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Diagnosed Patients
+              {t("clinicalDash:kpiDiagnosed")}
             </p>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
                 {diagnosedCount}
               </span>
               <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                Clinical Encounters
+                {t("clinicalDash:kpiClinicalEncounters")}
               </span>
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Today's Queue Activity
+              {t("clinicalDash:kpiTodayActivity")}
             </p>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
-                {patients.filter((p) => p.lastVisit === "Today").length}
+                {patients.filter((p) => p.lastVisitSort === 0).length}
               </span>
               <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
-                Seen Today
+                {t("clinicalDash:kpiSeenToday")}
               </span>
             </div>
           </div>
@@ -762,7 +775,7 @@ export default function ClinicalOfficerPage({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search patient name, ID, village, or clinic..."
+                placeholder={t("clinicalDash:searchPh")}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-slate-800 dark:text-slate-200"
               />
             </div>
@@ -770,16 +783,16 @@ export default function ClinicalOfficerPage({
             {/* Sort Dropdown */}
             <div className="flex items-center gap-2 w-full md:w-auto justify-end">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                Sort:
+                {t("clinicalDash:sortLabel")}
               </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="text-xs font-medium px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
               >
-                <option value="urgency-desc">Highest Urgency (Critical first)</option>
-                <option value="recent">Most Recent Visit</option>
-                <option value="name">Patient Name (A–Z)</option>
+                <option value="urgency-desc">{t("clinicalDash:sortUrgency")}</option>
+                <option value="recent">{t("clinicalDash:sortRecent")}</option>
+                <option value="name">{t("clinicalDash:sortName")}</option>
               </select>
             </div>
           </div>
@@ -787,7 +800,7 @@ export default function ClinicalOfficerPage({
           {/* Urgency Filter Pills (Read-only clinical guide) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <span className="text-xs font-semibold text-slate-400 uppercase mr-1 flex-shrink-0">
-              Urgency:
+              {t("clinicalDash:urgencyLabel")}
             </span>
             {["All", "Critical", "High", "Moderate", "Low", "Stable"].map((level) => {
               const active = selectedUrgencyFilter === level
@@ -807,7 +820,7 @@ export default function ClinicalOfficerPage({
                       className={`w-2 h-2 rounded-full ${active ? "bg-white" : cfg.dotCls}`}
                     />
                   )}
-                  {level}
+                  {level === "All" ? t("clinicalDash:all") : t(`urgency:${level}`)}
                   <span className="text-[10px] ml-0.5 opacity-80">
                     ({level === "All" ? patients.length : patients.filter((p) => p.urgency === level).length})
                   </span>
@@ -822,21 +835,21 @@ export default function ClinicalOfficerPage({
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="font-semibold text-base text-slate-900 dark:text-white">
-                Clinical Review Queue
+                {t("clinicalDash:queueTitle")}
               </h2>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
-                {filteredPatients.length} shown
+                {t("clinicalDash:shown", { count: filteredPatients.length })}
               </span>
             </div>
             <p className="text-xs text-slate-400 hidden sm:block">
-              Select any patient to review nurse vitals, diagnose, and issue prescriptions
+              {t("clinicalDash:clickHint")}
             </p>
           </div>
 
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center text-slate-400">
               <div className="animate-spin text-teal-600 w-8 h-8 mb-3">{Icons.refresh}</div>
-              <p className="text-sm font-medium">Loading clinical patient records...</p>
+              <p className="text-sm font-medium">{t("clinicalDash:loadingRecords")}</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center">
@@ -845,28 +858,28 @@ export default function ClinicalOfficerPage({
                 onClick={() => fetchPatients()}
                 className="mt-3 px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-semibold cursor-pointer"
               >
-                Retry
+                {t("clinicalDash:retry")}
               </button>
             </div>
           ) : filteredPatients.length === 0 ? (
             <div className="py-16 text-center text-slate-400">
               <p className="text-base font-semibold text-slate-600 dark:text-slate-300">
-                No patients match the selected filter.
+                {t("clinicalDash:noMatch")}
               </p>
-              <p className="text-xs mt-1">Try adjusting your urgency filter or search keyword.</p>
+              <p className="text-xs mt-1">{t("clinicalDash:noMatchHint")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-6">Patient</th>
-                    <th className="py-3 px-4">Demographics</th>
-                    <th className="py-3 px-4">Location</th>
-                    <th className="py-3 px-4">Latest Nurse Vitals</th>
-                    <th className="py-3 px-4">Triage Urgency</th>
-                    <th className="py-3 px-4">Last Visit</th>
-                    <th className="py-3 px-6 text-right">Action</th>
+                    <th className="py-3 px-6">{t("clinicalDash:colPatient")}</th>
+                    <th className="py-3 px-4">{t("clinicalDash:colDemographics")}</th>
+                    <th className="py-3 px-4">{t("clinicalDash:colLocation")}</th>
+                    <th className="py-3 px-4">{t("clinicalDash:colVitals")}</th>
+                    <th className="py-3 px-4">{t("clinicalDash:colUrgency")}</th>
+                    <th className="py-3 px-4">{t("clinicalDash:colLastVisit")}</th>
+                    <th className="py-3 px-6 text-right">{t("clinicalDash:colAction")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-normal">
@@ -900,7 +913,7 @@ export default function ClinicalOfficerPage({
                           </div>
                         </td>
                         <td className="py-4 px-4 text-slate-600 dark:text-slate-300">
-                          {p.age > 0 ? `${p.age} yrs` : "—"} · {p.gender}
+                          {p.age > 0 ? `${p.age} ${t("clinicalDash:yrs")}` : "—"} · {p.gender}
                         </td>
                         <td className="py-4 px-4">
                           <p className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[140px]">
@@ -936,7 +949,7 @@ export default function ClinicalOfficerPage({
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">No vitals logged</span>
+                            <span className="text-xs text-slate-400 italic">{t("clinicalDash:noVitalsLogged")}</span>
                           )}
                         </td>
                         <td className="py-4 px-4">
@@ -944,7 +957,7 @@ export default function ClinicalOfficerPage({
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${urgencyCfg.badgeCls}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${urgencyCfg.dotCls}`} />
-                            {p.urgency}
+                            {t(`urgency:${p.urgency}`)}
                           </span>
                         </td>
                         <td className="py-4 px-4 text-xs text-slate-500 dark:text-slate-400">
@@ -958,7 +971,7 @@ export default function ClinicalOfficerPage({
                             }}
                             className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-all cursor-pointer"
                           >
-                            Diagnose & Prescribe
+                            {t("clinicalDash:diagnosePrescribe")}
                           </button>
                         </td>
                       </tr>
@@ -999,18 +1012,18 @@ export default function ClinicalOfficerPage({
                           URGENCY_LEVELS_MAP[selectedPatient.urgency].dotCls
                         }`}
                       />
-                      {selectedPatient.urgency}
+                      {t(`urgency:${selectedPatient.urgency}`)}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    ID: #{selectedPatient.id} · {selectedPatient.age} yrs · {selectedPatient.gender} · {selectedPatient.village}
+                    ID: #{selectedPatient.id} · {`${selectedPatient.age} ${t("clinicalDash:yrs")}`} · {selectedPatient.gender} · {selectedPatient.village}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedPatient(null)}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                aria-label="Close"
+                aria-label={t("clinicalDash:close")}
               >
                 {Icons.x}
               </button>
@@ -1027,7 +1040,7 @@ export default function ClinicalOfficerPage({
                 }`}
               >
                 {Icons.heart}
-                Overview & Vitals
+                {t("clinicalDash:tabOverview")}
               </button>
               <button
                 onClick={() => setDrawerTab("diagnose")}
@@ -1038,7 +1051,7 @@ export default function ClinicalOfficerPage({
                 }`}
               >
                 {Icons.stethoscope}
-                Diagnose
+                {t("clinicalDash:tabDiagnose")}
               </button>
               <button
                 onClick={() => setDrawerTab("prescribe")}
@@ -1049,7 +1062,7 @@ export default function ClinicalOfficerPage({
                 }`}
               >
                 {Icons.pill}
-                Prescribe
+                {t("clinicalDash:tabPrescribe")}
               </button>
               <button
                 onClick={() => setDrawerTab("history")}
@@ -1060,7 +1073,7 @@ export default function ClinicalOfficerPage({
                 }`}
               >
                 {Icons.clock}
-                Clinical History ({patientVisits.length})
+                {t("clinicalDash:tabHistory")} ({patientVisits.length})
               </button>
             </div>
 
@@ -1073,7 +1086,7 @@ export default function ClinicalOfficerPage({
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Current Urgency Classification
+                        {t("clinicalDash:currentUrgency")}
                       </span>
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${
@@ -1085,11 +1098,11 @@ export default function ClinicalOfficerPage({
                             URGENCY_LEVELS_MAP[selectedPatient.urgency].dotCls
                           }`}
                         />
-                        {selectedPatient.urgency}
+                        {t(`urgency:${selectedPatient.urgency}`)}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Assessed during intake by triage nursing staff. Clinical Officers review this status to prioritize care.
+                      {t("clinicalDash:urgencyDesc")}
                     </p>
                   </div>
 
@@ -1097,13 +1110,13 @@ export default function ClinicalOfficerPage({
                   <div className="space-y-3">
                     <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                       {Icons.heart}
-                      Latest Nurse Vitals Assessment
+                      {t("clinicalDash:latestNurseVitals")}
                     </h3>
 
                     {selectedPatient.latestVitals ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm">
-                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">Blood Pressure</span>
+                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">{t("clinicalDash:vBloodPressure")}</span>
                           <span className="text-base font-bold text-slate-900 dark:text-white mt-1 block">
                             {selectedPatient.latestVitals.systolic && selectedPatient.latestVitals.diastolic
                               ? `${selectedPatient.latestVitals.systolic} / ${selectedPatient.latestVitals.diastolic} mmHg`
@@ -1112,21 +1125,21 @@ export default function ClinicalOfficerPage({
                         </div>
 
                         <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm">
-                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">Heart Rate</span>
+                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">{t("clinicalDash:vHeartRate")}</span>
                           <span className="text-base font-bold text-slate-900 dark:text-white mt-1 block">
                             {selectedPatient.latestVitals.pulse ? `${selectedPatient.latestVitals.pulse} bpm` : "—"}
                           </span>
                         </div>
 
                         <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm">
-                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">Temperature</span>
+                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">{t("clinicalDash:vTemperature")}</span>
                           <span className="text-base font-bold text-slate-900 dark:text-white mt-1 block">
                             {selectedPatient.latestVitals.temperature ? `${selectedPatient.latestVitals.temperature}°C` : "—"}
                           </span>
                         </div>
 
                         <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm">
-                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">Oxygen Saturation</span>
+                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">{t("clinicalDash:vOxygen")}</span>
                           <span
                             className={`text-base font-bold mt-1 block ${
                               selectedPatient.latestVitals.spo2 && selectedPatient.latestVitals.spo2 < 92
@@ -1137,19 +1150,19 @@ export default function ClinicalOfficerPage({
                             {selectedPatient.latestVitals.spo2 ? `${selectedPatient.latestVitals.spo2}%` : "—"}
                           </span>
                           {selectedPatient.latestVitals.spo2 && selectedPatient.latestVitals.spo2 < 92 && (
-                            <span className="text-[10px] text-red-500 font-semibold block">Hypoxemia Alert</span>
+                            <span className="text-[10px] text-red-500 font-semibold block">{t("clinicalDash:hypoxemiaAlert")}</span>
                           )}
                         </div>
 
                         <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm">
-                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">Resp Rate</span>
+                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">{t("clinicalDash:vRespRate")}</span>
                           <span className="text-base font-bold text-slate-900 dark:text-white mt-1 block">
                             {selectedPatient.latestVitals.respRate ? `${selectedPatient.latestVitals.respRate} /min` : "—"}
                           </span>
                         </div>
 
                         <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm">
-                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">Weight / Height</span>
+                          <span className="text-[11px] text-slate-400 uppercase font-semibold block">{t("clinicalDash:vWeightHeight")}</span>
                           <span className="text-sm font-semibold text-slate-900 dark:text-white mt-1 block">
                             {selectedPatient.latestVitals.weight ? `${selectedPatient.latestVitals.weight} kg` : "—"} ·{" "}
                             {selectedPatient.latestVitals.height ? `${selectedPatient.latestVitals.height} cm` : "—"}
@@ -1157,7 +1170,7 @@ export default function ClinicalOfficerPage({
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 italic">No vitals currently logged for this patient.</p>
+                      <p className="text-xs text-slate-400 italic">{t("clinicalDash:noVitalsForPatient")}</p>
                     )}
                   </div>
 
@@ -1167,14 +1180,14 @@ export default function ClinicalOfficerPage({
                       className="flex-1 py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-teal-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {Icons.stethoscope}
-                      Start Patient Diagnosis
+                      {t("clinicalDash:startDiagnosis")}
                     </button>
                     <button
                       onClick={() => setDrawerTab("prescribe")}
                       className="flex-1 py-3 px-4 border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {Icons.pill}
-                      Prescribe Medications
+                      {t("clinicalDash:prescribeMeds")}
                     </button>
                   </div>
                 </div>
@@ -1185,7 +1198,7 @@ export default function ClinicalOfficerPage({
                 <form onSubmit={handleSaveDiagnosis} className="space-y-5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-                      Primary Diagnosis *
+                      {t("clinicalDash:primaryDiagnosis")}
                     </label>
                     <input
                       type="text"
@@ -1194,14 +1207,14 @@ export default function ClinicalOfficerPage({
                       onChange={(e) =>
                         setDiagnosisForm({ ...diagnosisForm, primaryDiagnosis: e.target.value })
                       }
-                      placeholder="e.g. Acute Bacterial Bronchitis"
+                      placeholder={t("clinicalDash:primaryDiagnosisPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold text-slate-900 dark:text-white"
                     />
 
                     {/* Common Diagnosis Quick Chips */}
                     <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[11px] text-slate-400 font-medium">Quick options:</span>
-                      {COMMON_DIAGNOSES.map((diag) => (
+                      <span className="text-[11px] text-slate-400 font-medium">{t("clinicalDash:quickOptions")}</span>
+                      {COMMON_DIAGNOSES.map((diag, di) => (
                         <button
                           key={diag}
                           type="button"
@@ -1210,7 +1223,7 @@ export default function ClinicalOfficerPage({
                           }
                           className="text-[11px] px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:text-teal-700 dark:hover:text-teal-300 transition-colors text-slate-600 dark:text-slate-400 cursor-pointer"
                         >
-                          {diag}
+                          {t(`clinicalDash:diag_${di}`)}
                         </button>
                       ))}
                     </div>
@@ -1218,7 +1231,7 @@ export default function ClinicalOfficerPage({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-                      Secondary / Differential Diagnosis (Optional)
+                      {t("clinicalDash:secondaryDiagnosis")}
                     </label>
                     <input
                       type="text"
@@ -1226,14 +1239,14 @@ export default function ClinicalOfficerPage({
                       onChange={(e) =>
                         setDiagnosisForm({ ...diagnosisForm, secondaryDiagnosis: e.target.value })
                       }
-                      placeholder="e.g. Viral Pharyngitis or Bronchial Asthma"
+                      placeholder={t("clinicalDash:secondaryDiagnosisPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-                      Clinical Findings & Physical Examination
+                      {t("clinicalDash:clinicalFindings")}
                     </label>
                     <textarea
                       rows={3}
@@ -1241,14 +1254,14 @@ export default function ClinicalOfficerPage({
                       onChange={(e) =>
                         setDiagnosisForm({ ...diagnosisForm, clinicalFindings: e.target.value })
                       }
-                      placeholder="e.g. Patient presents with productive cough for 4 days. Auscultation reveals bilateral coarse crackles. Throat congested, no stridor."
+                      placeholder={t("clinicalDash:clinicalFindingsPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-                      Treatment Plan & Clinical Advice
+                      {t("clinicalDash:treatmentPlan")}
                     </label>
                     <textarea
                       rows={3}
@@ -1256,7 +1269,7 @@ export default function ClinicalOfficerPage({
                       onChange={(e) =>
                         setDiagnosisForm({ ...diagnosisForm, treatmentPlan: e.target.value })
                       }
-                      placeholder="e.g. Oral antibiotic therapy, hydration, paracetamol for fever. Return in 3 days if dyspnea or high fever persists."
+                      placeholder={t("clinicalDash:treatmentPlanPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
@@ -1269,12 +1282,12 @@ export default function ClinicalOfficerPage({
                     {isSavingDiagnosis ? (
                       <>
                         <span className="animate-spin">{Icons.refresh}</span>
-                        Saving Clinical Record...
+                        {t("clinicalDash:savingRecord")}
                       </>
                     ) : (
                       <>
                         {Icons.checkCircle}
-                        Save Diagnosis & Proceed to Prescription
+                        {t("clinicalDash:saveDiagnosisProceed")}
                       </>
                     )}
                   </button>
@@ -1287,13 +1300,13 @@ export default function ClinicalOfficerPage({
                   {/* Diagnosis Reference */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-                      Target Diagnosis / Indication
+                      {t("clinicalDash:targetDiagnosis")}
                     </label>
                     <input
                       type="text"
                       value={prescriptionDiagnosisRef}
                       onChange={(e) => setPrescriptionDiagnosisRef(e.target.value)}
-                      placeholder="e.g. Acute Bacterial Bronchitis"
+                      placeholder={t("clinicalDash:targetDiagnosisPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold"
                     />
                   </div>
@@ -1302,14 +1315,14 @@ export default function ClinicalOfficerPage({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Prescription Items ({prescriptionItems.length})
+                        {t("clinicalDash:prescriptionItems", { count: prescriptionItems.length })}
                       </label>
                       <button
                         type="button"
                         onClick={handleAddMedicationRow}
                         className="flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 p-1 cursor-pointer"
                       >
-                        {Icons.plus} Add Medication
+                        {Icons.plus} {t("clinicalDash:addMedication")}
                       </button>
                     </div>
 
@@ -1320,14 +1333,14 @@ export default function ClinicalOfficerPage({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-teal-700 dark:text-teal-300">
-                            Medication #{index + 1}
+                            {t("clinicalDash:medicationN", { n: index + 1 })}
                           </span>
                           {prescriptionItems.length > 1 && (
                             <button
                               type="button"
                               onClick={() => handleRemoveMedicationRow(item.id)}
                               className="text-red-500 hover:text-red-700 p-1 transition-colors cursor-pointer"
-                              title="Remove medication"
+                              title={t("clinicalDash:removeMedication")}
                             >
                               {Icons.trash}
                             </button>
@@ -1337,7 +1350,7 @@ export default function ClinicalOfficerPage({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                              Medication Name *
+                              {t("clinicalDash:medName")}
                             </label>
                             <input
                               type="text"
@@ -1346,14 +1359,14 @@ export default function ClinicalOfficerPage({
                               onChange={(e) =>
                                 handleMedicationChange(item.id, "medication", e.target.value)
                               }
-                              placeholder="e.g. Amoxicillin"
+                              placeholder={t("clinicalDash:medNamePh")}
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold"
                             />
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                              Dosage *
+                              {t("clinicalDash:dosage")}
                             </label>
                             <input
                               type="text"
@@ -1362,14 +1375,14 @@ export default function ClinicalOfficerPage({
                               onChange={(e) =>
                                 handleMedicationChange(item.id, "dosage", e.target.value)
                               }
-                              placeholder="e.g. 500 mg"
+                              placeholder={t("clinicalDash:dosagePh")}
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
                             />
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                              Frequency *
+                              {t("clinicalDash:frequency")}
                             </label>
                             <select
                               value={item.frequency}
@@ -1378,18 +1391,18 @@ export default function ClinicalOfficerPage({
                               }
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
                             >
-                              <option value="Once daily">Once daily (OD)</option>
-                              <option value="Twice daily">Twice daily (BD)</option>
-                              <option value="Three times daily">Three times daily (TDS)</option>
-                              <option value="Four times daily">Four times daily (QDS)</option>
-                              <option value="Every 8 hours">Every 8 hours</option>
-                              <option value="As needed (PRN)">As needed (PRN)</option>
+                              <option value="Once daily">{t("clinicalDash:freqOnce")}</option>
+                              <option value="Twice daily">{t("clinicalDash:freqTwice")}</option>
+                              <option value="Three times daily">{t("clinicalDash:freqThrice")}</option>
+                              <option value="Four times daily">{t("clinicalDash:freqFour")}</option>
+                              <option value="Every 8 hours">{t("clinicalDash:freqEvery8")}</option>
+                              <option value="As needed (PRN)">{t("clinicalDash:freqPrn")}</option>
                             </select>
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                              Duration *
+                              {t("clinicalDash:duration")}
                             </label>
                             <input
                               type="text"
@@ -1398,14 +1411,14 @@ export default function ClinicalOfficerPage({
                               onChange={(e) =>
                                 handleMedicationChange(item.id, "duration", e.target.value)
                               }
-                              placeholder="e.g. 7 days"
+                              placeholder={t("clinicalDash:durationPh")}
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
                             />
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                              Route
+                              {t("clinicalDash:route")}
                             </label>
                             <select
                               value={item.route}
@@ -1414,18 +1427,18 @@ export default function ClinicalOfficerPage({
                               }
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
                             >
-                              <option value="Oral">Oral</option>
-                              <option value="Intravenous (IV)">Intravenous (IV)</option>
-                              <option value="Intramuscular (IM)">Intramuscular (IM)</option>
-                              <option value="Topical">Topical</option>
-                              <option value="Inhalation">Inhalation</option>
-                              <option value="Sublingual">Sublingual</option>
+                              <option value="Oral">{t("clinicalDash:routeOral")}</option>
+                              <option value="Intravenous (IV)">{t("clinicalDash:routeIv")}</option>
+                              <option value="Intramuscular (IM)">{t("clinicalDash:routeIm")}</option>
+                              <option value="Topical">{t("clinicalDash:routeTopical")}</option>
+                              <option value="Inhalation">{t("clinicalDash:routeInhalation")}</option>
+                              <option value="Sublingual">{t("clinicalDash:routeSublingual")}</option>
                             </select>
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                              Instructions
+                              {t("clinicalDash:instructions")}
                             </label>
                             <input
                               type="text"
@@ -1433,7 +1446,7 @@ export default function ClinicalOfficerPage({
                               onChange={(e) =>
                                 handleMedicationChange(item.id, "instructions", e.target.value)
                               }
-                              placeholder="e.g. Take after meals with full glass of water"
+                              placeholder={t("clinicalDash:instructionsPh")}
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
                             />
                           </div>
@@ -1444,13 +1457,13 @@ export default function ClinicalOfficerPage({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
-                      Pharmacy & Patient Instructions
+                      {t("clinicalDash:pharmacyNotes")}
                     </label>
                     <textarea
                       rows={2}
                       value={pharmacyNotes}
                       onChange={(e) => setPharmacyNotes(e.target.value)}
-                      placeholder="e.g. Complete the full 7-day course even if feeling better. Avoid dairy within 2 hours of dosage."
+                      placeholder={t("clinicalDash:pharmacyNotesPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
@@ -1463,12 +1476,12 @@ export default function ClinicalOfficerPage({
                     {isSavingPrescription ? (
                       <>
                         <span className="animate-spin">{Icons.refresh}</span>
-                        Issuing Prescription...
+                        {t("clinicalDash:issuingPrescription")}
                       </>
                     ) : (
                       <>
                         {Icons.pill}
-                        Save & Issue Prescription
+                        {t("clinicalDash:saveIssuePrescription")}
                       </>
                     )}
                   </button>
@@ -1480,21 +1493,21 @@ export default function ClinicalOfficerPage({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Encounter History & Prescriptions
+                      {t("clinicalDash:encounterHistory")}
                     </h4>
                     <span className="text-xs text-slate-400">
-                      {patientVisits.length} recorded events
+                      {t("clinicalDash:recordedEvents", { count: patientVisits.length })}
                     </span>
                   </div>
 
                   {isLoadingVisits ? (
                     <div className="py-12 text-center text-slate-400 text-xs">
                       <div className="animate-spin text-teal-600 w-6 h-6 mx-auto mb-2">{Icons.refresh}</div>
-                      Loading history...
+                      {t("clinicalDash:loadingHistory")}
                     </div>
                   ) : patientVisits.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 text-xs italic">
-                      No clinical visits or prescriptions recorded yet.
+                      {t("clinicalDash:noEvents")}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1503,7 +1516,7 @@ export default function ClinicalOfficerPage({
                         const urg = urgencyFromScore(score)
                         const cfg = URGENCY_LEVELS_MAP[urg]
                         const prescriptions: PrescriptionItem[] = v.vitals?.prescriptions || []
-                        const clinicianName = (Array.isArray(v.staff) ? v.staff[0]?.name : v.staff?.name) || "Attending Clinician"
+                        const clinicianName = (Array.isArray(v.staff) ? v.staff[0]?.name : v.staff?.name) || t("clinicalDash:attendingClinician")
 
                         return (
                           <div
@@ -1518,7 +1531,7 @@ export default function ClinicalOfficerPage({
                                     month: "short",
                                     year: "numeric",
                                   })}{" "}
-                                  at{" "}
+                                  {t("clinicalDash:at")}{" "}
                                   {new Date(v.created_at).toLocaleTimeString("en-GB", {
                                     hour: "2-digit",
                                     minute: "2-digit",
@@ -1526,17 +1539,17 @@ export default function ClinicalOfficerPage({
                                 </span>
                                 <span className="text-[11px] text-teal-600 dark:text-teal-400 font-medium block">
                                   {v.symptom_category === "prescription"
-                                    ? "Prescription Order"
+                                    ? t("clinicalDash:typePrescription")
                                     : v.symptom_category === "clinical_visit"
-                                    ? "Clinical Diagnostic Visit"
-                                    : "Nurse Triage & Vitals"}
+                                    ? t("clinicalDash:typeClinicalVisit")
+                                    : t("clinicalDash:typeNurseTriage")}
                                 </span>
                               </div>
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-semibold text-[11px] border ${cfg.badgeCls}`}
                               >
                                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotCls}`} />
-                                {urg}
+                                {t(`urgency:${urg}`)}
                               </span>
                             </div>
 
@@ -1544,7 +1557,7 @@ export default function ClinicalOfficerPage({
                             {v.diagnosis && (
                               <div className="bg-teal-50/70 dark:bg-teal-950/40 p-3 rounded-xl border border-teal-100 dark:border-teal-900/50">
                                 <span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold uppercase tracking-wider block">
-                                  Diagnosis
+                                  {t("clinicalDash:diagnosisLabel")}
                                 </span>
                                 <p className="text-slate-900 dark:text-white font-semibold text-sm mt-0.5">
                                   {v.diagnosis}
@@ -1556,7 +1569,7 @@ export default function ClinicalOfficerPage({
                             {prescriptions.length > 0 && (
                               <div className="space-y-2">
                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                                  Prescribed Medications ({prescriptions.length})
+                                  {t("clinicalDash:prescribedMeds", { count: prescriptions.length })}
                                 </span>
                                 <div className="space-y-1.5">
                                   {prescriptions.map((p, pIdx) => (
@@ -1573,11 +1586,11 @@ export default function ClinicalOfficerPage({
                                         </span>
                                       </div>
                                       <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                                        {p.frequency} · Duration: {p.duration} · Route: {p.route}
+                                        {freqLabel(p.frequency)} · {t("clinicalDash:durationColon")} {p.duration} · {t("clinicalDash:routeColon")} {routeLabel(p.route)}
                                       </p>
                                       {p.instructions && (
                                         <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 italic">
-                                          Note: {p.instructions}
+                                          {t("clinicalDash:noteColon")} {p.instructions}
                                         </p>
                                       )}
                                     </div>
@@ -1590,7 +1603,7 @@ export default function ClinicalOfficerPage({
                             {v.symptoms && (
                               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900">
                                 <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                                  Encounter Documentation
+                                  {t("clinicalDash:encounterDoc")}
                                 </span>
                                 <p className="text-slate-700 dark:text-slate-300 text-xs mt-0.5 whitespace-pre-wrap leading-relaxed">
                                   {v.symptoms}
@@ -1611,7 +1624,7 @@ export default function ClinicalOfficerPage({
                                 )}
                                 {v.vitals.pulse && (
                                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 text-center">
-                                    <span className="text-[9px] text-slate-400 block uppercase">Pulse</span>
+                                    <span className="text-[9px] text-slate-400 block uppercase">{t("clinicalDash:pulseShort")}</span>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                                       {v.vitals.pulse} bpm
                                     </span>
@@ -1629,7 +1642,7 @@ export default function ClinicalOfficerPage({
                             )}
 
                             <div className="text-[10px] text-slate-400 flex justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2">
-                              <span>Attending: <strong>{clinicianName}</strong></span>
+                              <span>{t("clinicalDash:attending")} <strong>{clinicianName}</strong></span>
                               <span>ID: #{v.id.split("-")[0]}</span>
                             </div>
                           </div>

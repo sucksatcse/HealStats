@@ -1,177 +1,26 @@
 import { useState, useEffect, useRef } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type UrgencyLevel = "Low" | "Medium" | "High"
 
-interface TriageScenario {
-  level: UrgencyLevel
-  confidence: number
-  headline: string
-  summary: string
-  factors: {
-    label: string
-    value: string
-    status: "ok" | "warn" | "critical"
-    detail: string
-  }[]
-  recommendation: string
-  escalationNote: string
-  nextReview: string
+type FactorKey = "bp" | "temp" | "pulse" | "spo2" | "complaint" | "critical"
+type FactorStatus = "ok" | "warn" | "critical"
+
+const FACTOR_KEYS: FactorKey[] = ["bp", "temp", "pulse", "spo2", "complaint", "critical"]
+
+const CONFIDENCE: Record<UrgencyLevel, number> = {
+  Low: 91,
+  Medium: 83,
+  High: 97,
 }
 
-// ── Demo scenarios ─────────────────────────────────────────────────────────────
-const SCENARIOS: Record<UrgencyLevel, TriageScenario> = {
-  Low: {
-    level: "Low",
-    confidence: 91,
-    headline: "Routine care appropriate",
-    summary:
-      "Vitals are within expected ranges for this patient's age and condition profile. Reported symptoms are mild and consistent with a self-limiting illness. No red-flag indicators detected.",
-    factors: [
-      {
-        label: "Blood Pressure",
-        value: "118/76 mmHg",
-        status: "ok",
-        detail: "Within normal range (systolic 90–120)",
-      },
-      {
-        label: "Temperature",
-        value: "37.1 °C",
-        status: "ok",
-        detail: "Afebrile — no fever detected",
-      },
-      {
-        label: "Pulse Rate",
-        value: "74 bpm",
-        status: "ok",
-        detail: "Regular and within normal limits",
-      },
-      {
-        label: "SpO₂",
-        value: "98%",
-        status: "ok",
-        detail: "Normal oxygen saturation",
-      },
-      {
-        label: "Chief Complaint",
-        value: "Mild cough",
-        status: "ok",
-        detail: "Duration < 3 days, no haemoptysis",
-      },
-      {
-        label: "Critical Symptoms",
-        value: "None reported",
-        status: "ok",
-        detail: "No convulsions, bleeding, or chest pain",
-      },
-    ],
-    recommendation:
-      "Schedule for standard outpatient consultation. No immediate intervention required. Patient may wait in general queue. Reassess if symptoms worsen or fever develops within 48 hours.",
-    escalationNote:
-      "Escalation not currently indicated. Contact duty clinician if patient reports worsening respiratory symptoms.",
-    nextReview: "48 hours or sooner if condition changes",
-  },
-  Medium: {
-    level: "Medium",
-    confidence: 83,
-    headline: "Elevated concern — prioritise today",
-    summary:
-      "Two vital parameters are outside normal ranges and reported symptoms suggest active infection. Patient should be seen before routine cases. Close monitoring of temperature and hydration status is recommended.",
-    factors: [
-      {
-        label: "Blood Pressure",
-        value: "142/91 mmHg",
-        status: "warn",
-        detail: "Stage 1 hypertension — systolic above threshold",
-      },
-      {
-        label: "Temperature",
-        value: "38.4 °C",
-        status: "warn",
-        detail: "Moderate fever — active infection likely",
-      },
-      {
-        label: "Pulse Rate",
-        value: "102 bpm",
-        status: "warn",
-        detail: "Mild tachycardia — may reflect fever",
-      },
-      {
-        label: "SpO₂",
-        value: "96%",
-        status: "ok",
-        detail: "Borderline normal — monitor closely",
-      },
-      {
-        label: "Chief Complaint",
-        value: "Fever + chills + headache",
-        status: "warn",
-        detail: "Symptom triad consistent with malaria or typhoid",
-      },
-      {
-        label: "Critical Symptoms",
-        value: "None reported",
-        status: "ok",
-        detail: "No convulsions, bleeding, or chest pain",
-      },
-    ],
-    recommendation:
-      "Prioritise ahead of routine cases. Perform malaria RDT immediately. Begin hydration and paracetamol for fever management while awaiting clinician review. Monitor vitals every 30 minutes.",
-    escalationNote:
-      "Escalate to duty clinician if temperature exceeds 39.5 °C, pulse exceeds 120 bpm, or patient reports altered consciousness.",
-    nextReview: "30 minutes",
-  },
-  High: {
-    level: "High",
-    confidence: 97,
-    headline: "Immediate clinical attention required",
-    summary:
-      "Critical vital signs detected alongside high-risk reported symptoms. This presentation requires immediate clinician assessment. Do not leave the patient unattended. Prepare for urgent referral if stabilisation is not possible at this facility.",
-    factors: [
-      {
-        label: "Blood Pressure",
-        value: "185/118 mmHg",
-        status: "critical",
-        detail: "Hypertensive crisis — systolic ≥ 180 mmHg",
-      },
-      {
-        label: "Temperature",
-        value: "39.8 °C",
-        status: "critical",
-        detail: "High-grade fever — systemic infection risk",
-      },
-      {
-        label: "Pulse Rate",
-        value: "128 bpm",
-        status: "critical",
-        detail: "Significant tachycardia — haemodynamic instability possible",
-      },
-      {
-        label: "SpO₂",
-        value: "91%",
-        status: "critical",
-        detail: "Below 92% — supplemental oxygen required",
-      },
-      {
-        label: "Chief Complaint",
-        value: "Chest pain + shortness of breath",
-        status: "critical",
-        detail: "High-risk symptom combination requiring immediate workup",
-      },
-      {
-        label: "Critical Symptoms",
-        value: "Chest pain reported",
-        status: "critical",
-        detail: "WHO red-flag symptom — immediate assessment mandatory",
-      },
-    ],
-    recommendation:
-      "Alert senior clinician immediately. Administer supplemental oxygen if available. Establish IV access. Do not send patient home. Prepare urgent referral documentation for district hospital. Notify ambulance coordinator if transfer is required.",
-    escalationNote:
-      "ESCALATE NOW — senior clinician must assess within 10 minutes. If patient deteriorates before clinician arrives, initiate emergency protocol.",
-    nextReview: "Continuous monitoring",
-  },
+const FACTOR_STATUS: Record<UrgencyLevel, Record<FactorKey, FactorStatus>> = {
+  Low: { bp: "ok", temp: "ok", pulse: "ok", spo2: "ok", complaint: "ok", critical: "ok" },
+  Medium: { bp: "warn", temp: "warn", pulse: "warn", spo2: "ok", complaint: "warn", critical: "ok" },
+  High: { bp: "critical", temp: "critical", pulse: "critical", spo2: "critical", complaint: "critical", critical: "critical" },
 }
+
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 const PALETTE: Record<UrgencyLevel, {
@@ -351,15 +200,30 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function TriagePage() {
+  const { t } = useTranslation()
   const [level, setLevel] = useState<UrgencyLevel>("Medium")
   const [animating, setAnimating] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [escalated, setEscalated] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const s = SCENARIOS[level]
+  const lk = level.toLowerCase()
   const p = PALETTE[level]
-  const typed = useTypewriter(s.summary, true)
+  const confidence = CONFIDENCE[level]
+  const factors = FACTOR_KEYS.map((k) => ({
+    key: k,
+    label: t(`triage:factorLabel.${k}`),
+    value: t(`triage:${lk}.f.${k}.value`),
+    status: FACTOR_STATUS[level][k],
+    detail: t(`triage:${lk}.f.${k}.detail`),
+  }))
+  const summary = t(`triage:${lk}.summary`)
+  const headline = t(`triage:${lk}.headline`)
+  const recommendation = t(`triage:${lk}.recommendation`)
+  const escalationNote = t(`triage:${lk}.escalation`)
+  const nextReview = t(`triage:${lk}.nextReview`)
+  const levelLabel = t(`triage:lvl${level}`)
+  const typed = useTypewriter(summary, true)
 
   const switchLevel = (next: UrgencyLevel) => {
     if (next === level) return
@@ -370,12 +234,12 @@ export default function TriagePage() {
 
   const handleSave = () => {
     setSaved(true)
-    setToast("Record saved locally — will sync when connected")
+    setToast(t("triage:toastSaved"))
   }
 
   const handleEscalate = () => {
     setEscalated(true)
-    setToast("Escalation alert sent to duty clinician")
+    setToast(t("triage:toastEscalated"))
   }
 
   return (
@@ -387,10 +251,10 @@ export default function TriagePage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            AI Triage Result
+            {t("triage:title")}
           </h1>
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
-            Generated for{" "}
+            {t("triage:generatedFor")}{" "}
             <span className="font-semibold text-teal-700 dark:text-teal-300">Mariama Kouyaté</span>
             <span className="text-slate-300 dark:text-slate-600 mx-1.5">·</span>
             <span className="font-mono text-xs text-slate-400 dark:text-slate-500">PT-00412</span>
@@ -421,7 +285,7 @@ export default function TriagePage() {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              {l}
+              {t(`triage:lvl${l}`)}
             </button>
           ))}
         </div>
@@ -436,7 +300,7 @@ export default function TriagePage() {
           <div className="relative flex-shrink-0 flex flex-col items-center gap-3">
             <div className="relative">
               <ConfidenceRing
-                pct={s.confidence}
+                pct={confidence}
                 color={p.ring}
                 animate={animating}
               />
@@ -445,12 +309,12 @@ export default function TriagePage() {
                 <span
                   className={`font-display text-3xl font-bold transition-all ${p.text}`}
                 >
-                  {s.confidence}%
+                  {confidence}%
                 </span>
                 <span
                   className={`text-[10px] font-bold uppercase tracking-widest ${p.muted}`}
                 >
-                  confidence
+                  {t("triage:confidence")}
                 </span>
               </div>
             </div>
@@ -464,7 +328,7 @@ export default function TriagePage() {
                 }`}
               />
               <span className="text-sm font-bold uppercase tracking-wider">
-                {level} Urgency
+                {levelLabel} {t("triage:urgencySuffix")}
               </span>
             </div>
           </div>
@@ -474,7 +338,7 @@ export default function TriagePage() {
             <h2
               className={`font-display text-2xl lg:text-[26px] leading-tight mb-3 ${p.text}`}
             >
-              {s.headline}
+              {headline}
             </h2>
             <p className={`text-sm leading-relaxed ${p.muted} min-h-[4rem]`}>
               {typed}
@@ -495,7 +359,7 @@ export default function TriagePage() {
                 <circle cx="7" cy="7" r="5.5" />
                 <path strokeLinecap="round" d="M7 4v3.5l2 1.5" />
               </svg>
-              Next review: {s.nextReview}
+              {t("triage:nextReviewLabel")}: {nextReview}
             </div>
           </div>
         </div>
@@ -520,21 +384,19 @@ export default function TriagePage() {
             </svg>
           </div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Why this score was given
+            {t("triage:whyScore")}
           </h2>
           <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-            {s.factors.filter((f) => f.status !== "ok").length > 0
-              ? `${s.factors.filter((f) => f.status !== "ok").length} flag${
-                  s.factors.filter((f) => f.status !== "ok").length > 1
-                    ? "s"
-                    : ""
-                } detected`
-              : "All clear"}
+            {factors.filter((f) => f.status !== "ok").length > 0
+              ? t("triage:flagsDetected", {
+                  count: factors.filter((f) => f.status !== "ok").length,
+                })
+              : t("triage:allClear")}
           </span>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-3">
-          {s.factors.map(({ label, value, status, detail }) => {
+          {factors.map(({ key, label, value, status, detail }) => {
             const ic = FACTOR_STATUS_ICON[status]
             const rowCls =
               status === "critical"
@@ -544,7 +406,7 @@ export default function TriagePage() {
                   : p.factorOk || "bg-slate-50 border-slate-100 dark:bg-slate-800/40 dark:border-slate-800"
             return (
               <div
-                key={label}
+                key={key}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${rowCls}`}
               >
                 <div
@@ -599,11 +461,11 @@ export default function TriagePage() {
             </svg>
           </div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Clinical Recommendation
+            {t("triage:clinicalRec")}
           </h2>
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
-          {s.recommendation}
+          {recommendation}
         </p>
 
         {/* Escalation threshold note */}
@@ -642,8 +504,8 @@ export default function TriagePage() {
                   : "text-slate-600 dark:text-slate-300"
             }`}
           >
-            <strong>Escalation note: </strong>
-            {s.escalationNote}
+            <strong>{t("triage:escalationNoteLabel")}</strong>
+            {escalationNote}
           </p>
         </div>
       </div>
@@ -651,13 +513,13 @@ export default function TriagePage() {
       {/* ── Model info strip ── */}
       <div className="flex flex-wrap items-center gap-4 px-1">
         {[
-          { label: "Model", value: "HealStats Triage v2.1" },
+          { label: t("triage:model"), value: t("triage:modelVal") },
           {
-            label: "Data sources",
-            value: "WHO ICD-11 + MSF clinical protocols",
+            label: t("triage:dataSources"),
+            value: t("triage:dataSourcesVal"),
           },
-          { label: "Threshold set", value: "Sub-Saharan Africa (rural)" },
-          { label: "Processed", value: "On-device · No internet used" },
+          { label: t("triage:thresholdSet"), value: t("triage:thresholdVal") },
+          { label: t("triage:processed"), value: t("triage:processedVal") },
         ].map(({ label, value }) => (
           <div key={label} className="flex items-center gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
@@ -674,8 +536,7 @@ export default function TriagePage() {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-5 flex flex-col sm:flex-row items-center gap-3">
         {/* Disclaimer */}
         <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed flex-1">
-          This AI assessment is a clinical decision-support tool only. It does
-          not replace the judgement of a trained health worker or clinician.
+          {t("triage:disclaimer")}
         </p>
 
         <div className="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto">
@@ -704,7 +565,7 @@ export default function TriagePage() {
                     d="M2 8l4 4 8-8"
                   />
                 </svg>
-                Saved
+                {t("triage:saved")}
               </>
             ) : (
               <>
@@ -721,7 +582,7 @@ export default function TriagePage() {
                     d="M13 11v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2M8 2v8m-3-3l3 3 3-3"
                   />
                 </svg>
-                Save Record
+                {t("triage:saveRecord")}
               </>
             )}
           </button>
@@ -755,7 +616,7 @@ export default function TriagePage() {
                     d="M2 8l4 4 8-8"
                   />
                 </svg>
-                Alert Sent
+                {t("triage:alertSent")}
               </>
             ) : (
               <>
@@ -772,7 +633,7 @@ export default function TriagePage() {
                     d="M8 1v6m0 0l-2.5-2.5M8 7l2.5-2.5M3 10a5 5 0 0010 0"
                   />
                 </svg>
-                Escalate to Doctor
+                {t("triage:escalate")}
               </>
             )}
           </button>

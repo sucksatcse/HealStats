@@ -38,7 +38,7 @@ HealStats is an offline-first healthcare record and disaster-response platform d
 | Outbreak Detection | Disaster Response | Implemented | Medium |
 | Emergency Triage Queue | Disaster Response | Implemented | High |
 | Clinic Operations Map | Administration | In Progress (Leaflet verified with mocks; database activation pending) | Medium |
-| Bangla/English | Accessibility | Implemented (partial page coverage) | Critical |
+| Bangla/English | Accessibility | Implemented (full page coverage) | Critical |
 | Dark Mode | UI/UX | Implemented | High |
 | Motion & Animation | UI/UX | Implemented | Medium |
 | Error/Empty/Loading States | UI/UX | Implemented | High |
@@ -263,11 +263,11 @@ Conflict resolution logic (handling edits to the same record by two offline devi
 
 ## 13. Language Support
 
-- **Status**: Implemented (infrastructure complete; UI coverage in progress)
+- **Status**: Implemented (full application UI coverage)
 - **Supported**: Bangla and English (English is the fallback)
-- **Mechanism**: Application-wide internationalization built on `i18next` + `react-i18next` (Task 18). One centralized config (`src/i18n/index.ts`) with namespaced English/Bangla resources (`src/i18n/locales/en.ts`, `bn.ts`: `common`, `navigation`, `urgency`, `map`, `chatbot`, `errors`). i18next is the **single source of truth** for the active language; the existing `LanguageContext`/`useLang()` now delegates to it, so the language switcher, all `useTranslation()` components and all legacy inline-label components stay in sync. The selected language is persisted in `localStorage` (`hs-lang`) via the browser language detector and survives refresh and navigation.
-- **Translated via keys (`t()`)**: the Ops Map (Task 16, `ClinicOpsPanel`) and the AI Assistant (Task 17, `ChatWidget` + `chatbotService`, including grounded replies), plus shared `common`/`urgency` labels. The landing page, navbar (switcher, links, CTAs) and dashboards remain localized through the shared language state.
-- **Coverage / limitations**: Many deep worker/admin/clinical pages are **not yet translated** and still render English strings (e.g. `StaffPage`, `PatientRecordsPage`, `PatientDetailPage`, `VitalsPage`, `NewPatientPage`, `DigitizePage`, `SyncMonitorPage`, `FlaggedPatientsPage`, `EmergencyDashboard`, `EmergencyTriagePage`, `OutbreakDetectionPage`, `LoginPage`/`AdminLoginPage`, `SettingsPage`). The i18n architecture is in place for these to be migrated incrementally. Canonical database values (symptom categories, roles, urgency numbers) are **never** translated — only their display labels are.
+- **Mechanism**: Application-wide internationalization built on `i18next` + `react-i18next` (Task 18). One centralized config (`src/i18n/index.ts`) with namespaced English/Bangla resources (`src/i18n/locales/en.ts`, `bn.ts`). i18next is the **single source of truth** for the active language; the existing `LanguageContext`/`useLang()` now delegates to it, so the language switcher, all `useTranslation()` components and all legacy inline-label components stay in sync. The selected language is persisted in `localStorage` (`hs-lang`) via the browser language detector and survives refresh and navigation. English/Bangla key parity is verified and the production build passes.
+- **Translated via keys (`t()`)**: The entire authenticated application — landing, navbar, auth pages, patient/vitals/triage/digitize flows, sync pages, emergency & outbreak pages, settings, analytics, and the three role dashboards (Admin, Nurse `nurseDash`, Clinical Officer `clinicalDash`) — is fully localized, alongside shared `common`/`urgency` labels, the Ops Map (`ClinicOpsPanel`) and AI Assistant (`ChatWidget` + `chatbotService`).
+- **Coverage / limitations**: All routed worker/admin/clinical pages switch fully to Bangla via the toggle. Canonical database values (symptom categories, roles, urgency numbers, stored medication frequency/route/diagnosis strings) are **never** translated — only their display labels are, via lookup maps. Persisted record content written to the DB (e.g. prescription summary text) remains in a stable canonical form.
 
 ---
 
@@ -408,7 +408,7 @@ Currently, the strongest demoable features are:
 
 - **Emergency Mode:** External weather/flood sensor feeds remain planned (internal database metrics, zones, triage, and broadcast are fully implemented).
 - **Worker Home Dashboard:** Quick stats (Patients Today, Total Patients, Pending Sync, High-Risk) and the recently-visited list are wired to live Supabase data (Task 24); the header shows the real (shortened) staff ID and an honest last-synced value (— until a sync occurs in-session) — no fabricated placeholders.
-- **Translation:** Some deep UI elements lack complete Bangla translation strings.
+- **Translation:** Full application UI is translated to Bangla; only canonical stored data values remain in their fixed form by design.
 
 ---
 

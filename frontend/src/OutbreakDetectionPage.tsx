@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   fetchOutbreakAnalysis,
   type OutbreakCluster,
@@ -16,6 +17,7 @@ export default function OutbreakDetectionPage({
   clinicId,
   onViewPatient,
 }: OutbreakDetectionPageProps) {
+  const { t } = useTranslation();
   const [analysis, setAnalysis] = useState<OutbreakAnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function OutbreakDetectionPage({
       }
     } catch (err) {
       console.error("[OutbreakDetectionPage] loadData error:", err);
-      setError("An unexpected error occurred while analyzing outbreak data.");
+      setError(t("outbreak:errUnexpected"));
     } finally {
       setLoading(false);
     }
@@ -171,21 +173,23 @@ export default function OutbreakDetectionPage({
   }, [analysis]);
 
   const dominantCategory = useMemo(() => {
-    if (!analysis?.categoryCounts) return "None";
+    if (!analysis?.categoryCounts) return t("outbreak:dcatNone");
     const entries = Object.entries(analysis.categoryCounts);
     entries.sort((a, b) => b[1] - a[1]);
     if (entries[0] && entries[0][1] > 0) {
       const map: Record<string, string> = {
-        fever: "Acute Febrile / Malaria",
-        "diarrhea/gastrointestinal": "Waterborne / Diarrhea",
-        respiratory: "Acute Respiratory (ARI)",
-        "skin/rash": "Cutaneous / Measles",
-        other: "Other Syndromes",
+        fever: t("outbreak:dcatFever"),
+        "diarrhea/gastrointestinal": t("outbreak:dcatDiarrhea"),
+        respiratory: t("outbreak:dcatRespiratory"),
+        "skin/rash": t("outbreak:dcatSkin"),
+        other: t("outbreak:dcatOther"),
       };
       return map[entries[0][0]] || entries[0][0];
     }
-    return "Surveillance Stable";
-  }, [analysis]);
+    return t("outbreak:dcatStable");
+  }, [analysis, t]);
+
+  const windowLabel = hours >= 24 ? t("outbreak:windowDays", { n: hours / 24 }) : t("outbreak:windowHours", { n: hours });
 
   return (
     <div className="space-y-6 pb-12">
@@ -275,7 +279,7 @@ export default function OutbreakDetectionPage({
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v8M4.5 6.5L8 10l3.5-3.5M2.5 13.5h11" />
               </svg>
-              Export Report (CSV)
+              {t("outbreak:exportReport")}
             </button>
           </div>
         </div>
@@ -287,7 +291,7 @@ export default function OutbreakDetectionPage({
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
-              Active Clusters
+              {t("outbreak:activeClusters")}
             </span>
             <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 flex items-center justify-center text-xs font-bold">
               ⚡
@@ -298,11 +302,11 @@ export default function OutbreakDetectionPage({
           </p>
           <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             <span className="text-red-500 font-semibold">
-              {analysis?.clusters.filter((c) => c.riskLevel === "critical").length ?? 0} critical
+              {t("outbreak:nCritical", { n: analysis?.clusters.filter((c) => c.riskLevel === "critical").length ?? 0 })}
             </span>
             <span>·</span>
             <span className="text-amber-500 font-semibold">
-              {analysis?.clusters.filter((c) => c.riskLevel === "warning").length ?? 0} warning
+              {t("outbreak:nWarning", { n: analysis?.clusters.filter((c) => c.riskLevel === "warning").length ?? 0 })}
             </span>
           </div>
         </div>
@@ -311,7 +315,7 @@ export default function OutbreakDetectionPage({
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
-              Cluster-Linked Cases
+              {t("outbreak:linkedCases")}
             </span>
             <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 flex items-center justify-center text-xs font-bold">
               👥
@@ -321,7 +325,7 @@ export default function OutbreakDetectionPage({
             {loading ? "…" : totalClusterCases}
           </p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-            from {analysis?.totalVisitsAnalyzed ?? 0} recent visits analyzed
+            {t("outbreak:fromVisits", { n: analysis?.totalVisitsAnalyzed ?? 0 })}
           </p>
         </div>
 
@@ -329,7 +333,7 @@ export default function OutbreakDetectionPage({
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
-              Active Epicenters
+              {t("outbreak:activeEpicenters")}
             </span>
             <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center text-xs font-bold">
               📍
@@ -339,7 +343,7 @@ export default function OutbreakDetectionPage({
             {loading ? "…" : activeEpicentersCount}
           </p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-            {availableZones.length > 0 ? availableZones.join(", ") : "District surveillance clear"}
+            {availableZones.length > 0 ? availableZones.join(", ") : t("outbreak:surveillanceClear")}
           </p>
         </div>
 
@@ -347,7 +351,7 @@ export default function OutbreakDetectionPage({
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
-              Primary Syndrome
+              {t("outbreak:primarySyndrome")}
             </span>
             <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/40 text-violet-600 flex items-center justify-center text-xs font-bold">
               🔬
@@ -357,7 +361,7 @@ export default function OutbreakDetectionPage({
             {loading ? "…" : dominantCategory}
           </p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-            Highest relative frequency
+            {t("outbreak:highestFreq")}
           </p>
         </div>
       </div>
@@ -369,21 +373,21 @@ export default function OutbreakDetectionPage({
             {/* Time Window Buttons */}
             <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
               {[
-                { label: "48 Hours", val: 48 },
-                { label: "7 Days", val: 168 },
-                { label: "30 Days", val: 720 },
-              ].map((t) => (
+                { label: t("outbreak:win48"), val: 48 },
+                { label: t("outbreak:win7d"), val: 168 },
+                { label: t("outbreak:win30d"), val: 720 },
+              ].map((tw) => (
                 <button
-                  key={t.val}
+                  key={tw.val}
                   type="button"
-                  onClick={() => setHours(t.val)}
+                  onClick={() => setHours(tw.val)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                    hours === t.val
+                    hours === tw.val
                       ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-400 shadow-xs"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
-                  {t.label}
+                  {tw.label}
                 </button>
               ))}
             </div>
@@ -394,11 +398,11 @@ export default function OutbreakDetectionPage({
               onChange={(e) => setSelectedSyndrome(e.target.value)}
               className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <option value="all">All Syndromes</option>
-              <option value="diarrhea/gastrointestinal">Waterborne / Diarrhea</option>
-              <option value="fever">Acute Febrile / Malaria</option>
-              <option value="respiratory">Respiratory (ARI)</option>
-              <option value="skin/rash">Cutaneous / Measles</option>
+              <option value="all">{t("outbreak:allSyndromes")}</option>
+              <option value="diarrhea/gastrointestinal">{t("outbreak:synDiarrhea")}</option>
+              <option value="fever">{t("outbreak:synFever")}</option>
+              <option value="respiratory">{t("outbreak:synRespiratory")}</option>
+              <option value="skin/rash">{t("outbreak:synSkin")}</option>
             </select>
 
             {/* Risk Level Filter */}
@@ -407,10 +411,10 @@ export default function OutbreakDetectionPage({
               onChange={(e) => setSelectedRisk(e.target.value)}
               className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <option value="all">All Risk Levels</option>
-              <option value="critical">Critical Outbreaks</option>
-              <option value="warning">Warning Clusters</option>
-              <option value="monitoring">Watch / Sentinel</option>
+              <option value="all">{t("outbreak:allRisk")}</option>
+              <option value="critical">{t("outbreak:riskCritical")}</option>
+              <option value="warning">{t("outbreak:riskWarning")}</option>
+              <option value="monitoring">{t("outbreak:riskMonitoring")}</option>
             </select>
 
             {/* Zone Filter */}
@@ -420,7 +424,7 @@ export default function OutbreakDetectionPage({
                 onChange={(e) => setSelectedZone(e.target.value)}
                 className="text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
-                <option value="all">All Zones</option>
+                <option value="all">{t("outbreak:allZones")}</option>
                 {availableZones.map((z) => (
                   <option key={z} value={z}>
                     {z}
@@ -432,7 +436,7 @@ export default function OutbreakDetectionPage({
 
           {/* Sensitivity Mode Toggle */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Sensitivity:</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t("outbreak:sensitivity")}</span>
             <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
               <button
                 type="button"
@@ -442,9 +446,9 @@ export default function OutbreakDetectionPage({
                     ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-400 shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                 }`}
-                title="Standard epidemic threshold (>=2 cases in zone/clinic)"
+                title={t("outbreak:standardTitle")}
               >
-                Standard
+                {t("outbreak:standard")}
               </button>
               <button
                 type="button"
@@ -454,9 +458,9 @@ export default function OutbreakDetectionPage({
                     ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-400 shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                 }`}
-                title="Early Warning high sensitivity (flags >=1 high urgency case as cluster)"
+                title={t("outbreak:earlyWarningTitle")}
               >
-                Early Warning
+                {t("outbreak:earlyWarning")}
               </button>
             </div>
           </div>
@@ -469,7 +473,7 @@ export default function OutbreakDetectionPage({
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-display font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>Detected Outbreak Clusters</span>
+              <span>{t("outbreak:detectedClusters")}</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 {filteredClusters.length}
               </span>
@@ -483,7 +487,7 @@ export default function OutbreakDetectionPage({
                 onClick={loadData}
                 className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition-colors cursor-pointer"
               >
-                Retry
+                {t("outbreak:retry")}
               </button>
             </div>
           )}
@@ -506,10 +510,10 @@ export default function OutbreakDetectionPage({
                 </svg>
               </div>
               <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
-                Surveillance Normal — No Active Clusters
+                {t("outbreak:normalNoCluster")}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
-                No clinical presentations in the past {hours >= 24 ? `${hours / 24} days` : `${hours} hours`} exceed outbreak clustering thresholds for the selected filters.
+                {t("outbreak:normalNoClusterBody", { window: windowLabel })}
               </p>
               {(selectedSyndrome !== "all" || selectedRisk !== "all" || selectedZone !== "all") && (
                 <button
@@ -521,7 +525,7 @@ export default function OutbreakDetectionPage({
                   }}
                   className="mt-4 px-3 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-400 text-xs font-semibold hover:bg-teal-100 dark:hover:bg-teal-900 transition-colors cursor-pointer"
                 >
-                  Reset Filters
+                  {t("outbreak:resetFilters")}
                 </button>
               )}
             </div>
@@ -555,10 +559,10 @@ export default function OutbreakDetectionPage({
                               }`}
                             >
                               {cluster.riskLevel === "critical"
-                                ? "CRITICAL OUTBREAK"
+                                ? t("outbreak:badge_critical")
                                 : cluster.riskLevel === "warning"
-                                ? "WARNING CLUSTER"
-                                : "WATCH / SENTINEL"}
+                                ? t("outbreak:badge_warning")
+                                : t("outbreak:badge_monitoring")}
                             </span>
 
                             <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider">
@@ -575,7 +579,7 @@ export default function OutbreakDetectionPage({
                           </h3>
 
                           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                            <span>Affected Villages:</span>
+                            <span>{t("outbreak:affectedVillages")}</span>
                             {cluster.affectedVillages.map((v) => (
                               <span
                                 key={v}
@@ -590,16 +594,16 @@ export default function OutbreakDetectionPage({
                         {/* Cluster Stat Pill */}
                         <div className="sm:text-right flex-shrink-0 bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Case Count
+                            {t("outbreak:caseCount")}
                           </p>
                           <p className="text-2xl font-display font-black text-slate-900 dark:text-white leading-tight">
                             {cluster.caseCount}{" "}
                             <span className="text-xs font-medium text-slate-400">
-                              cases
+                              {t("outbreak:casesLabel")}
                             </span>
                           </p>
                           <div className="flex items-center gap-1 mt-1 text-[11px]">
-                            <span className="text-slate-400">Max Urgency:</span>
+                            <span className="text-slate-400">{t("outbreak:maxUrgency")}</span>
                             <span
                               className={`font-bold ${
                                 cluster.urgencyMax >= 4
@@ -618,7 +622,7 @@ export default function OutbreakDetectionPage({
                       {/* Symptoms Chips */}
                       <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                          Primary Symptoms:
+                          {t("outbreak:primarySymptoms")}
                         </span>
                         {cluster.dominantSymptoms.map((s) => (
                           <span
@@ -629,16 +633,16 @@ export default function OutbreakDetectionPage({
                           </span>
                         ))}
                         <span className="text-xs text-slate-400 ml-auto">
-                          First: {new Date(cluster.firstDetected).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Latest: {new Date(cluster.lastDetected).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {t("outbreak:firstLatest", { first: new Date(cluster.firstDetected).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), latest: new Date(cluster.lastDetected).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
                         </span>
                       </div>
 
                       {/* Response Protocol Checklist */}
                       <div className="mt-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                         <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                          <span>📋 WHO / Field Protocol Action Checklist</span>
+                          <span>📋 {t("outbreak:protocolChecklist").replace("📋 ", "")}</span>
                           <span className="text-[10px] text-slate-400 font-normal lowercase">
-                            (click to check off tasks)
+                            {t("outbreak:clickToCheck")}
                           </span>
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -684,12 +688,12 @@ export default function OutbreakDetectionPage({
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
                           </svg>
                           {isExpanded
-                            ? "Hide linked clinical cases"
-                            : `View ${cluster.cases.length} linked patient cases`}
+                            ? t("outbreak:hideLinked")
+                            : t("outbreak:viewLinked", { n: cluster.cases.length })}
                         </button>
 
                         <span className="text-[11px] text-slate-400">
-                          Cluster ID: {cluster.id}
+                          {t("outbreak:clusterId", { id: cluster.id })}
                         </span>
                       </div>
                     </div>
@@ -698,20 +702,20 @@ export default function OutbreakDetectionPage({
                     {isExpanded && (
                       <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 rounded-b-2xl">
                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
-                          Linked Case Admissions (Intake Log)
+                          {t("outbreak:linkedAdmissions")}
                         </p>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs border-collapse">
                             <thead>
                               <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400">
-                                <th className="pb-2">Patient</th>
-                                <th className="pb-2">ID</th>
-                                <th className="pb-2">Demographics</th>
-                                <th className="pb-2">Village</th>
-                                <th className="pb-2">Urgency</th>
-                                <th className="pb-2">Symptoms & Diagnosis</th>
-                                <th className="pb-2">Intake Time</th>
-                                <th className="pb-2 text-right">Action</th>
+                                <th className="pb-2">{t("outbreak:colPatient")}</th>
+                                <th className="pb-2">{t("outbreak:colId")}</th>
+                                <th className="pb-2">{t("outbreak:colDemographics")}</th>
+                                <th className="pb-2">{t("outbreak:colVillage")}</th>
+                                <th className="pb-2">{t("outbreak:colUrgency")}</th>
+                                <th className="pb-2">{t("outbreak:colSymptomsDx")}</th>
+                                <th className="pb-2">{t("outbreak:colIntake")}</th>
+                                <th className="pb-2 text-right">{t("outbreak:colAction")}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -744,7 +748,7 @@ export default function OutbreakDetectionPage({
                                   </td>
                                   <td className="py-2.5 max-w-xs truncate text-slate-600 dark:text-slate-300" title={`${cs.symptoms} — ${cs.diagnosis}`}>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                      {cs.diagnosis || "Under assessment"}
+                                      {cs.diagnosis || t("outbreak:underAssessment")}
                                     </span>
                                     <p className="text-[11px] text-slate-400 truncate">
                                       {cs.symptoms}
@@ -761,7 +765,7 @@ export default function OutbreakDetectionPage({
                                         onClick={() => onViewPatient(cs.patientId)}
                                         className="px-2.5 py-1 rounded bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 hover:bg-teal-100 font-semibold text-[11px] transition-colors cursor-pointer"
                                       >
-                                        View Patient →
+                                        {t("outbreak:viewPatient")}
                                       </button>
                                     )}
                                   </td>
@@ -784,19 +788,19 @@ export default function OutbreakDetectionPage({
           {/* Symptom Category Surveillance Bar */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
             <h3 className="text-sm font-display font-bold text-slate-900 dark:text-white">
-              Symptom Category Surveillance
+              {t("outbreak:categorySurveillance")}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Distribution of all clinical visit categories across clinics in this timeframe.
+              {t("outbreak:categorySurveillanceDesc")}
             </p>
 
             <div className="space-y-3 pt-2">
               {[
-                { key: "fever", label: "Acute Febrile / Malaria", color: "bg-amber-500" },
-                { key: "diarrhea/gastrointestinal", label: "Waterborne / Diarrhea", color: "bg-sky-500" },
-                { key: "respiratory", label: "Respiratory (ARI)", color: "bg-teal-500" },
-                { key: "skin/rash", label: "Cutaneous / Measles", color: "bg-rose-500" },
-                { key: "other", label: "Other / Uncategorized", color: "bg-slate-400" },
+                { key: "fever", label: t("outbreak:bar_fever"), color: "bg-amber-500" },
+                { key: "diarrhea/gastrointestinal", label: t("outbreak:bar_diarrhea"), color: "bg-sky-500" },
+                { key: "respiratory", label: t("outbreak:bar_respiratory"), color: "bg-teal-500" },
+                { key: "skin/rash", label: t("outbreak:bar_skin"), color: "bg-rose-500" },
+                { key: "other", label: t("outbreak:bar_other"), color: "bg-slate-400" },
               ].map((item) => {
                 const count = analysis?.categoryCounts[item.key] || 0;
                 const total = analysis?.totalVisitsAnalyzed || 1;
@@ -826,28 +830,28 @@ export default function OutbreakDetectionPage({
           {/* WHO / MSF Outbreak Response SOP Guidelines Card */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3.5">
             <h3 className="text-sm font-display font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>🛡️ Epidemic Intervention Standards</span>
+              <span>{t("outbreak:sopTitle")}</span>
             </h3>
 
             <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
               <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900/50">
-                <p className="font-bold text-sky-900 dark:text-sky-300">Waterborne / AWD Protocol</p>
+                <p className="font-bold text-sky-900 dark:text-sky-300">{t("outbreak:sop1Title")}</p>
                 <p className="text-[11px] text-sky-800 dark:text-sky-400 mt-0.5">
-                  Threshold: ≥3 cases within 48h. Establish oral rehydration points (ORPs) within 500m of affected blocks. Request emergency water quality testing.
+                  {t("outbreak:sop1Body")}
                 </p>
               </div>
 
               <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50">
-                <p className="font-bold text-amber-900 dark:text-amber-300">Vector-Borne / Malaria Surge</p>
+                <p className="font-bold text-amber-900 dark:text-amber-300">{t("outbreak:sop2Title")}</p>
                 <p className="text-[11px] text-amber-800 dark:text-amber-400 mt-0.5">
-                  Threshold: 2× baseline positivity. Confirm via RDT. Initiate vector source reduction, larviciding, and distribution of LLIN bednets to affected shelters.
+                  {t("outbreak:sop2Body")}
                 </p>
               </div>
 
               <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/50">
-                <p className="font-bold text-teal-900 dark:text-teal-300">Acute Respiratory Infection (ARI)</p>
+                <p className="font-bold text-teal-900 dark:text-teal-300">{t("outbreak:sop3Title")}</p>
                 <p className="text-[11px] text-teal-800 dark:text-teal-400 mt-0.5">
-                  Enforce droplet isolation triage. Prioritize pulse oximetry monitoring for children under 5 and elderly patients presenting with shortness of breath.
+                  {t("outbreak:sop3Body")}
                 </p>
               </div>
             </div>

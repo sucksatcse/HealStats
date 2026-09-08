@@ -266,7 +266,7 @@ export default function ClinicsMapSection() {
               <svg
                 viewBox="0 0 380 450"
                 className="w-full drop-shadow-lg"
-                aria-label="Map of Bangladesh showing clinic locations by district"
+                aria-label={lang === "bn" ? "জেলা অনুযায়ী ক্লিনিকের অবস্থান দেখানো বাংলাদেশের মানচিত্র" : "Map of Bangladesh showing clinic locations by district"}
               >
                 <defs>
                   {/* Dot grid pattern for sea texture */}

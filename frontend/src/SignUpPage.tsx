@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { supabase } from "./lib/supabase"
 
 interface SignUpPageProps {
@@ -27,15 +28,16 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
   const [done, setDone] = useState<null | {
     needsConfirmation: boolean
   }>(null)
+  const { t } = useTranslation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    if (!name.trim()) return setError("Please enter your full name.")
-    if (!email.trim()) return setError("Please enter your email address.")
-    if (password.length < 8) return setError("Password must be at least 8 characters.")
-    if (password !== confirm) return setError("Passwords do not match.")
+    if (!name.trim()) return setError(t("auth:errName"))
+    if (!email.trim()) return setError(t("auth:errEmail"))
+    if (password.length < 8) return setError(t("auth:errPwMin"))
+    if (password !== confirm) return setError(t("auth:errPwMatch"))
 
     setLoading(true)
 
@@ -59,14 +61,14 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
 
     // Supabase returns a user with no identities when the email already exists.
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-      setError("An account with this email already exists. Please sign in instead.")
+      setError(t("auth:errExists"))
       setLoading(false)
       return
     }
 
     const userId = data.user?.id
     if (!userId) {
-      setError("Could not create the account. Please try again.")
+      setError(t("auth:errCreate"))
       setLoading(false)
       return
     }
@@ -133,9 +135,9 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="font-display text-2xl text-teal-950 dark:text-white mb-2">Account created</h1>
+            <h1 className="font-display text-2xl text-teal-950 dark:text-white mb-2">{t("auth:successTitle")}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-7 leading-relaxed">
-              Please check your email and confirm your address, then sign in to your account.
+              {t("auth:successDesc")}
             </p>
             <button
               onClick={() => {
@@ -146,7 +148,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
               }}
               className="w-full max-w-xs mx-auto bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-3.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5 cursor-pointer"
             >
-              Continue to sign in
+              {t("auth:successContinue")}
             </button>
           </div>
         </div>
@@ -171,7 +173,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5">
               <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
             </svg>
-            Back to home
+            {t("auth:backHome")}
           </button>
         </div>
 
@@ -184,7 +186,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                 type="button"
                 onClick={onBack}
                 className="inline-flex flex-col items-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-2xl p-1"
-                aria-label="Back to home"
+                aria-label={t("auth:backHomeAria")}
               >
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 shadow-lg shadow-teal-600/25 mb-4 group-hover:bg-teal-700 transition-colors">
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-7 h-7">
@@ -195,14 +197,14 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                   Heal<span className="text-teal-600">Stats</span>
                 </h1>
               </button>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Create your clinic account</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t("auth:signupBrandSubtitle")}</p>
             </div>
 
             {/* Card */}
             <div className="rounded-3xl p-8" style={{ background: "var(--an-glass-bg)", backdropFilter: "blur(24px)", border: "1px solid var(--an-border)", boxShadow: "var(--an-glass-shadow-lg)" }}>
-              <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">Healthcare Worker Sign Up</h2>
+              <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">{t("auth:signupTitle")}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                Register as a community health worker or clinician. Administrator accounts are provisioned by your district coordinator.
+                {t("auth:signupSubtitle")}
               </p>
 
               {error && (
@@ -215,7 +217,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                       <p className="font-semibold capitalize">{error}</p>
                       {error.toLowerCase().includes("rate limit") && (
                         <p className="mt-1.5 text-xs text-red-600 dark:text-red-300 leading-relaxed">
-                          Supabase's default email service has a limit of 3 emails/hour. To bypass this for development, open your Supabase Dashboard &rarr; <strong>Authentication</strong> &rarr; <strong>Providers</strong> &rarr; <strong>Email</strong> and turn off <strong>Confirm email</strong>.
+                          {t("auth:rateLimitHelp")}
                         </p>
                       )}
                     </div>
@@ -226,39 +228,39 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
               <form onSubmit={handleSubmit} noValidate className="space-y-4">
                 {/* Full name */}
                 <div>
-                  <label htmlFor="su-name" className={labelCls}>Full Name</label>
+                  <label htmlFor="su-name" className={labelCls}>{t("auth:fullName")}</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4.5 h-4.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                       </svg>
                     </span>
-                    <input id="su-name" type="text" autoComplete="name" placeholder="e.g. Amara Diallo" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+                    <input id="su-name" type="text" autoComplete="name" placeholder={t("auth:fullNamePlaceholder")} value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="su-email" className={labelCls}>Email Address</label>
+                  <label htmlFor="su-email" className={labelCls}>{t("auth:email")}</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4.5 h-4.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 5.5h14a1 1 0 011 1v7a1 1 0 01-1 1H3a1 1 0 01-1-1v-7a1 1 0 011-1zm0 1l7 4.5 7-4.5" />
                       </svg>
                     </span>
-                    <input id="su-email" type="email" autoComplete="email" placeholder="e.g. name@clinic.org" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+                    <input id="su-email" type="email" autoComplete="email" placeholder={t("auth:emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
                   </div>
                 </div>
 
                 {/* Clinical designation selection */}
                 <div>
-                  <label className={labelCls}>Clinical Role</label>
+                  <label className={labelCls}>{t("auth:clinicalRole")}</label>
                   <div className="space-y-2.5">
                     {([
                       {
                         value: "community_health_worker",
-                        label: "Community Health Worker",
-                        desc: "Register patients and capture vitals in the field",
+                        label: t("auth:roleChwLabel"),
+                        desc: t("auth:roleChwDesc"),
                         icon: (
                           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -267,8 +269,8 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                       },
                       {
                         value: "nurse",
-                        label: "Nurse",
-                        desc: "Record vitals, view patient histories, add visit notes",
+                        label: t("auth:roleNurseLabel"),
+                        desc: t("auth:roleNurseDesc"),
                         icon: (
                           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L8 14l7.5-7.5" />
@@ -277,8 +279,8 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                       },
                       {
                         value: "clinical_officer",
-                        label: "Clinical Officer",
-                        desc: "Diagnose, prescribe, and record clinical visits",
+                        label: t("auth:roleCoLabel"),
+                        desc: t("auth:roleCoDesc"),
                         icon: (
                           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-5 h-5 flex-shrink-0">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10 3.75v12.5m6.25-6.25H3.75" />
@@ -325,15 +327,15 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
 
                 {/* Password */}
                 <div>
-                  <label htmlFor="su-password" className={labelCls}>Password</label>
+                  <label htmlFor="su-password" className={labelCls}>{t("auth:password")}</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4.5 h-4.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                       </svg>
                     </span>
-                    <input id="su-password" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls.replace("pr-4", "pr-11")} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>
+                    <input id="su-password" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder={t("auth:pwPlaceholderMin")} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls.replace("pr-4", "pr-11")} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors" aria-label={showPassword ? t("auth:hidePassword") : t("auth:showPassword")}>
                       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4.5 h-4.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -344,14 +346,14 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
 
                 {/* Confirm password */}
                 <div>
-                  <label htmlFor="su-confirm" className={labelCls}>Confirm Password</label>
+                  <label htmlFor="su-confirm" className={labelCls}>{t("auth:confirmPassword")}</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-4.5 h-4.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                       </svg>
                     </span>
-                    <input id="su-confirm" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Re-enter your password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputCls} />
+                    <input id="su-confirm" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder={t("auth:confirmPlaceholder")} value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputCls} />
                   </div>
                 </div>
 
@@ -366,10 +368,10 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
                       </svg>
-                      Creating account…
+                      {t("auth:signupSubmitting")}
                     </>
                   ) : (
-                    "Create account"
+                    t("auth:signupSubmit")
                   )}
                 </button>
               </form>
@@ -377,7 +379,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
 
             {/* Footer */}
             <p className="mt-6 text-center text-[13px] text-slate-500 dark:text-slate-400">
-              Already have an account?{" "}
+              {t("auth:haveAccount")}{" "}
               <button
                 onClick={() => {
                   if (typeof window !== "undefined") {
@@ -387,7 +389,7 @@ export default function SignUpPage({ onBack, onGoToLogin }: SignUpPageProps) {
                 }}
                 className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-semibold transition-colors cursor-pointer"
               >
-                Sign in
+                {t("auth:signIn")}
               </button>
             </p>
           </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useTranslation } from "react-i18next"
 import { syncService } from "./lib/syncService"
 import type { SyncConflict } from "./lib/offlineDb"
 
@@ -299,6 +300,14 @@ const TYPE_COLOR: Record<SyncRecord["type"], string> = {
   "AI Triage": "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
 }
 
+const TYPE_KEY: Record<SyncRecord["type"], string> = {
+  "New Patient": "type_newPatient",
+  "Visit Record": "type_visit",
+  "Vitals Entry": "type_vitals",
+  "Digitized Record": "type_digitized",
+  "AI Triage": "type_aiTriage",
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmtKB(kb: number) {
   return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`
@@ -331,6 +340,7 @@ function StatCard({
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function SyncPage() {
+  const { t } = useTranslation()
   const [records, setRecords] = useState<SyncRecord[]>(INITIAL_RECORDS)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [isSyncing, setIsSyncing] = useState(false)
@@ -432,15 +442,15 @@ export default function SyncPage() {
     filter === "all" ? records : records.filter((r) => r.status === filter)
 
   const FILTERS: { id: "all" | SyncStatus; label: string; count: number }[] = [
-    { id: "all", label: "All", count: records.length },
+    { id: "all", label: t("sync:filter_all"), count: records.length },
     {
       id: "queued",
-      label: "Queued",
+      label: t("sync:filter_queued"),
       count: records.filter((r) => r.status === "queued").length,
     },
-    { id: "syncing", label: "Syncing", count: syncing.length },
-    { id: "synced", label: "Synced", count: synced.length },
-    { id: "failed", label: "Failed", count: failed.length },
+    { id: "syncing", label: t("sync:filter_syncing"), count: syncing.length },
+    { id: "synced", label: t("sync:filter_synced"), count: synced.length },
+    { id: "failed", label: t("sync:filter_failed"), count: failed.length },
   ]
 
   return (
@@ -449,10 +459,10 @@ export default function SyncPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Sync Status
+            {t("sync:title")}
           </h1>
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
-            Last synced:{" "}
+            {t("sync:lastSynced")}:{" "}
             <span className="font-semibold text-slate-600 dark:text-slate-300">{lastSynced}</span>
             <span className="mx-2 text-slate-200 dark:text-slate-700">·</span>
             Kayes District Clinic · HW-20451
@@ -490,10 +500,10 @@ export default function SyncPage() {
             />
           </svg>
           {isSyncing
-            ? "Syncing…"
+            ? t("sync:syncing")
             : pending.length === 0
-              ? "All synced"
-              : `Sync Now (${pending.length})`}
+              ? t("sync:allSynced")
+              : t("sync:syncNow", { count: pending.length })}
         </button>
       </div>
 
@@ -539,8 +549,8 @@ export default function SyncPage() {
             }`}
           >
             {isOnline
-              ? "Connected — ready to sync"
-              : "Offline — data saved locally"}
+              ? t("sync:connectedReady")
+              : t("sync:offlineSaved")}
           </p>
           <p
             className={`text-xs leading-relaxed ${
@@ -548,10 +558,8 @@ export default function SyncPage() {
             }`}
           >
             {isOnline
-              ? `All ${pending.length} pending record${
-                  pending.length !== 1 ? "s" : ""
-                } (${fmtKB(totalKB)}) will sync securely to the central server. Your data is end-to-end encrypted.`
-              : "Your records are safely stored on this device. No data will be lost. Sync will resume automatically the moment internet connectivity is detected — no action required from you."}
+              ? t("sync:onlineDesc", { count: pending.length, size: fmtKB(totalKB) })
+              : t("sync:offlineDesc")}
           </p>
         </div>
         {isOnline && pending.length > 0 && !isSyncing && (
@@ -559,7 +567,7 @@ export default function SyncPage() {
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0 self-center bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            {fmtKB(totalKB)} ready
+            {t("sync:ready", { size: fmtKB(totalKB) })}
           </div>
         )}
       </div>
@@ -568,26 +576,26 @@ export default function SyncPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           value={pending.length}
-          label="Pending"
-          sub="queued + failed"
+          label={t("sync:statPending")}
+          sub={t("sync:statPendingSub")}
           color="text-slate-700"
         />
         <StatCard
           value={syncing.length}
-          label="In Progress"
-          sub="currently syncing"
+          label={t("sync:statProgress")}
+          sub={t("sync:statProgressSub")}
           color="text-violet-600"
         />
         <StatCard
           value={synced.length}
-          label="Synced Today"
-          sub="successfully sent"
+          label={t("sync:statSynced")}
+          sub={t("sync:statSyncedSub")}
           color="text-emerald-600"
         />
         <StatCard
           value={failed.length}
-          label="Failed"
-          sub="need attention"
+          label={t("sync:statFailed")}
+          sub={t("sync:statFailedSub")}
           color={failed.length > 0 ? "text-red-600" : "text-slate-400"}
         />
       </div>
@@ -609,13 +617,13 @@ export default function SyncPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">
-                  Resolved Conflicts
+                  {t("sync:resolvedConflicts")}
                   <span className="ml-2 text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
                     {conflicts.length}
                   </span>
                 </p>
                 <p className="text-xs text-amber-700/70 dark:text-amber-400/70 mt-0.5">
-                  Auto-resolved via Last-Write-Wins — click to inspect
+                  {t("sync:autoResolved")}
                 </p>
               </div>
             </div>
@@ -649,14 +657,14 @@ export default function SyncPage() {
                         }`}
                       >
                         {c.resolution_strategy === "lww_local_wins"
-                          ? "LWW: Local Wins"
+                          ? t("sync:lwwLocal")
                           : c.resolution_strategy === "lww_remote_wins"
-                            ? "LWW: Remote Wins"
-                            : "Upsert Duplicate"}
+                            ? t("sync:lwwRemote")
+                            : t("sync:upsertDup")}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Resolved{" "}
+                      {t("sync:resolved")}{" "}
                       <span className="font-medium text-slate-700 dark:text-slate-200">
                         {new Date(c.resolved_at).toLocaleString()}
                       </span>
@@ -703,8 +711,7 @@ export default function SyncPage() {
 
           {/* Total size */}
           <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
-            {fmtKB(records.reduce((s, r) => s + r.sizeKB, 0))} total ·{" "}
-            {displayed.length} record{displayed.length !== 1 ? "s" : ""}
+            {t("sync:totalRecords", { size: fmtKB(records.reduce((s, r) => s + r.sizeKB, 0)), count: displayed.length })}
           </span>
         </div>
 
@@ -714,11 +721,11 @@ export default function SyncPage() {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
                 {[
-                  "Record Type",
-                  "Patient",
-                  "Created",
-                  "Size",
-                  "Status",
+                  t("sync:colType"),
+                  t("sync:colPatient"),
+                  t("sync:colCreated"),
+                  t("sync:colSize"),
+                  t("sync:colStatus"),
                   "",
                 ].map((h, i) => (
                   <th
@@ -754,10 +761,10 @@ export default function SyncPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                          All clear
+                          {t("sync:allClear")}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                          No records match this filter
+                          {t("sync:noMatch")}
                         </p>
                       </div>
                     </div>
@@ -780,7 +787,7 @@ export default function SyncPage() {
                             {TYPE_ICON[record.type]}
                           </div>
                           <span className="text-sm font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                            {record.type}
+                            {t(`sync:${TYPE_KEY[record.type]}`)}
                           </span>
                         </div>
                       </td>
@@ -820,11 +827,10 @@ export default function SyncPage() {
                           className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-semibold ${sc.badge}`}
                         >
                           {sc.icon}
-                          {sc.label}
+                          {t(`sync:status_${record.status}`)}
                           {record.retries && record.retries > 0 ? (
                             <span className="text-[10px] opacity-70">
-                              · {record.retries} retr
-                              {record.retries > 1 ? "ies" : "y"}
+                              {t("sync:retry", { count: record.retries })}
                             </span>
                           ) : null}
                         </div>
@@ -836,17 +842,17 @@ export default function SyncPage() {
                           {record.status === "failed" && (
                             <button
                               onClick={() => handleRetry(record.id)}
-                              title="Retry"
+                              title={t("sync:retry")}
                               className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all"
                             >
-                              Retry
+                              {t("sync:retry")}
                             </button>
                           )}
                           {(record.status === "failed" ||
                             record.status === "synced") && (
                             <button
                               onClick={() => handleDismiss(record.id)}
-                              title="Remove from list"
+                              title={t("sync:removeFromList")}
                               className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
                             >
                               <svg
@@ -876,7 +882,7 @@ export default function SyncPage() {
         {/* Table footer */}
         <div className="px-5 py-3 bg-slate-50/60 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            Records are encrypted with AES-256 before leaving this device.
+            {t("sync:encNote")}
           </p>
           <div className="flex items-center gap-3">
             {synced.length > 0 && (
@@ -888,12 +894,12 @@ export default function SyncPage() {
                 }
                 className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
-                Clear synced
+                {t("sync:clearSynced")}
               </button>
             )}
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Auto-sync:{" "}
-              <span className="font-semibold text-teal-600 dark:text-teal-400">enabled</span>
+              {t("sync:autoSync")}:{" "}
+              <span className="font-semibold text-teal-600 dark:text-teal-400">{t("sync:enabled")}</span>
             </span>
           </div>
         </div>
@@ -904,25 +910,25 @@ export default function SyncPage() {
         {/* Status legend */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-5 py-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
-            Status Reference
+            {t("sync:statusReference")}
           </p>
           <div className="space-y-2.5">
             {([
               {
                 status: "queued",
-                desc: "Saved locally, waiting for connection",
+                desc: t("sync:desc_queued"),
               },
               {
                 status: "syncing",
-                desc: "Currently uploading to central server",
+                desc: t("sync:desc_syncing"),
               },
               {
                 status: "synced",
-                desc: "Confirmed received and stored centrally",
+                desc: t("sync:desc_synced"),
               },
               {
                 status: "failed",
-                desc: "Upload failed — tap Retry to try again",
+                desc: t("sync:desc_failed"),
               },
             ] as { status: SyncStatus; desc: string }[]).map(
               ({ status, desc }) => {
@@ -932,7 +938,7 @@ export default function SyncPage() {
                     <div className="mt-0.5 flex-shrink-0">{sc.icon}</div>
                     <div>
                       <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                        {sc.label}
+                        {t(`sync:status_${status}`)}
                       </span>
                       <span className="text-xs text-slate-400 dark:text-slate-500 ml-1.5">
                         {desc}
@@ -948,25 +954,25 @@ export default function SyncPage() {
         {/* How sync works */}
         <div className="bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-800 rounded-2xl px-5 py-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-teal-500 dark:text-teal-400 mb-3">
-            How automatic sync works
+            {t("sync:howTitle")}
           </p>
           <div className="space-y-2.5">
             {[
               {
                 step: "1",
-                text: "Records are saved instantly to your device — no internet needed.",
+                text: t("sync:how1"),
               },
               {
                 step: "2",
-                text: "When connectivity is detected, HealStats syncs in the background automatically.",
+                text: t("sync:how2"),
               },
               {
                 step: "3",
-                text: "Each record is verified on the server before being marked Synced.",
+                text: t("sync:how3"),
               },
               {
                 step: "4",
-                text: "Failed records are retried up to 5 times before requiring manual action.",
+                text: t("sync:how4"),
               },
             ].map(({ step, text }) => (
               <div key={step} className="flex items-start gap-2.5">

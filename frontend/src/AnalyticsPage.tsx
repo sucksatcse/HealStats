@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Icons ────────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -71,13 +72,13 @@ const WEEKLY = [
 ]
 
 const DIAGNOSES = [
-  { name: "Malaria", count: 428 },
-  { name: "Acute Respiratory Infection", count: 356 },
-  { name: "Hypertension", count: 291 },
-  { name: "Type 2 Diabetes", count: 214 },
-  { name: "Antenatal Care", count: 188 },
-  { name: "Diarrhoeal Disease", count: 143 },
-  { name: "Malnutrition", count: 97 },
+  { name: "Malaria", key: "dx_malaria", count: 428 },
+  { name: "Acute Respiratory Infection", key: "dx_ari", count: 356 },
+  { name: "Hypertension", key: "dx_hypertension", count: 291 },
+  { name: "Type 2 Diabetes", key: "dx_diabetes", count: 214 },
+  { name: "Antenatal Care", key: "dx_anc", count: 188 },
+  { name: "Diarrhoeal Disease", key: "dx_diarrhoeal", count: 143 },
+  { name: "Malnutrition", key: "dx_malnutrition", count: 97 },
 ]
 
 const URGENCY = [
@@ -90,6 +91,7 @@ const URGENCY = [
 
 const VILLAGES = ["Diamou", "Sadiola", "Kéniéba", "Yélimané", "Nioro"]
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+const DAY_KEYS = ["day_mon", "day_tue", "day_wed", "day_thu", "day_fri", "day_sat", "day_sun"]
 // Visit intensity per village per day (0-100)
 const HEATMAP: number[][] = [
   [72, 88, 54, 91, 96, 61, 40],
@@ -101,6 +103,7 @@ const HEATMAP: number[][] = [
 
 // ── Line chart: weekly visits ────────────────────────────────────────────────────
 function WeeklyLineChart() {
+  const { t } = useTranslation()
   const [hover, setHover] = useState<number | null>(null)
   const W = 640,
     H = 240,
@@ -227,7 +230,7 @@ function WeeklyLineChart() {
           </p>
           <p className="font-display text-lg leading-none mt-0.5">
             {pts[hover].visits.toLocaleString()}{" "}
-            <span className="text-xs font-sans text-teal-200">visits</span>
+            <span className="text-xs font-sans text-teal-200">{t("analytics:visits")}</span>
           </p>
         </div>
       )}
@@ -237,6 +240,7 @@ function WeeklyLineChart() {
 
 // ── Bar chart: common diagnoses ──────────────────────────────────────────────────
 function DiagnosesBarChart() {
+  const { t } = useTranslation()
   const [hover, setHover] = useState<number | null>(null)
   const max = Math.max(...DIAGNOSES.map((d) => d.count))
   return (
@@ -250,7 +254,7 @@ function DiagnosesBarChart() {
         >
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
-              {d.name}
+              {t(`analytics:${d.key}`)}
             </span>
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tabular-nums ml-2">
               {d.count}
@@ -276,6 +280,7 @@ function DiagnosesBarChart() {
 
 // ── Donut chart: urgency distribution ────────────────────────────────────────────
 function UrgencyDonut() {
+  const { t } = useTranslation()
   const [hover, setHover] = useState<number | null>(null)
   const total = URGENCY.reduce((s, u) => s + u.count, 0)
   const R = 70,
@@ -340,7 +345,7 @@ function UrgencyDonut() {
             fontSize="10"
             fontWeight={600}
           >
-            {hover !== null ? arcs[hover].level : "TOTAL FLAGGED"}
+            {hover !== null ? t(`urgency:${arcs[hover].level}`) : t("analytics:totalFlagged")}
           </text>
         </svg>
       </div>
@@ -359,7 +364,7 @@ function UrgencyDonut() {
               className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
               style={{ background: URGENCY_COLORS[a.level] }}
             />
-            <span className="text-sm text-slate-600 dark:text-slate-300 flex-1">{a.level}</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300 flex-1">{t(`urgency:${a.level}`)}</span>
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
               {Math.round(a.frac * 100)}%
             </span>
@@ -372,6 +377,7 @@ function UrgencyDonut() {
 
 // ── Heatmap: village × day intensity ─────────────────────────────────────────────
 function VillageHeatmap() {
+  const { t } = useTranslation()
   const [hover, setHover] = useState<{ v: number; d: number } | null>(null)
   // Sequential teal ramp (light→dark), monotonic lightness
   const shade = (v: number) => {
@@ -396,7 +402,7 @@ function VillageHeatmap() {
                 key={d}
                 className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 text-center uppercase tracking-wide"
               >
-                {d}
+                {t(`analytics:${DAY_KEYS[DAYS.indexOf(d)]}`)}
               </div>
             ))}
           </div>
@@ -426,9 +432,9 @@ function VillageHeatmap() {
                     {active && (
                       <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 bg-teal-950 text-white rounded-lg px-2.5 py-1.5 shadow-lg whitespace-nowrap z-20">
                         <p className="text-[10px] text-teal-300 font-semibold">
-                          {VILLAGES[vi]} · {DAYS[di]}
+                          {VILLAGES[vi]} · {t(`analytics:${DAY_KEYS[di]}`)}
                         </p>
-                        <p className="text-xs font-semibold">{val}% capacity</p>
+                        <p className="text-xs font-semibold">{t("analytics:capacity", { val })}</p>
                       </div>
                     )}
                   </div>
@@ -440,7 +446,7 @@ function VillageHeatmap() {
       </div>
       {/* Scale legend */}
       <div className="flex items-center gap-2 mt-4 justify-end">
-        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Low</span>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{t("analytics:low")}</span>
         <div className="flex gap-0.5">
           {[
             "#f0fdfa",
@@ -457,7 +463,7 @@ function VillageHeatmap() {
             />
           ))}
         </div>
-        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">High</span>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{t("analytics:high")}</span>
       </div>
     </div>
   )
@@ -499,6 +505,7 @@ function ChartCard({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
   const [range, setRange] = useState<"8w" | "6m" | "1y">("8w")
   const totalVisits = WEEKLY.reduce((s, w) => s + w.visits, 0)
 
@@ -508,10 +515,10 @@ export default function AnalyticsPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Analytics &amp; Reports
+            {t("analytics:title")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Kayes Health District · trends across all clinics
+            {t("analytics:subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -526,13 +533,13 @@ export default function AnalyticsPage() {
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                 }`}
               >
-                {r === "8w" ? "8 weeks" : r === "6m" ? "6 months" : "1 year"}
+                {r === "8w" ? t("analytics:range8w") : r === "6m" ? t("analytics:range6m") : t("analytics:range1y")}
               </button>
             ))}
           </div>
           <button className="flex items-center gap-2 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5">
             {Icon.download}
-            Export Report
+            {t("analytics:exportReport")}
           </button>
         </div>
       </div>
@@ -541,13 +548,13 @@ export default function AnalyticsPage() {
       <div className="grid lg:grid-cols-2 gap-4">
         {/* Line chart — full width */}
         <ChartCard
-          title="Patients Visited per Week"
-          subtitle={`${totalVisits.toLocaleString()} total over 8 weeks · aggregated across 12 clinics`}
+          title={t("analytics:weeklyTitle")}
+          subtitle={t("analytics:weeklySubtitle", { total: totalVisits.toLocaleString() })}
           span
           badge={
             <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full">
               {Icon.trendUp}
-              +18.2% vs prior
+              {t("analytics:trendVsPrior")}
             </span>
           }
         >
@@ -558,26 +565,26 @@ export default function AnalyticsPage() {
               style={{ background: TEAL }}
             />
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Weekly patient visits
+              {t("analytics:weeklyLegend")}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
-              Peak: Wk 34, 1,856 visits
+              {t("analytics:peak")}
             </span>
           </div>
         </ChartCard>
 
         {/* Bar chart — common diagnoses */}
         <ChartCard
-          title="Most Common Diagnoses"
-          subtitle="By recorded visits this period"
+          title={t("analytics:diagnosesTitle")}
+          subtitle={t("analytics:diagnosesSubtitle")}
         >
           <DiagnosesBarChart />
         </ChartCard>
 
         {/* Donut — urgency distribution */}
         <ChartCard
-          title="Urgency-Level Distribution"
-          subtitle="AI triage outcomes across all patients"
+          title={t("analytics:urgencyTitle")}
+          subtitle={t("analytics:urgencySubtitle")}
           badge={<span className="text-slate-300 dark:text-slate-600">{Icon.info}</span>}
         >
           <UrgencyDonut />
@@ -585,12 +592,12 @@ export default function AnalyticsPage() {
 
         {/* Heatmap — full width */}
         <ChartCard
-          title="Visit Intensity by Village"
-          subtitle="Relative clinic load — village × day of week"
+          title={t("analytics:heatmapTitle")}
+          subtitle={t("analytics:heatmapSubtitle")}
           span
           badge={
             <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              This week
+              {t("analytics:thisWeek")}
             </span>
           }
         >

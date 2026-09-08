@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const Icon = {
@@ -137,6 +138,18 @@ const INCIDENT_TYPES = [
   "Other emergency",
 ]
 
+const INCIDENT_KEY: Record<string, string> = {
+  "Cyclone / Storm surge": "it_cyclone",
+  "Monsoon flood": "it_flood",
+  "Building collapse": "it_collapse",
+  "Road traffic accident (mass)": "it_rta",
+  "Boat / ferry capsize": "it_boat",
+  "Fire": "it_fire",
+  "Disease outbreak cluster": "it_outbreak",
+  "Chemical / industrial exposure": "it_chemical",
+  "Other emergency": "it_other",
+}
+
 const SEVERITY_LEVELS = [
   {
     id: "critical",
@@ -174,6 +187,7 @@ const MAP_PINS = [
 ]
 
 export default function EmergencyReportPage() {
+  const { t } = useTranslation()
   const [incidentType, setIncidentType] = useState("")
   const [location, setLocation] = useState<string | null>(null)
   const [affected, setAffected] = useState("")
@@ -199,7 +213,7 @@ export default function EmergencyReportPage() {
   }
 
   if (submitted) {
-    const pinLabel = MAP_PINS.find((p) => p.id === location)?.label ?? "Unknown"
+    const pinLabel = MAP_PINS.find((p) => p.id === location)?.label ?? t("emergencyReport:unknown")
     return (
       <div className="max-w-2xl mx-auto py-6">
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-red-100 dark:border-red-900/50 shadow-xl shadow-red-900/5 overflow-hidden">
@@ -208,24 +222,23 @@ export default function EmergencyReportPage() {
               {Icon.check}
             </div>
             <h2 className="font-display text-3xl text-white">
-              Emergency report dispatched
+              {t("emergencyReport:dispatchedTitle")}
             </h2>
             <p className="text-red-50 text-sm mt-2 max-w-md mx-auto leading-relaxed">
-              Queued locally and broadcasting to the District Coordination
-              Centre. It will resend automatically until acknowledged.
+              {t("emergencyReport:dispatchedBody")}
             </p>
           </div>
           <div className="px-8 py-6 space-y-3">
             {[
-              ["Reference", "EMG-2026-0834"],
-              ["Incident", incidentType],
-              ["Location", pinLabel],
-              ["People affected", affected],
+              [t("emergencyReport:refLabel"), "EMG-2026-0834"],
+              [t("emergencyReport:incidentLabel"), incidentType ? t(`emergencyReport:${INCIDENT_KEY[incidentType]}`) : ""],
+              [t("emergencyReport:locationLabel"), pinLabel],
+              [t("emergencyReport:affectedLabel"), affected],
               [
-                "Severity",
-                SEVERITY_LEVELS.find((s) => s.id === severity)?.label,
+                t("emergencyReport:severityLabel"),
+                t(`emergencyReport:sev_${severity}`),
               ],
-              ["Filed", now],
+              [t("emergencyReport:filedLabel"), now],
             ].map(([k, v]) => (
               <div
                 key={k}
@@ -251,7 +264,7 @@ export default function EmergencyReportPage() {
               }}
               className="w-full py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-semibold text-sm transition-colors"
             >
-              File another report
+              {t("emergencyReport:fileAnother")}
             </button>
           </div>
         </div>
@@ -277,28 +290,25 @@ export default function EmergencyReportPage() {
         <div className="flex-1 min-w-0 relative">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-white/20 rounded-full px-2 py-0.5">
-              Disaster Mode
+              {t("emergencyReport:disasterMode")}
             </span>
             <span className="flex items-center gap-1 text-[11px] text-red-50 font-medium">
               {Icon.clock} {now}
             </span>
           </div>
           <h1 className="font-display text-2xl text-white mt-1.5 leading-tight">
-            Emergency Incident Report
+            {t("emergencyReport:pageTitle")}
           </h1>
         </div>
       </div>
 
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-        Report a mass-casualty or emergency event. Fields marked{" "}
-        <span className="text-red-600 dark:text-red-400 font-semibold">*</span> are required to
-        dispatch. Reports are stored offline and broadcast the moment any signal
-        returns.
+        {t("emergencyReport:intro")}
       </p>
 
       <div className="space-y-6">
         {/* Incident type */}
-        <Field label="Incident Type" required icon={Icon.alert}>
+        <Field label={t("emergencyReport:fIncidentType")} required icon={Icon.alert}>
           <div className="relative">
             <select
               value={incidentType}
@@ -310,11 +320,11 @@ export default function EmergencyReportPage() {
               }`}
             >
               <option value="" disabled>
-                Select incident type…
+                {t("emergencyReport:selectIncident")}
               </option>
-              {INCIDENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              {INCIDENT_TYPES.map((it) => (
+                <option key={it} value={it}>
+                  {t(`emergencyReport:${INCIDENT_KEY[it]}`)}
                 </option>
               ))}
             </select>
@@ -325,7 +335,7 @@ export default function EmergencyReportPage() {
         </Field>
 
         {/* Location map pin selector */}
-        <Field label="Location" required icon={Icon.pin}>
+        <Field label={t("emergencyReport:fLocation")} required icon={Icon.pin}>
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-800/40">
             <div className="relative aspect-[16/9] bg-gradient-to-br from-sky-50 to-teal-50">
               <svg
@@ -365,7 +375,7 @@ export default function EmergencyReportPage() {
                     onClick={() => setLocation(p.id)}
                     className="absolute -translate-x-1/2 -translate-y-full group focus:outline-none"
                     style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                    aria-label={`Select ${p.label}`}
+                    aria-label={t("emergencyReport:selectAria", { name: p.label })}
                   >
                     {active && (
                       <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-red-500/25 animate-ping" />
@@ -403,11 +413,11 @@ export default function EmergencyReportPage() {
               {location ? (
                 <span className="flex items-center gap-1.5 text-red-700 dark:text-red-400 font-semibold">
                   <span className="text-red-500">{Icon.pin}</span>
-                  {MAP_PINS.find((p) => p.id === location)?.label} selected
+                  {t("emergencyReport:selected", { name: MAP_PINS.find((p) => p.id === location)?.label })}
                 </span>
               ) : (
                 <span className="text-slate-400 dark:text-slate-500">
-                  Tap a pin to mark the incident location
+                  {t("emergencyReport:tapPin")}
                 </span>
               )}
             </div>
@@ -416,14 +426,14 @@ export default function EmergencyReportPage() {
 
         {/* Number affected + Severity */}
         <div className="grid sm:grid-cols-2 gap-6">
-          <Field label="People Affected" required icon={Icon.users}>
+          <Field label={t("emergencyReport:fAffected")} required icon={Icon.users}>
             <input
               type="number"
               min={0}
               inputMode="numeric"
               value={affected}
               onChange={(e) => setAffected(e.target.value)}
-              placeholder="e.g. 45"
+              placeholder={t("emergencyReport:phAffected")}
               className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3.5 text-sm font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400"
             />
             <div className="flex flex-wrap gap-2 mt-2">
@@ -440,7 +450,7 @@ export default function EmergencyReportPage() {
             </div>
           </Field>
 
-          <Field label="Severity" required icon={Icon.alert}>
+          <Field label={t("emergencyReport:fSeverity")} required icon={Icon.alert}>
             <div className="space-y-2">
               {SEVERITY_LEVELS.map((s) => (
                 <label key={s.id} className="block cursor-pointer">
@@ -461,10 +471,10 @@ export default function EmergencyReportPage() {
                       <p
                         className={`text-sm font-semibold text-slate-700 dark:text-slate-200 ${s.text}`}
                       >
-                        {s.label}
+                        {t(`emergencyReport:sev_${s.id}`)}
                       </p>
                       <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">
-                        {s.desc}
+                        {t(`emergencyReport:sev_${s.id}Desc`)}
                       </p>
                     </div>
                   </div>
@@ -475,16 +485,16 @@ export default function EmergencyReportPage() {
         </div>
 
         {/* Photo upload */}
-        <Field label="Photo Evidence" icon={Icon.camera}>
+        <Field label={t("emergencyReport:fPhoto")} icon={Icon.camera}>
           <label className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-red-300 hover:bg-red-50/40 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-red-800 dark:hover:bg-red-950/20 transition-colors py-8 cursor-pointer text-center">
             <span className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-red-500">
               {Icon.camera}
             </span>
             <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-              Tap to add photos
+              {t("emergencyReport:tapAddPhotos")}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Compressed and stored offline · up to 6 images
+              {t("emergencyReport:photoHint")}
             </span>
             <input
               type="file"
@@ -512,7 +522,7 @@ export default function EmergencyReportPage() {
                       setPhotos((prev) => prev.filter((_, idx) => idx !== i))
                     }
                     className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors p-0.5"
-                    aria-label="Remove photo"
+                    aria-label={t("emergencyReport:removePhoto")}
                   >
                     {Icon.x}
                   </button>
@@ -523,12 +533,12 @@ export default function EmergencyReportPage() {
         </Field>
 
         {/* Notes */}
-        <Field label="Situation Notes" icon={Icon.alert}>
+        <Field label={t("emergencyReport:fNotes")} icon={Icon.alert}>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Access routes, resources needed, hazards on site…"
+            placeholder={t("emergencyReport:phNotes")}
             className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 resize-none transition-all focus:outline-none focus:ring-4 focus:ring-red-500/15 focus:border-red-400"
           />
         </Field>
@@ -545,11 +555,11 @@ export default function EmergencyReportPage() {
             }`}
           >
             {Icon.send}
-            Submit Emergency Report
+            {t("emergencyReport:submit")}
           </button>
           {!canSubmit && (
             <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2.5">
-              Complete incident type, location, and people affected to dispatch.
+              {t("emergencyReport:incompleteHint")}
             </p>
           )}
         </div>

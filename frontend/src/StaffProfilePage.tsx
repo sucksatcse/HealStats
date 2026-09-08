@@ -160,7 +160,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
       }
     } catch (err: any) {
       console.error("Failed loading staff profile:", err)
-      setError(err?.message || "Failed to load staff profile information.")
+      setError(err?.message || t("profile:failedLoadStaff", "Failed to load staff profile information."))
     } finally {
       setLoading(false)
     }
@@ -171,8 +171,8 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
   }, [loadProfile])
 
   const roleDisplay = (role: string | undefined) => {
-    if (role === "admin") return t("profile.administrator", "Administrator")
-    if (role === "worker") return t("profile.healthWorker", "Health Worker")
+    if (role === "admin") return t("profile:administrator", "Administrator")
+    if (role === "worker") return t("profile:healthWorker", "Health Worker")
     return role || "—"
   }
 
@@ -214,10 +214,10 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
           </svg>
         </div>
         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-          You are not signed in
+          {t("profile:notSignedIn", "You are not signed in")}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-          Please sign in with your staff credentials to view your profile and clinic assignment.
+          {t("profile:notSignedInBody", "Please sign in with your staff credentials to view your profile and clinic assignment.")}
         </p>
       </div>
     )
@@ -226,7 +226,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
   // ── Loading Skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex flex-col gap-5 max-w-4xl mx-auto pb-10 px-2 sm:px-4 w-full animate-pulse" role="status" aria-label="Loading staff profile">
+      <div className="flex flex-col gap-5 max-w-4xl mx-auto pb-10 px-2 sm:px-4 w-full animate-pulse" role="status" aria-label={t("profile:loadingStaff", "Loading staff profile")}>
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
           <div className="flex items-start gap-5">
             <div className="w-20 h-20 rounded-2xl bg-slate-200 dark:bg-slate-800 flex-shrink-0" />
@@ -258,7 +258,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            {t("profile.backToStaff", "Back to Staff Management")}
+            {t("profile:backToStaff", "Back to Staff Management")}
           </button>
         )}
         <div
@@ -273,10 +273,10 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
             </svg>
           </div>
           <h2 className="font-bold text-lg text-red-900 dark:text-red-200">
-            Unable to load staff profile
+            {t("profile:unableLoadStaff", "Unable to load staff profile")}
           </h2>
           <p className="text-sm mt-1.5 max-w-md text-red-700 dark:text-red-300">
-            {error || "Staff record could not be loaded."}
+            {error || t("profile:staffRecordNotLoaded", "Staff record could not be loaded.")}
           </p>
           <div className="flex items-center gap-3 mt-6">
             <button
@@ -287,7 +287,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 8A6 6 0 1 1 8 2M14 2v6h-6" />
               </svg>
-              {t("profile.retry", "Retry")}
+              {t("profile:retry", "Retry")}
             </button>
             {onBack && (
               <button
@@ -295,7 +295,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
                 onClick={onBack}
                 className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors cursor-pointer"
               >
-                {t("profile.backToStaff", "Back to Staff Management")}
+                {t("profile:backToStaff", "Back to Staff Management")}
               </button>
             )}
           </div>
@@ -306,10 +306,10 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
 
   const clinicDisplay =
     staff.clinic_id === null
-      ? t("profile.allClinics", "All clinics (district-level)")
+      ? t("profile:allClinics", "All clinics (district-level)")
       : clinic?.name
       ? clinic.name
-      : "Unassigned Clinic"
+      : t("profile:unassignedClinicStaff", "Unassigned Clinic")
 
   return (
     <div className="flex flex-col gap-5 max-w-4xl mx-auto pb-12 px-2 sm:px-4 w-full">
@@ -324,10 +324,10 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            {isSelfProfile ? t("profile.backToDashboard", "Back to Dashboard") : t("profile.backToStaff", "Back to Staff Management")}
+            {isSelfProfile ? t("profile:backToDashboard", "Back to Dashboard") : t("profile:backToStaff", "Back to Staff Management")}
           </button>
           <span className="text-xs text-slate-400">
-            {isSelfProfile ? t("profile.myProfile", "My Profile") : t("profile.staffProfile", "Staff Profile")}
+            {isSelfProfile ? t("profile:myProfile", "My Profile") : t("profile:staffProfile", "Staff Profile")}
           </span>
         </div>
       )}
@@ -352,7 +352,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
                   {staff.name}
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {staff.email || "No email linked"} · Facility: {clinicDisplay}
+                  {staff.email || t("profile:noEmailLinked", "No email linked")} · {t("profile:facilityLabel", "Facility")}: {clinicDisplay}
                 </p>
               </div>
 
@@ -369,7 +369,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {t("profile.active", "Active")}
+                  {t("profile:active", "Active")}
                 </span>
               </div>
             </div>
@@ -380,23 +380,23 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
                 type="button"
                 onClick={copyId}
                 className="inline-flex items-center gap-1 font-mono text-[11px] text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-200 dark:border-teal-800/60 px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
-                title={`Click to copy full UUID: ${staff.id}`}
+                title={t("profile:clickCopyUuid", { id: staff.id })}
               >
-                <span>ID: {shortId(staff.id)}</span>
+                <span>{t("profile:idShort", "ID")}: {shortId(staff.id)}</span>
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-3 h-3">
                   <rect x="5" y="5" width="8" height="8" rx="1.5" />
                   <path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" />
                 </svg>
                 {copiedId && (
                   <span className="text-[10px] text-emerald-600 font-bold ml-1">
-                    {t("profile.copied", "Copied")}
+                    {t("profile:copied", "Copied")}
                   </span>
                 )}
               </button>
 
               {clinic?.zone && (
                 <span className="text-slate-500 dark:text-slate-400">
-                  Catchment Zone: <strong className="text-slate-700 dark:text-slate-300">{clinic.zone}</strong>
+                  {t("profile:catchmentZone", "Catchment Zone")}: <strong className="text-slate-700 dark:text-slate-300">{clinic.zone}</strong>
                 </span>
               )}
             </div>
@@ -412,13 +412,13 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
           className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4"
         >
           <h2 id="prof-info-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100 pb-3 border-b border-slate-100 dark:border-slate-800">
-            {t("profile.professionalInfo", "Professional Information")}
+            {t("profile:professionalInfo", "Professional Information")}
           </h2>
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-3 text-sm">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.staffId", "Staff ID")}
+                {t("profile:staffId", "Staff ID")}
               </dt>
               <dd className="font-mono text-xs text-slate-700 dark:text-slate-200 mt-0.5">
                 {shortId(staff.id)}
@@ -427,7 +427,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
 
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.role", "Clinical Role")}
+                {t("profile:clinicalRole", "Clinical Role")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                 {roleDisplay(staff.role)}
@@ -436,16 +436,16 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
 
             <div className="sm:col-span-2">
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {t("profile.email", "Account Email")}
+                {t("profile:accountEmail", "Account Email")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 break-words">
-                {staff.email || "No email associated"}
+                {staff.email || t("profile:noEmailAssociated", "No email associated")}
               </dd>
             </div>
 
             <div className="sm:col-span-2">
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Assigned Health Facility / Clinic
+                {t("profile:assignedFacility", "Assigned Health Facility / Clinic")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                 {clinicDisplay}
@@ -459,7 +459,7 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
 
             <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Staff Database UUID
+                {t("profile:staffDbUuid", "Staff Database UUID")}
               </dt>
               <dd className="font-mono text-[11px] text-slate-400 mt-0.5 break-all select-all">
                 {staff.id}
@@ -474,43 +474,43 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
           className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4"
         >
           <h2 id="security-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100 pb-3 border-b border-slate-100 dark:border-slate-800">
-            {t("profile.accountDetails", "Account details")}
+            {t("profile:accountDetails", "Account details")}
           </h2>
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-3 text-sm">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Authentication Method
+                {t("profile:authMethod", "Authentication Method")}
               </dt>
               <dd className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                Supabase Auth (Encrypted)
+                {t("profile:authMethodVal", "Supabase Auth (Encrypted)")}
               </dd>
             </div>
 
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Session Status
+                {t("profile:sessionStatus", "Session Status")}
               </dt>
               <dd className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 text-xs mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Verified Active
+                {t("profile:verifiedActive", "Verified Active")}
               </dd>
             </div>
 
             <div className="sm:col-span-2">
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Data Access Boundary
+                {t("profile:dataAccessBoundary", "Data Access Boundary")}
               </dt>
               <dd className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
                 {staff.role === "admin"
-                  ? "District-wide oversight across all clinic catchments, outbreak surveillance radar, resource reallocation, and staff administration."
-                  : `Scoped to ${clinicDisplay} records. Can register new patients, file clinical intake encounters, record vitals, and sync offline queues.`}
+                  ? t("profile:boundaryAdmin", "District-wide oversight across all clinic catchments, outbreak surveillance radar, resource reallocation, and staff administration.")
+                  : t("profile:boundaryWorker", { clinic: clinicDisplay })}
               </dd>
             </div>
 
             <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
-                🔒 HealthStats enforces strict data safety standards. Cryptographic keys and authentication secrets are never saved in local storage. For role changes or credential resets, please contact your district coordinator.
+                {t("profile:dataSafetyNote", "🔒 HealthStats enforces strict data safety standards. Cryptographic keys and authentication secrets are never saved in local storage. For role changes or credential resets, please contact your district coordinator.")}
               </p>
             </div>
           </dl>
@@ -524,47 +524,47 @@ export default function StaffProfilePage({ staffId, onBack }: StaffProfilePagePr
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <h2 id="activity-heading" className="text-sm font-bold text-slate-800 dark:text-slate-100">
-            {t("profile.clinicalActivity", "Clinical Activity Summary")}
+            {t("profile:clinicalActivity", "Clinical Activity Summary")}
           </h2>
           <span className="text-xs text-slate-400">
-            Live Central Database Metrics
+            {t("profile:liveMetrics", "Live Central Database Metrics")}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Total Recorded Visits
+              {t("profile:totalRecordedVisits", "Total Recorded Visits")}
             </p>
             <p className="text-2xl font-display text-teal-900 dark:text-teal-300 mt-1">
               {totalVisits !== null ? totalVisits : "—"}
             </p>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Encounters filed under this provider
+              {t("profile:encountersUnderProvider", "Encounters filed under this provider")}
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Last Clinical Activity
+              {t("profile:lastClinicalActivity", "Last Clinical Activity")}
             </p>
             <p className="text-lg font-display text-slate-800 dark:text-slate-100 mt-1">
-              {lastVisitAt ? fmtDate(lastVisitAt) : "No encounters recorded"}
+              {lastVisitAt ? fmtDate(lastVisitAt) : t("profile:noEncountersRecorded", "No encounters recorded")}
             </p>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {lastVisitAt ? `at ${fmtTime(lastVisitAt)}` : "Awaiting first encounter"}
+              {lastVisitAt ? t("profile:atTime", { time: fmtTime(lastVisitAt) }) : t("profile:awaitingFirstEncounter", "Awaiting first encounter")}
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Operational Zone
+              {t("profile:operationalZone", "Operational Zone")}
             </p>
             <p className="text-lg font-display text-slate-800 dark:text-slate-100 mt-1">
-              {clinic?.zone || "National Network"}
+              {clinic?.zone || t("profile:nationalNetwork", "National Network")}
             </p>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Bangladesh Rural Health Command
+              {t("profile:bdRuralHealth", "Bangladesh Rural Health Command")}
             </p>
           </div>
         </div>

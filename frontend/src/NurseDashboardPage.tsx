@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { useAuth } from "./AuthContext"
-import { useLang } from "./LanguageContext"
 import { useTheme } from "./ThemeContext"
 import AppNavbar from "./AppNavbar"
 import { supabase } from "./lib/supabase"
@@ -176,7 +176,7 @@ export default function NurseDashboardPage({
   onNavigate?: (page: string) => void
 }) {
   const { profile } = useAuth()
-  const { lang } = useLang()
+  const { t } = useTranslation()
 
   // ── States ────────────────────────────────────────────────────────────────
   const [patients, setPatients] = useState<PatientRow[]>([])
@@ -254,7 +254,7 @@ export default function NurseDashboardPage({
         const latestVisit = p.visits && p.visits.length > 0 ? p.visits[0] : null
         let urgency: Urgency = "Stable"
         let urgencyScore = 1
-        let lastVisit = "No prior visits"
+        let lastVisit = t("nurseDash:noPriorVisits")
         let lastVisitSort = 999999
 
         if (latestVisit) {
@@ -263,24 +263,24 @@ export default function NurseDashboardPage({
           const vDate = new Date(latestVisit.created_at)
           const diffDays = Math.floor(Math.abs(Date.now() - vDate.getTime()) / 86400000)
           lastVisitSort = diffDays
-          if (diffDays === 0) lastVisit = "Today"
-          else if (diffDays === 1) lastVisit = "Yesterday"
-          else lastVisit = `${diffDays}d ago`
+          if (diffDays === 0) lastVisit = t("nurseDash:today")
+          else if (diffDays === 1) lastVisit = t("nurseDash:yesterday")
+          else lastVisit = t("nurseDash:daysAgo", { n: diffDays })
         } else if (p.created_at) {
           const cDate = new Date(p.created_at)
           const diffDays = Math.floor(Math.abs(Date.now() - cDate.getTime()) / 86400000)
           lastVisitSort = diffDays + 10
-          lastVisit = diffDays === 0 ? "Registered Today" : `Registered ${diffDays}d ago`
+          lastVisit = diffDays === 0 ? t("nurseDash:registeredToday") : t("nurseDash:registeredDaysAgo", { n: diffDays })
         }
 
         return {
           id: p.id ? p.id.split("-")[0].toUpperCase() : "UNKNOWN",
           rawId: p.id,
-          name: p.name || "Unnamed Patient",
+          name: p.name || t("nurseDash:unnamedPatient"),
           age: p.age || 0,
           gender: p.sex === "Female" || p.sex === "F" ? "Female" : p.sex === "Male" || p.sex === "M" ? "Male" : "Other",
-          village: p.village || "Unknown Village",
-          clinicName: p.clinics?.name || "Unassigned Clinic",
+          village: p.village || t("nurseDash:unknownVillage"),
+          clinicName: p.clinics?.name || t("nurseDash:unassignedClinic"),
           clinicId: p.clinic_id,
           urgency,
           urgencyScore,
@@ -293,7 +293,7 @@ export default function NurseDashboardPage({
       setPatients(mapped)
     } catch (err: any) {
       console.error("[NurseDashboardPage] fetchPatients error:", err)
-      setError(err.message || "Failed to load patient triage list.")
+      setError(err.message || t("nurseDash:errLoad"))
     } finally {
       setIsLoading(false)
     }
@@ -320,7 +320,7 @@ export default function NurseDashboardPage({
       setPatientVisits((data as any) || [])
     } catch (err: any) {
       console.error("[NurseDashboardPage] loadPatientVisits error:", err)
-      showToast("Could not load clinical history", "error")
+      showToast(t("nurseDash:couldNotLoadHistory"), "error")
     } finally {
       setIsLoadingVisits(false)
     }
@@ -370,12 +370,12 @@ export default function NurseDashboardPage({
       setSelectedPatient((prev) => (prev ? { ...prev, urgency: urgencySelection, urgencyScore: targetScore } : null))
       setPatients((prev) =>
         prev.map((p) =>
-          p.rawId === selectedPatient.rawId ? { ...p, urgency: urgencySelection, urgencyScore: targetScore, lastVisit: "Today" } : p
+          p.rawId === selectedPatient.rawId ? { ...p, urgency: urgencySelection, urgencyScore: targetScore, lastVisit: t("nurseDash:today"), lastVisitSort: 0 } : p
         )
       )
 
       showToast(
-        `Patient urgency updated to ${urgencySelection} (Level ${targetScore})! Synced with Admin Patients.`,
+        t("nurseDash:urgencyUpdated", { level: t(`urgency:${urgencySelection}`), score: targetScore }),
         "success"
       )
 
@@ -383,7 +383,7 @@ export default function NurseDashboardPage({
       loadPatientVisits(selectedPatient.rawId)
     } catch (err: any) {
       console.error("[NurseDashboardPage] updateUrgency error:", err)
-      showToast(err.message || "Failed to update patient urgency", "error")
+      showToast(err.message || t("nurseDash:failUpdateUrgency"), "error")
     } finally {
       setIsUpdatingUrgency(false)
     }
@@ -405,17 +405,17 @@ export default function NurseDashboardPage({
     const ht = vitalsForm.height ? parseFloat(vitalsForm.height) : undefined
 
     if (!sys && !dia && !hr && !temp && !spo2 && !vitalsForm.symptomsNote.trim()) {
-      showToast("Please enter at least one vital sign or clinical note", "info")
+      showToast(t("nurseDash:enterAtLeastOne"), "info")
       return
     }
 
     if (spo2 !== undefined && (spo2 < 50 || spo2 > 100)) {
-      showToast("SpO2 must be between 50% and 100%", "error")
+      showToast(t("nurseDash:spo2Range"), "error")
       return
     }
 
     if (temp !== undefined && (temp < 30 || temp > 45)) {
-      showToast("Temperature must be realistic (30°C–45°C)", "error")
+      showToast(t("nurseDash:tempRange"), "error")
       return
     }
 
@@ -452,7 +452,7 @@ export default function NurseDashboardPage({
           status: "pending",
           createdAt: Date.now(),
         })
-        showToast("Vitals saved offline. Will sync when connection is restored.", "info")
+        showToast(t("nurseDash:savedOffline"), "info")
       } else {
         const { error: insErr } = await supabase.from("visits").insert([payload])
         if (insErr) {
@@ -464,12 +464,12 @@ export default function NurseDashboardPage({
               status: "pending",
               createdAt: Date.now(),
             })
-            showToast("Saved offline due to network issue.", "info")
+            showToast(t("nurseDash:savedOfflineNetwork"), "info")
           } else {
             throw insErr
           }
         } else {
-          showToast("Vitals and clinical observations recorded successfully!", "success")
+          showToast(t("nurseDash:vitalsRecorded"), "success")
         }
       }
 
@@ -493,7 +493,8 @@ export default function NurseDashboardPage({
                 urgency: newUrgency,
                 urgencyScore: payload.urgency_score,
                 latestVitals: vitalsObj,
-                lastVisit: "Today",
+                lastVisit: t("nurseDash:today"),
+                lastVisitSort: 0,
               }
             : p
         )
@@ -517,7 +518,7 @@ export default function NurseDashboardPage({
       setDrawerTab("history")
     } catch (err: any) {
       console.error("[NurseDashboardPage] saveVitals error:", err)
-      showToast(err.message || "Failed to record vitals", "error")
+      showToast(err.message || t("nurseDash:failRecordVitals"), "error")
     } finally {
       setIsSavingVitals(false)
     }
@@ -551,18 +552,18 @@ export default function NurseDashboardPage({
           status: "pending",
           createdAt: Date.now(),
         })
-        showToast("Note queued offline.", "info")
+        showToast(t("nurseDash:noteQueued"), "info")
       } else {
         const { error: noteErr } = await supabase.from("visits").insert([payload])
         if (noteErr) throw noteErr
-        showToast("Visit note added to patient record.", "success")
+        showToast(t("nurseDash:noteAdded"), "success")
       }
 
       setQuickNoteText("")
       loadPatientVisits(selectedPatient.rawId)
     } catch (err: any) {
       console.error("[NurseDashboardPage] addNote error:", err)
-      showToast(err.message || "Failed to save visit note", "error")
+      showToast(err.message || t("nurseDash:failSaveNote"), "error")
     } finally {
       setIsSavingNote(false)
     }
@@ -604,7 +605,7 @@ export default function NurseDashboardPage({
   // ── KPI Statistics ────────────────────────────────────────────────────────
   const criticalCount = useMemo(() => patients.filter((p) => p.urgency === "Critical").length, [patients])
   const highCount = useMemo(() => patients.filter((p) => p.urgency === "High").length, [patients])
-  const todayEncounters = useMemo(() => patients.filter((p) => p.lastVisit === "Today").length, [patients])
+  const todayEncounters = useMemo(() => patients.filter((p) => p.lastVisitSort === 0).length, [patients])
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
@@ -643,13 +644,13 @@ export default function NurseDashboardPage({
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-700/60 border border-teal-500/30 text-teal-200 text-xs font-semibold mb-3">
                 <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
-                Nurse Station & Clinical Triage
+                {t("nurseDash:badge")}
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold font-display tracking-tight text-white">
-                Clinical Vitals & Urgency Management
+                {t("nurseDash:title")}
               </h1>
               <p className="text-sm text-teal-100/80 mt-1 max-w-2xl">
-                Logged in as <strong className="text-white">{profile?.name || "Staff Nurse"}</strong> (Clinical Officer / Nurse). Record patient vitals, document visit notes, and adjust triage urgency synced live with Admin.
+                {t("nurseDash:loggedInPre")} <strong className="text-white">{profile?.name || t("nurseDash:staffNurse")}</strong> {t("nurseDash:loggedInPost")}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -659,14 +660,14 @@ export default function NurseDashboardPage({
                 className="flex items-center gap-2 bg-teal-700/60 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-teal-500/30 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <span className={isLoading ? "animate-spin" : ""}>{Icons.refresh}</span>
-                Refresh Station
+                {t("nurseDash:refreshStation")}
               </button>
               {onNavigate && (
                 <button
                   onClick={() => onNavigate("dashboard")}
                   className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  {Icons.arrowLeft} Back to Main Hub
+                  {Icons.arrowLeft} {t("nurseDash:backToHub")}
                 </button>
               )}
             </div>
@@ -677,14 +678,14 @@ export default function NurseDashboardPage({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Total Queue
+              {t("nurseDash:kpiTotalQueue")}
             </p>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
                 {patients.length}
               </span>
               <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
-                Active Patients
+                {t("nurseDash:kpiActivePatients")}
               </span>
             </div>
           </div>
@@ -692,7 +693,7 @@ export default function NurseDashboardPage({
           <div className="bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 shadow-sm relative overflow-hidden">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">
-                Critical (Level 5)
+                {t("nurseDash:kpiCritical")}
               </p>
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
             </div>
@@ -701,35 +702,35 @@ export default function NurseDashboardPage({
                 {criticalCount}
               </span>
               <span className="text-xs text-red-600/80 dark:text-red-400/80 font-medium">
-                Immediate Action
+                {t("nurseDash:kpiImmediate")}
               </span>
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-900/40 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wider">
-              High Urgency (Level 4)
+              {t("nurseDash:kpiHigh")}
             </p>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-2xl lg:text-3xl font-bold text-orange-600 dark:text-orange-400">
                 {highCount}
               </span>
               <span className="text-xs text-orange-600/80 dark:text-orange-400/80 font-medium">
-                Within 30 mins
+                {t("nurseDash:kpiWithin30")}
               </span>
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Today's Encounters
+              {t("nurseDash:kpiToday")}
             </p>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
                 {todayEncounters}
               </span>
               <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                Assessed Today
+                {t("nurseDash:kpiAssessedToday")}
               </span>
             </div>
           </div>
@@ -747,7 +748,7 @@ export default function NurseDashboardPage({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search patient name, ID, village, or clinic..."
+                placeholder={t("nurseDash:searchPh")}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-slate-800 dark:text-slate-200"
               />
             </div>
@@ -755,16 +756,16 @@ export default function NurseDashboardPage({
             {/* Sort Dropdown */}
             <div className="flex items-center gap-2 w-full md:w-auto justify-end">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                Sort:
+                {t("nurseDash:sortLabel")}
               </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="text-xs font-medium px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
               >
-                <option value="urgency-desc">Highest Urgency (Critical first)</option>
-                <option value="recent">Most Recent Visit</option>
-                <option value="name">Patient Name (A–Z)</option>
+                <option value="urgency-desc">{t("nurseDash:sortUrgency")}</option>
+                <option value="recent">{t("nurseDash:sortRecent")}</option>
+                <option value="name">{t("nurseDash:sortName")}</option>
               </select>
             </div>
           </div>
@@ -772,7 +773,7 @@ export default function NurseDashboardPage({
           {/* Urgency Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <span className="text-xs font-semibold text-slate-400 uppercase mr-1 flex-shrink-0">
-              Urgency:
+              {t("nurseDash:urgencyLabel")}
             </span>
             {["All", "Critical", "High", "Moderate", "Low", "Stable"].map((level) => {
               const active = selectedUrgencyFilter === level
@@ -792,7 +793,7 @@ export default function NurseDashboardPage({
                       className={`w-2 h-2 rounded-full ${active ? "bg-white" : cfg.dotCls}`}
                     />
                   )}
-                  {level}
+                  {level === "All" ? t("nurseDash:all") : t(`urgency:${level}`)}
                   <span className={`text-[10px] ml-0.5 opacity-80`}>
                     ({level === "All" ? patients.length : patients.filter((p) => p.urgency === level).length})
                   </span>
@@ -807,21 +808,21 @@ export default function NurseDashboardPage({
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="font-semibold text-base text-slate-900 dark:text-white">
-                Patient Triage Queue
+                {t("nurseDash:queueTitle")}
               </h2>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold">
-                {filteredPatients.length} shown
+                {t("nurseDash:shown", { count: filteredPatients.length })}
               </span>
             </div>
             <p className="text-xs text-slate-400 hidden sm:block">
-              Click any patient to open nursing chart, record vitals, or update urgency
+              {t("nurseDash:clickHint")}
             </p>
           </div>
 
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center text-slate-400">
               <div className="animate-spin text-teal-600 w-8 h-8 mb-3">{Icons.refresh}</div>
-              <p className="text-sm font-medium">Loading clinical patient records...</p>
+              <p className="text-sm font-medium">{t("nurseDash:loadingRecords")}</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center">
@@ -830,28 +831,28 @@ export default function NurseDashboardPage({
                 onClick={() => fetchPatients()}
                 className="mt-3 px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-semibold cursor-pointer"
               >
-                Retry
+                {t("nurseDash:retry")}
               </button>
             </div>
           ) : filteredPatients.length === 0 ? (
             <div className="py-16 text-center text-slate-400">
               <p className="text-base font-semibold text-slate-600 dark:text-slate-300">
-                No patients match the selected criteria.
+                {t("nurseDash:noMatch")}
               </p>
-              <p className="text-xs mt-1">Try changing the urgency filter or search keyword.</p>
+              <p className="text-xs mt-1">{t("nurseDash:noMatchHint")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-6">Patient</th>
-                    <th className="py-3 px-4">Demographics</th>
-                    <th className="py-3 px-4">Location</th>
-                    <th className="py-3 px-4">Latest Vitals</th>
-                    <th className="py-3 px-4">Triage Urgency</th>
-                    <th className="py-3 px-4">Last Visit</th>
-                    <th className="py-3 px-6 text-right">Action</th>
+                    <th className="py-3 px-6">{t("nurseDash:colPatient")}</th>
+                    <th className="py-3 px-4">{t("nurseDash:colDemographics")}</th>
+                    <th className="py-3 px-4">{t("nurseDash:colLocation")}</th>
+                    <th className="py-3 px-4">{t("nurseDash:colVitals")}</th>
+                    <th className="py-3 px-4">{t("nurseDash:colUrgency")}</th>
+                    <th className="py-3 px-4">{t("nurseDash:colLastVisit")}</th>
+                    <th className="py-3 px-6 text-right">{t("nurseDash:colAction")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-normal">
@@ -885,7 +886,7 @@ export default function NurseDashboardPage({
                           </div>
                         </td>
                         <td className="py-4 px-4 text-slate-600 dark:text-slate-300">
-                          {p.age > 0 ? `${p.age} yrs` : "—"} · {p.gender}
+                          {p.age > 0 ? `${p.age} ${t("nurseDash:yrs")}` : "—"} · {p.gender}
                         </td>
                         <td className="py-4 px-4">
                           <p className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[140px]">
@@ -915,7 +916,7 @@ export default function NurseDashboardPage({
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">No vitals logged</span>
+                            <span className="text-xs text-slate-400 italic">{t("nurseDash:noVitalsLogged")}</span>
                           )}
                         </td>
                         <td className="py-4 px-4">
@@ -923,7 +924,7 @@ export default function NurseDashboardPage({
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${urgencyCfg.badgeCls}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${urgencyCfg.dotCls}`} />
-                            {p.urgency}
+                            {t(`urgency:${p.urgency}`)}
                           </span>
                         </td>
                         <td className="py-4 px-4 text-xs text-slate-500 dark:text-slate-400">
@@ -937,7 +938,7 @@ export default function NurseDashboardPage({
                             }}
                             className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-all cursor-pointer"
                           >
-                            Triage & Vitals
+                            {t("nurseDash:triageVitals")}
                           </button>
                         </td>
                       </tr>
@@ -978,18 +979,18 @@ export default function NurseDashboardPage({
                           URGENCY_LEVELS_MAP[selectedPatient.urgency].dotCls
                         }`}
                       />
-                      {selectedPatient.urgency}
+                      {t(`urgency:${selectedPatient.urgency}`)}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    ID: #{selectedPatient.id} · {selectedPatient.age} yrs · {selectedPatient.gender} · {selectedPatient.village}
+                    ID: #{selectedPatient.id} · {`${selectedPatient.age} ${t("nurseDash:yrs")}`} · {selectedPatient.gender} · {selectedPatient.village}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedPatient(null)}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                aria-label="Close"
+                aria-label={t("nurseDash:close")}
               >
                 {Icons.x}
               </button>
@@ -1006,7 +1007,7 @@ export default function NurseDashboardPage({
                 }`}
               >
                 {Icons.alertTriangle}
-                Urgency Assessment
+                {t("nurseDash:tabUrgency")}
               </button>
               <button
                 onClick={() => setDrawerTab("vitals")}
@@ -1017,7 +1018,7 @@ export default function NurseDashboardPage({
                 }`}
               >
                 {Icons.heart}
-                Record Vitals
+                {t("nurseDash:tabVitals")}
               </button>
               <button
                 onClick={() => setDrawerTab("notes")}
@@ -1028,7 +1029,7 @@ export default function NurseDashboardPage({
                 }`}
               >
                 {Icons.clipboard}
-                Visit Notes
+                {t("nurseDash:tabNotes")}
               </button>
               <button
                 onClick={() => setDrawerTab("history")}
@@ -1039,7 +1040,7 @@ export default function NurseDashboardPage({
                 }`}
               >
                 {Icons.clock}
-                History ({patientVisits.length})
+                {t("nurseDash:tabHistory")} ({patientVisits.length})
               </button>
             </div>
 
@@ -1051,16 +1052,16 @@ export default function NurseDashboardPage({
                   <div className="rounded-2xl border border-teal-200 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/20 p-4">
                     <h3 className="text-sm font-semibold text-teal-900 dark:text-teal-200 flex items-center gap-2">
                       {Icons.activity}
-                      Direct Urgency Management (Admin Synced)
+                      {t("nurseDash:directUrgency")}
                     </h3>
                     <p className="text-xs text-teal-800/80 dark:text-teal-300/80 mt-1 leading-relaxed">
-                      Updating a patient's urgency level creates a verified clinical assessment record in the database. <strong>This is immediately reflected in the Admin → Patients dashboard</strong> to assist doctors and administrators in prioritizing care.
+                      {t("nurseDash:directUrgencyDesc1")} <strong>{t("nurseDash:directUrgencyDescStrong")}</strong> {t("nurseDash:directUrgencyDesc2")}
                     </p>
                   </div>
 
                   <div className="space-y-3">
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Select Clinical Urgency Level
+                      {t("nurseDash:selectUrgencyLevel")}
                     </label>
                     <div className="grid grid-cols-1 gap-2.5">
                       {(Object.keys(URGENCY_LEVELS_MAP) as Urgency[]).map((levelKey) => {
@@ -1087,16 +1088,16 @@ export default function NurseDashboardPage({
                               <div className="flex items-center justify-between">
                                 <span className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                                   <span className={`w-2.5 h-2.5 rounded-full ${opt.dotCls}`} />
-                                  {opt.label}
+                                  {t(`nurseDash:ulabel_${levelKey}`)}
                                 </span>
                                 {selectedPatient.urgency === levelKey && (
                                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
-                                    Current
+                                    {t("nurseDash:current")}
                                   </span>
                                 )}
                               </div>
                               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                {opt.desc}
+                                {t(`nurseDash:udesc_${levelKey}`)}
                               </p>
                             </div>
                           </div>
@@ -1107,13 +1108,13 @@ export default function NurseDashboardPage({
 
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Clinical Reason / Triage Rationale
+                      {t("nurseDash:clinicalReason")}
                     </label>
                     <textarea
                       rows={3}
                       value={urgencyReason}
                       onChange={(e) => setUrgencyReason(e.target.value)}
-                      placeholder="e.g. Patient exhibits respiratory distress and oxygen saturation below 90%. Immediate stabilization required."
+                      placeholder={t("nurseDash:reasonPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-800 dark:text-slate-200"
                     />
                   </div>
@@ -1126,12 +1127,12 @@ export default function NurseDashboardPage({
                     {isUpdatingUrgency ? (
                       <>
                         <span className="animate-spin">{Icons.refresh}</span>
-                        Updating & Syncing...
+                        {t("nurseDash:updatingSyncing")}
                       </>
                     ) : (
                       <>
                         {Icons.checkCircle}
-                        Save Urgency Level & Sync with Admin
+                        {t("nurseDash:saveUrgencySync")}
                       </>
                     )}
                   </button>
@@ -1144,7 +1145,7 @@ export default function NurseDashboardPage({
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Blood Pressure Systolic (mmHg)
+                        {t("nurseDash:vBpSys")}
                       </label>
                       <input
                         type="number"
@@ -1159,7 +1160,7 @@ export default function NurseDashboardPage({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Blood Pressure Diastolic (mmHg)
+                        {t("nurseDash:vBpDia")}
                       </label>
                       <input
                         type="number"
@@ -1174,7 +1175,7 @@ export default function NurseDashboardPage({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Pulse / Heart Rate (bpm)
+                        {t("nurseDash:vPulse")}
                       </label>
                       <input
                         type="number"
@@ -1189,7 +1190,7 @@ export default function NurseDashboardPage({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Temperature (°C)
+                        {t("nurseDash:vTemp")}
                       </label>
                       <input
                         type="number"
@@ -1205,7 +1206,7 @@ export default function NurseDashboardPage({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        SpO2 Oxygen Saturation (%)
+                        {t("nurseDash:vSpo2")}
                       </label>
                       <input
                         type="number"
@@ -1222,14 +1223,14 @@ export default function NurseDashboardPage({
                       />
                       {vitalsForm.spo2 && parseFloat(vitalsForm.spo2) < 92 && (
                         <p className="text-[11px] text-red-600 dark:text-red-400 mt-1 font-medium">
-                          Warning: Hypoxemia detected (&lt; 92%). Urgent evaluation recommended.
+                          {t("nurseDash:hypoxemiaWarn")}
                         </p>
                       )}
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Respiratory Rate (breaths/min)
+                        {t("nurseDash:vResp")}
                       </label>
                       <input
                         type="number"
@@ -1244,7 +1245,7 @@ export default function NurseDashboardPage({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Weight (kg)
+                        {t("nurseDash:vWeight")}
                       </label>
                       <input
                         type="number"
@@ -1258,7 +1259,7 @@ export default function NurseDashboardPage({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Height (cm)
+                        {t("nurseDash:vHeight")}
                       </label>
                       <input
                         type="number"
@@ -1273,7 +1274,7 @@ export default function NurseDashboardPage({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      Encounter Urgency Classification
+                      {t("nurseDash:encounterUrgency")}
                     </label>
                     <select
                       value={vitalsForm.urgencyScore}
@@ -1282,23 +1283,23 @@ export default function NurseDashboardPage({
                       }
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium cursor-pointer"
                     >
-                      <option value={1}>Stable (Level 1)</option>
-                      <option value={2}>Low (Level 2)</option>
-                      <option value={3}>Moderate (Level 3)</option>
-                      <option value={4}>High (Level 4)</option>
-                      <option value={5}>Critical (Level 5)</option>
+                      <option value={1}>{t("nurseDash:opt_stable")}</option>
+                      <option value={2}>{t("nurseDash:opt_low")}</option>
+                      <option value={3}>{t("nurseDash:opt_moderate")}</option>
+                      <option value={4}>{t("nurseDash:opt_high")}</option>
+                      <option value={5}>{t("nurseDash:opt_critical")}</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      Clinical Notes / Observations
+                      {t("nurseDash:clinicalNotes")}
                     </label>
                     <textarea
                       rows={3}
                       value={vitalsForm.symptomsNote}
                       onChange={(e) => setVitalsForm({ ...vitalsForm, symptomsNote: e.target.value })}
-                      placeholder="Enter nursing observations, complaints, lung sounds, conscious state..."
+                      placeholder={t("nurseDash:notesPh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                   </div>
@@ -1311,12 +1312,12 @@ export default function NurseDashboardPage({
                     {isSavingVitals ? (
                       <>
                         <span className="animate-spin">{Icons.refresh}</span>
-                        Saving Vitals...
+                        {t("nurseDash:savingVitals")}
                       </>
                     ) : (
                       <>
                         {Icons.heart}
-                        Save Vitals & Observations
+                        {t("nurseDash:saveVitals")}
                       </>
                     )}
                   </button>
@@ -1328,18 +1329,18 @@ export default function NurseDashboardPage({
                 <div className="space-y-6">
                   <form onSubmit={handleAddQuickNote} className="space-y-3">
                     <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Add Clinical Visit Note
+                      {t("nurseDash:addVisitNote")}
                     </label>
                     <textarea
                       rows={3}
                       value={quickNoteText}
                       onChange={(e) => setQuickNoteText(e.target.value)}
-                      placeholder="Record nursing interventions, medication administered, patient response, or physician consultation details..."
+                      placeholder={t("nurseDash:notePh")}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-slate-400">
-                        Author: <strong className="text-slate-600 dark:text-slate-300">{profile?.name || "Staff Nurse"}</strong>
+                        {t("nurseDash:author")} <strong className="text-slate-600 dark:text-slate-300">{profile?.name || t("nurseDash:staffNurse")}</strong>
                       </span>
                       <button
                         type="submit"
@@ -1347,20 +1348,20 @@ export default function NurseDashboardPage({
                         className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                       >
                         {isSavingNote && <span className="animate-spin">{Icons.refresh}</span>}
-                        Post Visit Note
+                        {t("nurseDash:postNote")}
                       </button>
                     </div>
                   </form>
 
                   <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
                     <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Clinical Notes Timeline
+                      {t("nurseDash:notesTimeline")}
                     </h4>
 
                     {isLoadingVisits ? (
-                      <p className="text-xs text-slate-400">Loading notes...</p>
+                      <p className="text-xs text-slate-400">{t("nurseDash:loadingNotes")}</p>
                     ) : patientVisits.filter((v) => v.symptoms).length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No notes logged for this patient yet.</p>
+                      <p className="text-xs text-slate-400 italic">{t("nurseDash:noNotes")}</p>
                     ) : (
                       <div className="space-y-3">
                         {patientVisits
@@ -1372,7 +1373,7 @@ export default function NurseDashboardPage({
                             >
                               <div className="flex items-center justify-between text-slate-400 text-[11px]">
                                 <span className="font-semibold text-teal-700 dark:text-teal-300">
-                                  {(Array.isArray(v.staff) ? v.staff[0]?.name : v.staff?.name) || "Attending Nurse"}
+                                  {(Array.isArray(v.staff) ? v.staff[0]?.name : v.staff?.name) || t("nurseDash:attendingNurse")}
                                 </span>
                                 <span>{new Date(v.created_at).toLocaleString()}</span>
                               </div>
@@ -1382,7 +1383,7 @@ export default function NurseDashboardPage({
                               {v.urgency_score && (
                                 <div className="pt-1">
                                   <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
-                                    Urgency: {urgencyFromScore(v.urgency_score)}
+                                    {t("nurseDash:urgencyColon")} {t(`urgency:${urgencyFromScore(v.urgency_score)}`)}
                                   </span>
                                 </div>
                               )}
@@ -1399,21 +1400,21 @@ export default function NurseDashboardPage({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Past Vitals & Encounter Log
+                      {t("nurseDash:pastVitals")}
                     </h4>
                     <span className="text-xs text-slate-400">
-                      {patientVisits.length} recorded visits
+                      {t("nurseDash:recordedVisits", { count: patientVisits.length })}
                     </span>
                   </div>
 
                   {isLoadingVisits ? (
                     <div className="py-12 text-center text-slate-400 text-xs">
                       <div className="animate-spin text-teal-600 w-6 h-6 mx-auto mb-2">{Icons.refresh}</div>
-                      Loading chronological history...
+                      {t("nurseDash:loadingHistory")}
                     </div>
                   ) : patientVisits.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 text-xs italic">
-                      No visits recorded yet for this patient.
+                      {t("nurseDash:noVisitsYet")}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1434,7 +1435,7 @@ export default function NurseDashboardPage({
                                   month: "short",
                                   year: "numeric",
                                 })}{" "}
-                                at{" "}
+                                {t("nurseDash:at")}{" "}
                                 {new Date(v.created_at).toLocaleTimeString("en-GB", {
                                   hour: "2-digit",
                                   minute: "2-digit",
@@ -1444,7 +1445,7 @@ export default function NurseDashboardPage({
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-semibold text-[11px] border ${cfg.badgeCls}`}
                               >
                                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotCls}`} />
-                                {urg}
+                                {t(`urgency:${urg}`)}
                               </span>
                             </div>
 
@@ -1452,7 +1453,7 @@ export default function NurseDashboardPage({
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1">
                                 {vit.systolic && vit.diastolic && (
                                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                    <span className="text-[10px] text-slate-400 block uppercase">Blood Pressure</span>
+                                    <span className="text-[10px] text-slate-400 block uppercase">{t("nurseDash:vBloodPressure")}</span>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                                       {vit.systolic}/{vit.diastolic} mmHg
                                     </span>
@@ -1460,7 +1461,7 @@ export default function NurseDashboardPage({
                                 )}
                                 {vit.pulse && (
                                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                    <span className="text-[10px] text-slate-400 block uppercase">Heart Rate</span>
+                                    <span className="text-[10px] text-slate-400 block uppercase">{t("nurseDash:vHeartRate")}</span>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                                       {vit.pulse} bpm
                                     </span>
@@ -1468,7 +1469,7 @@ export default function NurseDashboardPage({
                                 )}
                                 {vit.temperature && (
                                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                    <span className="text-[10px] text-slate-400 block uppercase">Temperature</span>
+                                    <span className="text-[10px] text-slate-400 block uppercase">{t("nurseDash:vTemperature")}</span>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                                       {vit.temperature}°C
                                     </span>
@@ -1476,7 +1477,7 @@ export default function NurseDashboardPage({
                                 )}
                                 {vit.spo2 && (
                                   <div className={`p-2 rounded-xl ${vit.spo2 < 92 ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300" : "bg-slate-50 dark:bg-slate-900"}`}>
-                                    <span className="text-[10px] opacity-70 block uppercase">Oxygen (SpO2)</span>
+                                    <span className="text-[10px] opacity-70 block uppercase">{t("nurseDash:vOxygen")}</span>
                                     <span className="font-semibold">
                                       {vit.spo2}%
                                     </span>
@@ -1484,7 +1485,7 @@ export default function NurseDashboardPage({
                                 )}
                                 {vit.respRate && (
                                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                    <span className="text-[10px] text-slate-400 block uppercase">Resp Rate</span>
+                                    <span className="text-[10px] text-slate-400 block uppercase">{t("nurseDash:vRespRate")}</span>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                                       {vit.respRate} /min
                                     </span>
@@ -1492,7 +1493,7 @@ export default function NurseDashboardPage({
                                 )}
                                 {vit.weight && (
                                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                    <span className="text-[10px] text-slate-400 block uppercase">Weight</span>
+                                    <span className="text-[10px] text-slate-400 block uppercase">{t("nurseDash:vWeightShort")}</span>
                                     <span className="font-semibold text-slate-800 dark:text-slate-200">
                                       {vit.weight} kg
                                     </span>
@@ -1500,12 +1501,12 @@ export default function NurseDashboardPage({
                                 )}
                               </div>
                             ) : (
-                              <p className="text-slate-400 italic text-[11px]">No vital measurements recorded in this entry.</p>
+                              <p className="text-slate-400 italic text-[11px]">{t("nurseDash:noVitalsEntry")}</p>
                             )}
 
                             {v.symptoms && (
                               <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl">
-                                <span className="text-[10px] text-slate-400 block uppercase font-semibold">Note / Observation</span>
+                                <span className="text-[10px] text-slate-400 block uppercase font-semibold">{t("nurseDash:noteObservation")}</span>
                                 <p className="text-slate-700 dark:text-slate-300 text-xs mt-0.5">
                                   {v.symptoms}
                                 </p>
@@ -1513,7 +1514,7 @@ export default function NurseDashboardPage({
                             )}
 
                             <div className="text-[10px] text-slate-400 flex justify-between pt-1">
-                              <span>Staff: {(Array.isArray(v.staff) ? v.staff[0]?.name : v.staff?.name) || "Staff Nurse"}</span>
+                              <span>{t("nurseDash:staffLabel")} {(Array.isArray(v.staff) ? v.staff[0]?.name : v.staff?.name) || t("nurseDash:staffNurseFallback")}</span>
                               <span>ID: #{v.id.split("-")[0]}</span>
                             </div>
                           </div>

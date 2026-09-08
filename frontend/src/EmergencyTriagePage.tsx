@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { fetchEmergencyTriageQueue } from "./lib/adminService"
 import type { EmergencyTriagePatient, TriageBand, TriageStatus } from "./lib/types"
 
@@ -119,6 +120,7 @@ export default function EmergencyTriagePage({
   onNewVisit,
   onBack,
 }: EmergencyTriagePageProps) {
+  const { t } = useTranslation()
   const [patients, setPatients] = useState<EmergencyTriagePatient[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -193,10 +195,10 @@ export default function EmergencyTriagePage({
 
     const actionLabel =
       newStatus === "in_treatment"
-        ? `Admitted ${patient.name} to immediate clinical care`
+        ? t("emergencyTriage:admitted", { name: patient.name })
         : newStatus === "discharged"
-        ? `Discharged ${patient.name} from emergency queue`
-        : `Reverted ${patient.name} to waiting queue`
+        ? t("emergencyTriage:discharged", { name: patient.name })
+        : t("emergencyTriage:reverted", { name: patient.name })
 
     setActionSuccess(actionLabel)
   }
@@ -312,7 +314,7 @@ export default function EmergencyTriagePage({
                 type="button"
                 onClick={onBack}
                 className="w-9 h-9 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur flex items-center justify-center text-white transition-all cursor-pointer"
-                title="Return to Dashboard"
+                title={t("emergencyTriage:returnDashboard")}
               >
                 {Icon.arrowLeft}
               </button>
@@ -324,17 +326,17 @@ export default function EmergencyTriagePage({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/25 text-white rounded-full px-2.5 py-0.5">
-                  Emergency Mode Active
+                  {t("emergencyTriage:emergencyModeActive")}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-red-50 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Live Pulse · {now}
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> {t("emergencyTriage:livePulse")} · {now}
                 </span>
               </div>
               <h1 className="font-display text-2xl lg:text-3xl text-white font-bold mt-1 leading-tight">
-                Emergency Mode Triage Queue
+                {t("emergencyTriage:title")}
               </h1>
               <p className="text-xs text-red-100 mt-0.5">
-                Real-time clinical prioritization using authoritative 1–5 urgency scale & emergency triage bands.
+                {t("emergencyTriage:subtitle")}
               </p>
             </div>
           </div>
@@ -348,7 +350,7 @@ export default function EmergencyTriagePage({
               title="Refresh Queue"
             >
               <span className={refreshing ? "animate-spin" : ""}>{Icon.refresh}</span>
-              <span>{refreshing ? "Refreshing..." : "Refresh Queue"}</span>
+              <span>{refreshing ? t("emergencyTriage:refreshing") : t("emergencyTriage:refreshQueue")}</span>
             </button>
 
             <button
@@ -359,7 +361,7 @@ export default function EmergencyTriagePage({
               title="Export Triage Sheet CSV"
             >
               {Icon.download}
-              <span>Export Triage Sheet</span>
+              <span>{t("emergencyTriage:exportSheet")}</span>
             </button>
           </div>
         </div>
@@ -387,13 +389,13 @@ export default function EmergencyTriagePage({
       {/* ── Error Banner ── */}
       {error && (
         <div role="alert" className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 p-4 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
-          <span>Failed to load triage queue: {error}</span>
+          <span>{t("emergencyTriage:failedLoad", { error })}</span>
           <button
             type="button"
             onClick={() => loadQueue()}
             className="underline font-bold hover:text-red-900"
           >
-            Retry
+            {t("emergencyTriage:retry")}
           </button>
         </div>
       )}
@@ -403,48 +405,48 @@ export default function EmergencyTriagePage({
         {[
           {
             key: "all" as FilterTab,
-            label: "All Waiting",
+            label: t("emergencyTriage:card_all"),
             count: counts.all,
             dot: "bg-slate-500",
             border: "border-slate-300 dark:border-slate-700",
             textColor: "text-slate-800 dark:text-slate-100",
-            desc: "Active in queue",
+            desc: t("emergencyTriage:card_allDesc"),
           },
           {
             key: "red" as FilterTab,
-            label: "Immediate (Red)",
+            label: t("emergencyTriage:card_red"),
             count: counts.red,
             dot: BANDS_CONFIG.red.dot,
             border: "border-red-400 dark:border-red-800",
             textColor: "text-red-600 dark:text-red-400",
-            desc: "Urgency 4–5 (Critical)",
+            desc: t("emergencyTriage:card_redDesc"),
           },
           {
             key: "yellow" as FilterTab,
-            label: "Urgent (Yellow)",
+            label: t("emergencyTriage:card_yellow"),
             count: counts.yellow,
             dot: BANDS_CONFIG.yellow.dot,
             border: "border-amber-400 dark:border-amber-800",
             textColor: "text-amber-600 dark:text-amber-400",
-            desc: "Urgency 3 (Moderate)",
+            desc: t("emergencyTriage:card_yellowDesc"),
           },
           {
             key: "green" as FilterTab,
-            label: "Delayed (Green)",
+            label: t("emergencyTriage:card_green"),
             count: counts.green,
             dot: BANDS_CONFIG.green.dot,
             border: "border-emerald-400 dark:border-emerald-800",
             textColor: "text-emerald-600 dark:text-emerald-400",
-            desc: "Urgency 1–2 (Stable)",
+            desc: t("emergencyTriage:card_greenDesc"),
           },
           {
             key: "in_treatment" as FilterTab,
-            label: "In Treatment",
+            label: t("emergencyTriage:card_inTreatment"),
             count: counts.in_treatment,
             dot: "bg-blue-500",
             border: "border-blue-400 dark:border-blue-800",
             textColor: "text-blue-600 dark:text-blue-400",
-            desc: "Under clinical care",
+            desc: t("emergencyTriage:card_inTreatmentDesc"),
           },
         ].map((tab) => {
           const active = filter === tab.key
@@ -486,7 +488,7 @@ export default function EmergencyTriagePage({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search patient, ID, village, symptoms…"
+            placeholder={t("emergencyTriage:searchPh")}
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
           />
           {search && (
@@ -511,7 +513,7 @@ export default function EmergencyTriagePage({
               onClick={() => setFilter("all")}
               className="text-red-600 dark:text-red-400 underline ml-1 cursor-pointer"
             >
-              Reset filter
+              {t("emergencyTriage:resetFilter")}
             </button>
           )}
         </div>
@@ -521,18 +523,18 @@ export default function EmergencyTriagePage({
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
         {/* Table header (desktop) */}
         <div className="hidden lg:grid grid-cols-[70px_1.5fr_2fr_120px_1.2fr] gap-4 px-6 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-          <span>Urgency</span>
-          <span>Patient Identity</span>
-          <span>Chief Complaint & Vitals</span>
-          <span>Waiting Time</span>
-          <span className="text-right">Triage Actions</span>
+          <span>{t("emergencyTriage:colUrgency")}</span>
+          <span>{t("emergencyTriage:colIdentity")}</span>
+          <span>{t("emergencyTriage:colComplaint")}</span>
+          <span>{t("emergencyTriage:colWait")}</span>
+          <span className="text-right">{t("emergencyTriage:colActions")}</span>
         </div>
 
         {loading ? (
           <div className="p-12 text-center space-y-3">
             <div className="w-8 h-8 rounded-full border-2 border-red-600 border-t-transparent animate-spin mx-auto" />
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Loading Emergency Triage Queue...
+              {t("emergencyTriage:loadingQueue")}
             </p>
           </div>
         ) : filteredPatients.length === 0 ? (
@@ -541,12 +543,12 @@ export default function EmergencyTriagePage({
               {Icon.check}
             </div>
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              Triage queue is clear for this selection
+              {t("emergencyTriage:queueClear")}
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
               {search
-                ? `No patients match "${search}". Try adjusting your search query.`
-                : "No patients currently waiting under this triage band category."}
+                ? t("emergencyTriage:noMatchSearch", { q: search })
+                : t("emergencyTriage:noWaiting")}
             </p>
           </div>
         ) : (
@@ -674,7 +676,7 @@ export default function EmergencyTriagePage({
                           type="button"
                           onClick={() => updatePatientStatus(p, "discharged")}
                           className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm cursor-pointer"
-                          title="Mark patient treated and discharge from queue"
+                          title={t("emergencyTriage:dischargeTitle")}
                         >
                           {Icon.check}
                           <span>Discharge</span>
@@ -694,7 +696,7 @@ export default function EmergencyTriagePage({
                         type="button"
                         onClick={() => onViewPatient(p.patientId)}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-                        title="View Full Patient Record"
+                        title={t("emergencyTriage:viewRecord")}
                       >
                         {Icon.user}
                       </button>
@@ -705,7 +707,7 @@ export default function EmergencyTriagePage({
                         type="button"
                         onClick={() => onNewVisit(p.patientId)}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-                        title="Record Clinical Visit & Symptoms"
+                        title={t("emergencyTriage:recordVisit")}
                       >
                         {Icon.notes}
                       </button>
@@ -722,9 +724,9 @@ export default function EmergencyTriagePage({
       <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-2 px-2 flex-wrap gap-2">
         <span className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-          Urgency scores calculated using authoritative clinical scoring algorithm (1: Low to 5: Critical).
+          {t("emergencyTriage:footerScoring")}
         </span>
-        <span>Patients admitted locally persist across reloads.</span>
+        <span>{t("emergencyTriage:footerPersist")}</span>
       </div>
     </div>
   )

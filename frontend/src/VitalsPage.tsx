@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useTranslation } from "react-i18next"
 import { supabase } from "./lib/supabase"
 import { useAuth } from "./AuthContext"
 import { offlineDb } from "./lib/offlineDb"
@@ -179,6 +180,37 @@ const UUID_RE =
 const shortId = (id: string) => id.split("-")[0].toUpperCase()
 const sexLabel = (s: string | null) =>
   s === "F" ? "Female" : s === "M" ? "Male" : (s ?? "—")
+
+// Canonical English chip values map to display translation keys.
+const CHIP_KEY: Record<string, string> = {
+  "Fever": "chip_fever",
+  "Chills": "chip_chills",
+  "Headache": "chip_headache",
+  "Cough": "chip_cough",
+  "Shortness of breath": "chip_sob",
+  "Nausea / Vomiting": "chip_nausea",
+  "Diarrhoea": "chip_diarrhoea",
+  "Abdominal pain": "chip_abdominal",
+  "Chest pain": "chip_chest",
+  "Dizziness": "chip_dizziness",
+  "Fatigue": "chip_fatigue",
+  "Loss of appetite": "chip_appetite",
+  "Joint pain": "chip_joint",
+  "Rash": "chip_rash",
+  "Bleeding": "chip_bleeding",
+  "Convulsions": "chip_convulsions",
+  "Altered consciousness": "chip_altered",
+  "Swelling (oedema)": "chip_oedema",
+  "Painful urination": "chip_urination",
+  "Eye discharge": "chip_eye",
+}
+const CAT_KEY: Record<string, string> = {
+  "diarrhea/gastrointestinal": "cat_gi",
+  "fever": "cat_fever",
+  "respiratory": "cat_respiratory",
+  "skin/rash": "cat_skin",
+  "other": "cat_other",
+}
 const initialsOf = (name: string) => {
   const parts = name.trim().split(/\s+/)
   return (
@@ -198,34 +230,34 @@ function buildAIResult(
   const spo2 = parseFloat(vals.spo2)
 
   let urgency: "High" | "Medium" | "Low" = "Low"
-  const flags: string[] = []
-  const actions: string[] = []
+  const flags: { k: string; p?: Record<string, unknown> }[] = []
+  const actions: { k: string }[] = []
 
   if (sys >= 180 || sys < 80) {
-    flags.push(`Systolic BP ${sys} mmHg — outside safe range`)
+    flags.push({ k: "flagSysOut", p: { v: sys } })
     urgency = "High"
   } else if (sys >= 140) {
-    flags.push(`Systolic BP ${sys} mmHg — Stage 2 hypertension`)
+    flags.push({ k: "flagSysStage2", p: { v: sys } })
     urgency = "Medium"
   }
 
   if (temp >= 39.5) {
-    flags.push(`Temperature ${temp}°C — high-grade fever`)
+    flags.push({ k: "flagTempHigh", p: { v: temp } })
     urgency = "High"
   } else if (temp >= 38) {
-    flags.push(`Temperature ${temp}°C — moderate fever`)
+    flags.push({ k: "flagTempMod", p: { v: temp } })
     if (urgency !== "High") urgency = "Medium"
   } else if (temp < 35.5) {
-    flags.push(`Temperature ${temp}°C — hypothermia`)
+    flags.push({ k: "flagTempLow", p: { v: temp } })
     urgency = "High"
   }
 
   if (!isNaN(pulse) && (pulse > 120 || pulse < 45)) {
-    flags.push(`Pulse ${pulse} bpm — abnormal rate`)
+    flags.push({ k: "flagPulse", p: { v: pulse } })
     urgency = "High"
   }
   if (!isNaN(spo2) && spo2 < 92) {
-    flags.push(`SpO₂ ${spo2}% — possible hypoxia`)
+    flags.push({ k: "flagSpo2", p: { v: spo2 } })
     urgency = "High"
   }
 
@@ -235,29 +267,29 @@ function buildAIResult(
     chips.includes("Chest pain")
   ) {
     urgency = "High"
-    flags.push("Reported critical symptom requiring immediate assessment")
+    flags.push({ k: "flagCriticalSymptom" })
   }
   if (chips.includes("Bleeding")) {
     if (urgency !== "High") urgency = "Medium"
-    flags.push("Reported bleeding")
+    flags.push({ k: "flagBleeding" })
   }
 
   if (flags.length === 0) {
-    flags.push("All measured vitals within normal limits")
-    flags.push("No critical symptoms reported")
+    flags.push({ k: "flagAllNormal" })
+    flags.push({ k: "flagNoCritical" })
   }
 
   if (urgency === "High") {
-    actions.push("Escalate immediately — alert senior clinician")
-    actions.push("Do not leave patient unattended")
-    actions.push("Prepare for urgent referral if needed")
+    actions.push({ k: "actEscalate" })
+    actions.push({ k: "actNotLeave" })
+    actions.push({ k: "actPrepareReferral" })
   } else if (urgency === "Medium") {
-    actions.push("Prioritise ahead of routine cases today")
-    actions.push("Monitor vitals every 30 minutes")
-    actions.push("Document and flag for clinician review")
+    actions.push({ k: "actPrioritise" })
+    actions.push({ k: "actMonitor30" })
+    actions.push({ k: "actDocument" })
   } else {
-    actions.push("Routine clinical assessment")
-    actions.push("Standard follow-up schedule")
+    actions.push({ k: "actRoutine" })
+    actions.push({ k: "actStandardFollowup" })
   }
 
   return { urgency, flags, actions }
@@ -341,10 +373,11 @@ function useTypewriter(text: string, active: boolean, speed = 18) {
 
 // ── Components ─────────────────────────────────────────────────────────────────
 function StepBar({ step }: { step: 1 | 2 | 3 }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-4">
       <div className="flex items-start gap-3">
-        {VISIT_STEPS.map(({ n, label, sub }) => {
+        {VISIT_STEPS.map(({ n }) => {
           const done = n < step
           const active = n === step
           return (
@@ -397,10 +430,10 @@ function StepBar({ step }: { step: 1 | 2 | 3 }) {
                         : "text-slate-400 dark:text-slate-500"
                   }`}
                 >
-                  {label}
+                  {t(`vitals:step${n}`)}
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:block mt-0.5">
-                  {sub}
+                  {t(`vitals:step${n}sub`)}
                 </p>
               </div>
             </div>
@@ -414,7 +447,7 @@ function StepBar({ step }: { step: 1 | 2 | 3 }) {
         />
       </div>
       <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 text-right">
-        Step {step} of 3
+        {t("vitals:stepOf", { step })}
       </p>
     </div>
   )
@@ -431,6 +464,9 @@ export default function VitalsPage({
   onBack?: () => void
 }) {
   const { profile } = useAuth()
+  const { t } = useTranslation()
+  const sx = (s: string | null) =>
+    s === "F" ? t("vitals:female") : s === "M" ? t("vitals:male") : (s ?? "—")
 
   // Patient selection
   const [patients, setPatients] = useState<PatientOption[]>([])
@@ -482,7 +518,7 @@ export default function VitalsPage({
       } catch (err: any) {
         console.error(err)
         if (!cancelled)
-          setPatientsError(err.message || "Failed to load patients.")
+          setPatientsError(err.message || t("vitals:errLoadPatients"))
       } finally {
         if (!cancelled) setPatientsLoading(false)
       }
@@ -525,7 +561,11 @@ export default function VitalsPage({
           .slice(0, 8)
 
   const urgencySummary = aiResult
-    ? `${aiResult.urgency} urgency. ${aiResult.flags[0]}. Recommended: ${aiResult.actions[0]}.`
+    ? t("vitals:aiSummary", {
+        level: t(`vitals:aiUrgency${aiResult.urgency}`),
+        flag: t(aiResult.flags[0].k, aiResult.flags[0].p as Record<string, unknown>),
+        action: t(aiResult.actions[0].k),
+      })
     : ""
 
   const typewritten = useTypewriter(urgencySummary, aiState === "done")
@@ -566,16 +606,16 @@ export default function VitalsPage({
 
   const handleSave = async () => {
     if (!selected) {
-      setSaveError("Select a patient before saving the visit.")
+      setSaveError(t("vitals:errSelectPatient"))
       return
     }
     if (!complaint.trim()) {
-      setSaveError("Chief complaint is required.")
+      setSaveError(t("vitals:errComplaint"))
       return
     }
     if (!profile || !UUID_RE.test(profile.id)) {
       setSaveError(
-        "Your session is not linked to a staff record, so this visit cannot be saved. Sign in with a staff account.",
+        t("vitals:errNoStaff"),
       )
       return
     }
@@ -664,7 +704,7 @@ export default function VitalsPage({
       console.error(err)
       setSaveError(
         err.message ||
-          "Failed to save visit. Check your connection and try again.",
+          t("vitals:errSave"),
       )
     } finally {
       setSaving(false)
@@ -716,30 +756,30 @@ export default function VitalsPage({
               />
             </svg>
           </div>
-          <h1 className="font-display text-2xl text-teal-950 dark:text-white">Visit saved</h1>
+          <h1 className="font-display text-2xl text-teal-950 dark:text-white">{t("vitals:visitSaved")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm">
-            Recorded for{" "}
-            <span className="font-semibold text-teal-700 dark:text-teal-300">
-              {savedVisit.patient.name}
-            </span>{" "}
-            at {savedVisit.time} and {savedOffline ? "saved offline locally" : "synced to the clinic database"}.
+            {t("vitals:savedSentence", {
+              name: savedVisit.patient.name,
+              time: savedVisit.time,
+              mode: savedOffline ? t("vitals:savedOfflineText") : t("vitals:syncedText"),
+            })}
           </p>
           <p className="font-mono text-[11px] text-slate-400 dark:text-slate-500 mt-2">
-            Visit {shortId(savedVisit.id)}
+            {t("vitals:visitLabel")} {shortId(savedVisit.id)}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 mt-7">
             <button
               onClick={resetForm}
               className="text-sm font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:border-teal-400 dark:hover:border-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/40 px-4 py-2.5 rounded-xl transition-all"
             >
-              Record another visit
+              {t("vitals:recordAnother")}
             </button>
             {onSaved && (
               <button
                 onClick={() => onSaved(savedVisit.patient.id)}
                 className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm shadow-teal-600/20 transition-all hover:-translate-y-0.5"
               >
-                View patient record
+                {t("vitals:viewRecord")}
               </button>
             )}
           </div>
@@ -754,12 +794,12 @@ export default function VitalsPage({
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Vitals & Symptoms
+            {t("vitals:title")}
           </h1>
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
             {selected ? (
               <>
-                Recording for{" "}
+                {t("vitals:recordingFor")}{" "}
                 <span className="font-semibold text-teal-700 dark:text-teal-300">
                   {selected.name}
                 </span>
@@ -769,7 +809,7 @@ export default function VitalsPage({
                 </span>
               </>
             ) : (
-              "Select a patient to begin recording a visit"
+              t("vitals:selectToBegin")
             )}
           </p>
         </div>
@@ -796,7 +836,7 @@ export default function VitalsPage({
               />
             </svg>
           </div>
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Patient</h2>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("vitals:patient")}</h2>
           {selected && (
             <button
               type="button"
@@ -806,7 +846,7 @@ export default function VitalsPage({
               }}
               className="ml-auto text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
             >
-              Change
+              {t("vitals:change")}
             </button>
           )}
         </div>
@@ -821,7 +861,7 @@ export default function VitalsPage({
                 {selected.name}
               </p>
               <p className="text-xs text-teal-700 dark:text-teal-300">
-                {selected.age ?? "—"} yrs · {sexLabel(selected.sex)} ·{" "}
+                {selected.age ?? "—"} {t("vitals:yrs")} · {sx(selected.sex)} ·{" "}
                 {selected.village ?? "—"}
               </p>
             </div>
@@ -835,19 +875,19 @@ export default function VitalsPage({
               htmlFor="visit-patient-search"
               className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2"
             >
-              Find patient <span className="text-red-400">*</span>
+              {t("vitals:findPatient")} <span className="text-red-400">*</span>
             </label>
             <input
               id="visit-patient-search"
               type="search"
               value={patientQuery}
               onChange={(e) => setPatientQuery(e.target.value)}
-              placeholder="Search by name, village, or patient ID…"
+              placeholder={t("vitals:searchPatientsPlaceholder")}
               disabled={patientsLoading}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all disabled:opacity-60"
             />
             {patientsLoading && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">Loading patients…</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">{t("vitals:loadingPatients")}</p>
             )}
             {patientsError && (
               <p className="text-xs text-red-600 dark:text-red-400 mt-3">{patientsError}</p>
@@ -857,8 +897,8 @@ export default function VitalsPage({
                 {filteredPatients.length === 0 ? (
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
                     {patients.length === 0
-                      ? "No patients registered for your clinic yet."
-                      : "No patients match your search."}
+                      ? t("vitals:noPatientsClinic")
+                      : t("vitals:noPatientsMatch")}
                   </p>
                 ) : (
                   <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
@@ -877,7 +917,7 @@ export default function VitalsPage({
                               {p.name}
                             </span>
                             <span className="block text-[11px] text-slate-400 dark:text-slate-500">
-                              {p.age ?? "—"} yrs · {sexLabel(p.sex)} ·{" "}
+                              {p.age ?? "—"} {t("vitals:yrs")} · {sx(p.sex)} ·{" "}
                               {p.village ?? "—"}
                             </span>
                           </span>
@@ -914,7 +954,7 @@ export default function VitalsPage({
             </svg>
           </div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Measured Vitals
+            {t("vitals:measuredVitals")}
           </h2>
           <span className="ml-auto text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
             {new Date().toLocaleTimeString("en-GB", {
@@ -937,7 +977,7 @@ export default function VitalsPage({
                     className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${s.dot}`}
                   />
                   <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 leading-none">
-                    {v.label}
+                    {t(`vitals:field_${v.key}`)}
                   </label>
                 </div>
 
@@ -959,7 +999,12 @@ export default function VitalsPage({
                 {/* Range info */}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                    Normal: {v.normal}
+                    {t("vitals:normalPrefix")}{" "}
+                    {v.key === "weight"
+                      ? t("vitals:normalVaries")
+                      : v.key === "muac"
+                        ? t("vitals:normalMuac")
+                        : v.normal}
                   </span>
                   {status !== "empty" && status !== "normal" && (
                     <span
@@ -969,7 +1014,7 @@ export default function VitalsPage({
                           : "text-amber-500"
                       }`}
                     >
-                      {s.label}
+                      {t(`vitals:status_${status}`)}
                     </span>
                   )}
                 </div>
@@ -989,7 +1034,7 @@ export default function VitalsPage({
               <path d="M8 14s-6-4.686-6-8a6 6 0 0112 0c0 3.314-6 8-6 8z" />
             </svg>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Blood pressure reading:
+              {t("vitals:bpReading")}
             </span>
             <span className="font-display text-base text-teal-900 dark:text-teal-200 font-bold tracking-tight">
               {values.systolic}/{values.diastolic}
@@ -1018,7 +1063,7 @@ export default function VitalsPage({
             </svg>
           </div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Chief Complaint & Symptoms
+            {t("vitals:chiefSymptoms")}
           </h2>
         </div>
 
@@ -1028,19 +1073,19 @@ export default function VitalsPage({
             htmlFor="visit-complaint"
             className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2"
           >
-            Chief Complaint <span className="text-red-400">*</span>
+            {t("vitals:chiefComplaint")} <span className="text-red-400">*</span>
           </label>
           <textarea
             id="visit-complaint"
             rows={4}
-            placeholder="In the patient's own words: what brings them in today? Include onset, duration, and severity.&#10;&#10;e.g. 'High fever for 2 days with shivering and body aches. Feels worse at night. No cough.'"
+            placeholder={t("vitals:complaintPlaceholder")}
             value={complaint}
             onChange={(e) => setComplaint(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all resize-none leading-relaxed"
           />
           <div className="flex justify-end mt-1">
             <span className="text-[11px] text-slate-400 dark:text-slate-500">
-              {complaint.length} characters
+              {t("vitals:characters", { count: complaint.length })}
             </span>
           </div>
         </div>
@@ -1051,7 +1096,7 @@ export default function VitalsPage({
             htmlFor="visit-symptom-category"
             className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2"
           >
-            Symptom Category
+            {t("vitals:symptomCategory")}
           </label>
           <select
             id="visit-symptom-category"
@@ -1059,24 +1104,24 @@ export default function VitalsPage({
             onChange={(e) => setCategory(e.target.value)}
             className="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
           >
-            <option value="">Not categorised</option>
+            <option value="">{t("vitals:notCategorised")}</option>
             {SYMPTOM_CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>
-                {c.label}
+                {t(`vitals:${CAT_KEY[c.value]}`)}
               </option>
             ))}
           </select>
           <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
-            Used for outbreak monitoring across clinics.
+            {t("vitals:outbreakMonitoring")}
           </p>
         </div>
 
         {/* Symptom chips */}
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2.5">
-            Reported Symptoms{" "}
+            {t("vitals:reportedSymptoms")}{" "}
             <span className="text-slate-400 dark:text-slate-500 font-normal normal-case">
-              (select all that apply)
+              {t("vitals:selectAllApply")}
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
@@ -1104,14 +1149,14 @@ export default function VitalsPage({
                   }`}
                 >
                   {on && <span className="mr-1 text-[10px]">✓</span>}
-                  {c}
+                  {t(`vitals:${CHIP_KEY[c]}`)}
                 </button>
               )
             })}
           </div>
           {chips.length > 0 && (
             <p className="text-[11px] text-teal-600 dark:text-teal-400 font-medium mt-2">
-              {chips.length} symptom{chips.length > 1 ? "s" : ""} selected
+              {t("vitals:symptomsSelected", { count: chips.length })}
             </p>
           )}
         </div>
@@ -1138,16 +1183,14 @@ export default function VitalsPage({
                 </svg>
               </div>
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                AI Urgency Check
+                {t("vitals:aiTitle")}
               </h2>
               <span className="text-[10px] font-bold uppercase tracking-wide text-violet-500 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-900/50 px-2 py-0.5 rounded-full">
-                Beta
+                {t("vitals:beta")}
               </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm leading-relaxed">
-              Analyses entered vitals and symptoms to suggest an urgency level.
-              Works offline. Not a diagnostic tool — clinical judgement always
-              takes priority.
+              {t("vitals:aiDesc")}
             </p>
           </div>
 
@@ -1181,7 +1224,7 @@ export default function VitalsPage({
                     d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
                   />
                 </svg>
-                Analysing…
+                {t("vitals:analysing")}
               </>
             ) : (
               <>
@@ -1198,7 +1241,7 @@ export default function VitalsPage({
                     d="M8 1l1.5 3.5L13 5.5 10.5 8l.5 3.5L8 10l-3 1.5.5-3.5L3 5.5l3.5-1L8 1z"
                   />
                 </svg>
-                Run AI Urgency Check
+                {t("vitals:runAi")}
               </>
             )}
           </button>
@@ -1228,7 +1271,7 @@ export default function VitalsPage({
               <span
                 className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg ${URGENCY_STYLE[aiResult.urgency].badge}`}
               >
-                {aiResult.urgency} Urgency
+                {t(`vitals:aiUrgency${aiResult.urgency}`)} {t("vitals:urgencyWord")}
               </span>
               <p
                 className={`text-xs font-medium ${URGENCY_STYLE[aiResult.urgency].text}`}
@@ -1244,7 +1287,7 @@ export default function VitalsPage({
                 <p
                   className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${URGENCY_STYLE[aiResult.urgency].text} opacity-70`}
                 >
-                  Observations
+                  {t("vitals:observations")}
                 </p>
                 <ul className="space-y-1.5">
                   {aiResult.flags.map((f, i) => (
@@ -1261,7 +1304,7 @@ export default function VitalsPage({
                       <span
                         className={`text-xs leading-snug ${URGENCY_STYLE[aiResult.urgency].text}`}
                       >
-                        {f}
+                        {t(f.k, f.p as Record<string, unknown>)}
                       </span>
                     </li>
                   ))}
@@ -1273,7 +1316,7 @@ export default function VitalsPage({
                 <p
                   className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${URGENCY_STYLE[aiResult.urgency].text} opacity-70`}
                 >
-                  Recommended Actions
+                  {t("vitals:recommendedActions")}
                 </p>
                 <ul className="space-y-1.5">
                   {aiResult.actions.map((a, i) => (
@@ -1294,7 +1337,7 @@ export default function VitalsPage({
                       <span
                         className={`text-xs leading-snug ${URGENCY_STYLE[aiResult.urgency].text}`}
                       >
-                        {a}
+                        {t(a.k)}
                       </span>
                     </li>
                   ))}
@@ -1305,8 +1348,7 @@ export default function VitalsPage({
             <p
               className={`text-[10px] mt-4 pt-3 border-t opacity-60 ${URGENCY_STYLE[aiResult.urgency].text} border-current/20`}
             >
-              AI assessment generated offline based on WHO clinical thresholds.
-              Always apply clinical judgement.
+              {t("vitals:aiFooter")}
             </p>
           </div>
         )}
@@ -1331,7 +1373,7 @@ export default function VitalsPage({
             </svg>
           </div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Diagnosis & Urgency
+            {t("vitals:diagnosisUrgency")}
           </h2>
         </div>
 
@@ -1340,12 +1382,12 @@ export default function VitalsPage({
             htmlFor="visit-diagnosis"
             className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2"
           >
-            Diagnosis / Assessment
+            {t("vitals:diagnosisLabel")}
           </label>
           <textarea
             id="visit-diagnosis"
             rows={3}
-            placeholder="Working diagnosis and plan. e.g. 'Suspected uncomplicated malaria — RDT ordered. Paracetamol for fever.'"
+            placeholder={t("vitals:diagnosisPlaceholder")}
             value={diagnosis}
             onChange={(e) => setDiagnosis(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all resize-none leading-relaxed"
@@ -1355,11 +1397,11 @@ export default function VitalsPage({
         <div>
           <div className="flex items-center justify-between mb-2.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-              Urgency Score
+              {t("vitals:urgencyScore")}
             </p>
             {aiResult && urgencyScore === AI_URGENCY_SCORE[aiResult.urgency] && (
               <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">
-                Suggested by AI check
+                {t("vitals:suggestedByAi")}
               </span>
             )}
           </div>
@@ -1388,13 +1430,13 @@ export default function VitalsPage({
                   >
                     {u.score}
                   </span>
-                  {u.label}
+                  {t(`urgency:${u.label}`)}
                 </button>
               )
             })}
           </div>
           <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
-            Optional. Clinical judgement overrides any suggested score.
+            {t("vitals:urgencyOptional")}
           </p>
         </div>
       </div>
@@ -1439,7 +1481,7 @@ export default function VitalsPage({
               d="M10 4L6 8l4 4"
             />
           </svg>
-          Back
+          {t("vitals:back")}
         </button>
 
         <button
@@ -1473,11 +1515,11 @@ export default function VitalsPage({
                   d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
                 />
               </svg>
-              Saving…
+              {t("vitals:saving")}
             </>
           ) : (
             <>
-              Save Visit
+              {t("vitals:saveVisit")}
               <svg
                 viewBox="0 0 16 16"
                 fill="none"

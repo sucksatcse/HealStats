@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   fetchStaff,
   createStaffRecord,
@@ -241,6 +242,7 @@ function AddStaffModal({
   onClose: () => void
   onAdded: (s: StaffWithClinic) => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<StaffRole>("worker")
@@ -251,11 +253,11 @@ function AddStaffModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setError("Staff member name is required.")
+      setError(t("staff:errNameReq"))
       return
     }
     if (!email.trim() || !email.includes("@")) {
-      setError("A valid work email is required.")
+      setError(t("staff:errEmailReq"))
       return
     }
 
@@ -270,7 +272,7 @@ function AddStaffModal({
     setSaving(false)
 
     if (apiError || !data) {
-      setError(apiError ?? "Failed to create staff record.")
+      setError(apiError ?? t("staff:errCreateFail"))
       return
     }
     onAdded(data)
@@ -286,10 +288,10 @@ function AddStaffModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="font-display text-xl text-teal-950 dark:text-white">
-              Add New Staff
+              {t("staff:addTitle")}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Register a health worker or administrator
+              {t("staff:addSubtitle")}
             </p>
           </div>
           <button
@@ -314,13 +316,13 @@ function AddStaffModal({
               {Icon.info}
             </span>
             <p>
-              This creates the staff record in the database. To enable login, ensure an account with this email exists in Supabase Auth.
+              {t("staff:authNotice")}
             </p>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Full Name *
+              {t("staff:fullName")}
             </label>
             <input
               value={name}
@@ -328,14 +330,14 @@ function AddStaffModal({
                 setName(e.target.value)
                 setError("")
               }}
-              placeholder="e.g. Dr. Ayesha Rahman"
+              placeholder={t("staff:phName")}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all"
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Work Email *
+              {t("staff:workEmail")}
             </label>
             <input
               type="email"
@@ -344,7 +346,7 @@ function AddStaffModal({
                 setEmail(e.target.value)
                 setError("")
               }}
-              placeholder="staff@healstats.org"
+              placeholder={t("staff:phEmail")}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all"
             />
           </div>
@@ -352,7 +354,7 @@ function AddStaffModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                Role *
+                {t("staff:roleReq")}
               </label>
               <div className="relative">
                 <select
@@ -360,8 +362,8 @@ function AddStaffModal({
                   onChange={(e) => setRole(e.target.value as StaffRole)}
                   className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="worker">Health Worker</option>
-                  <option value="admin">Administrator</option>
+                  <option value="worker">{t("staff:roleWorker")}</option>
+                  <option value="admin">{t("staff:roleAdmin")}</option>
                 </select>
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                   {Icon.chevronDown}
@@ -371,7 +373,7 @@ function AddStaffModal({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                Assigned Clinic
+                {t("staff:assignedClinic")}
               </label>
               <div className="relative">
                 <select
@@ -379,7 +381,7 @@ function AddStaffModal({
                   onChange={(e) => setClinicId(e.target.value)}
                   className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="">No Clinic (General)</option>
+                  <option value="">{t("staff:noClinic")}</option>
                   {clinics.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} {c.zone ? `(${c.zone})` : ""}
@@ -399,14 +401,14 @@ function AddStaffModal({
               onClick={onClose}
               className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              {t("staff:cancel")}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="flex-1 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-md shadow-teal-600/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {saving ? "Creating…" : "Create Staff"}
+              {saving ? t("staff:creating") : t("staff:createStaff")}
             </button>
           </div>
         </form>
@@ -427,6 +429,7 @@ function EditStaffModal({
   onClose: () => void
   onSaved: (s: StaffWithClinic) => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(staff.name)
   const [email, setEmail] = useState(staff.email ?? "")
   const [role, setRole] = useState<StaffRole>(staff.role)
@@ -437,11 +440,11 @@ function EditStaffModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setError("Staff name is required.")
+      setError(t("staff:errNameReqEdit"))
       return
     }
     if (!email.trim() || !email.includes("@")) {
-      setError("A valid work email is required.")
+      setError(t("staff:errEmailReq"))
       return
     }
 
@@ -456,7 +459,7 @@ function EditStaffModal({
     setSaving(false)
 
     if (apiError || !data) {
-      setError(apiError ?? "Failed to update staff record.")
+      setError(apiError ?? t("staff:errUpdateFail"))
       return
     }
     onSaved(data)
@@ -472,10 +475,10 @@ function EditStaffModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="font-display text-xl text-teal-950 dark:text-white">
-              Edit Staff Profile
+              {t("staff:editTitle")}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Update details for {staff.name}
+              {t("staff:editSubtitle", { name: staff.name })}
             </p>
           </div>
           <button
@@ -496,7 +499,7 @@ function EditStaffModal({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Full Name *
+              {t("staff:fullName")}
             </label>
             <input
               value={name}
@@ -510,7 +513,7 @@ function EditStaffModal({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Work Email *
+              {t("staff:workEmail")}
             </label>
             <input
               type="email"
@@ -526,7 +529,7 @@ function EditStaffModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                Role *
+                {t("staff:roleReq")}
               </label>
               <div className="relative">
                 <select
@@ -534,8 +537,8 @@ function EditStaffModal({
                   onChange={(e) => setRole(e.target.value as StaffRole)}
                   className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="worker">Health Worker</option>
-                  <option value="admin">Administrator</option>
+                  <option value="worker">{t("staff:roleWorker")}</option>
+                  <option value="admin">{t("staff:roleAdmin")}</option>
                 </select>
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                   {Icon.chevronDown}
@@ -545,7 +548,7 @@ function EditStaffModal({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                Assigned Clinic
+                {t("staff:assignedClinic")}
               </label>
               <div className="relative">
                 <select
@@ -553,7 +556,7 @@ function EditStaffModal({
                   onChange={(e) => setClinicId(e.target.value)}
                   className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-slate-900 transition-all cursor-pointer"
                 >
-                  <option value="">No Clinic (General)</option>
+                  <option value="">{t("staff:noClinic")}</option>
                   {clinics.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} {c.zone ? `(${c.zone})` : ""}
@@ -573,14 +576,14 @@ function EditStaffModal({
               onClick={onClose}
               className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              {t("staff:cancel")}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="flex-1 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-md shadow-teal-600/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {saving ? "Saving…" : "Save Changes"}
+              {saving ? t("staff:saving") : t("staff:saveChanges")}
             </button>
           </div>
         </form>
@@ -660,6 +663,7 @@ export default function StaffPage({
   onViewStaff?: (staffId: string) => void
 } = {}) {
   const { profile } = useAuth()
+  const { t } = useTranslation()
   const [staff, setStaff] = useState<StaffWithClinic[]>([])
   const [clinics, setClinics] = useState<ClinicRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -706,7 +710,7 @@ export default function StaffPage({
       }
     } catch (err) {
       console.error("[StaffPage] loadData error:", err)
-      setFetchError("Failed to connect to staff database.")
+      setFetchError(t("staff:errConnect"))
     } finally {
       setIsLoading(false)
     }
@@ -732,16 +736,16 @@ export default function StaffPage({
       setStaff((prev) =>
         prev.map((item) => (item.id === s.id ? { ...item, is_active: currentActive } : item))
       )
-      flash(`Error: ${error}`)
+      flash(t("staff:toastError", { error }))
     } else {
-      flash(newActive ? `${s.name} reactivated` : `${s.name} deactivated`)
+      flash(newActive ? t("staff:toastReactivated", { name: s.name }) : t("staff:toastDeactivated", { name: s.name }))
     }
   }
 
   const handleAdded = (newStaff: StaffWithClinic) => {
     setStaff((prev) => [newStaff, ...prev])
     setShowAddModal(false)
-    flash(`${newStaff.name} added successfully`)
+    flash(t("staff:toastAdded", { name: newStaff.name }))
   }
 
   const handleSaved = (updatedStaff: StaffWithClinic) => {
@@ -749,7 +753,7 @@ export default function StaffPage({
       prev.map((item) => (item.id === updatedStaff.id ? updatedStaff : item))
     )
     setEditingStaff(null)
-    flash(`${updatedStaff.name} updated successfully`)
+    flash(t("staff:toastUpdated", { name: updatedStaff.name }))
   }
 
   const handleSort = (field: SortField) => {
@@ -845,12 +849,12 @@ export default function StaffPage({
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Staff Management
+            {t("staff:title")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {isLoading
-              ? "Loading staff directory…"
-              : `${staff.length} total staff members · ${activeCount} active · ${inactiveCount} inactive`}
+              ? t("staff:loadingDir")
+              : t("staff:summary", { total: staff.length, active: activeCount, inactive: inactiveCount })}
           </p>
         </div>
         <button
@@ -859,7 +863,7 @@ export default function StaffPage({
           className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/25 transition-all hover:-translate-y-0.5 cursor-pointer"
         >
           {Icon.plus}
-          Add New Staff
+          {t("staff:addNewStaff")}
         </button>
       </div>
 
@@ -877,7 +881,7 @@ export default function StaffPage({
                 setQuery(e.target.value)
                 setPage(1)
               }}
-              placeholder="Search by name, role, email, clinic…"
+              placeholder={t("staff:searchPh")}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </div>
@@ -898,19 +902,19 @@ export default function StaffPage({
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                 }`}
               >
-                {f}
+                {t(`staff:status_${f}`)}
               </button>
             ))}
           </div>
 
           {/* Role filter dropdown */}
           <FilterDropdown
-            label="Role"
+            label={t("staff:filterRole")}
             value={roleFilter}
             options={[
-              { label: "All Roles", value: "all" },
-              { label: "Health Worker", value: "worker" },
-              { label: "Administrator", value: "admin" },
+              { label: t("staff:allRoles"), value: "all" },
+              { label: t("staff:roleWorker"), value: "worker" },
+              { label: t("staff:roleAdmin"), value: "admin" },
             ]}
             onChange={(val) => {
               setRoleFilter(val as "all" | "worker" | "admin")
@@ -921,10 +925,10 @@ export default function StaffPage({
           {/* Clinic filter dropdown (shown for admins overseeing multiple clinics) */}
           {clinics.length > 0 && (
             <FilterDropdown
-              label="Clinic"
+              label={t("staff:filterClinic")}
               value={clinicFilter}
               options={[
-                { label: "All Clinics", value: "all" },
+                { label: t("staff:allClinics"), value: "all" },
                 ...clinics.map((c) => ({
                   label: `${c.name} ${c.zone ? `(${c.zone})` : ""}`,
                   value: c.id,
@@ -944,7 +948,7 @@ export default function StaffPage({
               onClick={clearAllFilters}
               className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 px-2 py-1 transition-colors cursor-pointer"
             >
-              Reset filters
+              {t("staff:resetFilters")}
             </button>
           )}
         </div>
@@ -981,7 +985,7 @@ export default function StaffPage({
         <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-5 py-4 flex items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-red-800 dark:text-red-300">
-              Error loading staff records
+              {t("staff:errLoadTitle")}
             </p>
             <p className="text-xs text-red-600 dark:text-red-400">{fetchError}</p>
           </div>
@@ -990,7 +994,7 @@ export default function StaffPage({
             onClick={loadData}
             className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
-            Retry
+            {t("staff:retry")}
           </button>
         </div>
       )}
@@ -1005,10 +1009,10 @@ export default function StaffPage({
                 {Icon.search}
               </div>
               <h3 className="font-display text-lg text-teal-950 dark:text-white">
-                No staff members registered
+                {t("staff:noStaffTitle")}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                No healthcare workers or administrators have been registered in the database yet.
+                {t("staff:noStaffBody")}
               </p>
               <button
                 type="button"
@@ -1016,7 +1020,7 @@ export default function StaffPage({
                 className="mt-5 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
               >
                 {Icon.plus}
-                Add First Staff Member
+                {t("staff:addFirst")}
               </button>
             </div>
           )}
@@ -1028,17 +1032,17 @@ export default function StaffPage({
                 {Icon.search}
               </div>
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                No staff members match your criteria
+                {t("staff:noMatchTitle")}
               </p>
               <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                Try searching a different name, role, email, or reset your active filters.
+                {t("staff:noMatchBody")}
               </p>
               <button
                 type="button"
                 onClick={clearAllFilters}
                 className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 hover:bg-teal-100 transition-colors cursor-pointer"
               >
-                Clear all filters
+                {t("staff:clearAll")}
               </button>
             </div>
           )}
@@ -1055,7 +1059,7 @@ export default function StaffPage({
                         onClick={() => handleSort("name")}
                         className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                       >
-                        Staff Member
+                        {t("staff:colStaff")}
                         <span className={sortField === "name" ? "text-teal-600 dark:text-teal-400" : "text-slate-300 dark:text-slate-600"}>
                           {Icon.sort}
                         </span>
@@ -1067,7 +1071,7 @@ export default function StaffPage({
                         onClick={() => handleSort("role")}
                         className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                       >
-                        Role
+                        {t("staff:colRole")}
                         <span className={sortField === "role" ? "text-teal-600 dark:text-teal-400" : "text-slate-300 dark:text-slate-600"}>
                           {Icon.sort}
                         </span>
@@ -1079,7 +1083,7 @@ export default function StaffPage({
                         onClick={() => handleSort("clinic")}
                         className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                       >
-                        Assigned Clinic
+                        {t("staff:colClinic")}
                         <span className={sortField === "clinic" ? "text-teal-600 dark:text-teal-400" : "text-slate-300 dark:text-slate-600"}>
                           {Icon.sort}
                         </span>
@@ -1091,14 +1095,14 @@ export default function StaffPage({
                         onClick={() => handleSort("status")}
                         className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                       >
-                        Status
+                        {t("staff:colStatus")}
                         <span className={sortField === "status" ? "text-teal-600 dark:text-teal-400" : "text-slate-300 dark:text-slate-600"}>
                           {Icon.sort}
                         </span>
                       </button>
                     </th>
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-right">
-                      Actions
+                      {t("staff:colActions")}
                     </th>
                   </tr>
                 </thead>
@@ -1130,12 +1134,12 @@ export default function StaffPage({
                                 type="button"
                                 onClick={() => onViewStaff ? onViewStaff(s.id) : setEditingStaff(s)}
                                 className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate hover:text-teal-700 dark:hover:text-teal-400 text-left block cursor-pointer"
-                                title="View staff profile"
+                                title={t("staff:viewProfile")}
                               >
                                 {s.name}
                               </button>
                               <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                                {s.email ?? "No email"} · {s.id.slice(0, 8).toUpperCase()}
+                                {s.email ?? t("staff:noEmail")} · {s.id.slice(0, 8).toUpperCase()}
                               </p>
                             </div>
                           </div>
@@ -1148,7 +1152,7 @@ export default function StaffPage({
                               s.role
                             )}`}
                           >
-                            {roleLabel(s.role)}
+                            {t(s.role === "admin" ? "staff:roleAdmin" : "staff:roleWorker")}
                           </span>
                         </td>
 
@@ -1165,7 +1169,7 @@ export default function StaffPage({
                                 )}
                               </div>
                             ) : (
-                              <span className="text-slate-400 italic">Unassigned</span>
+                              <span className="text-slate-400 italic">{t("staff:unassigned")}</span>
                             )}
                           </div>
                         </td>
@@ -1184,7 +1188,7 @@ export default function StaffPage({
                                 isActive ? "bg-emerald-500" : "bg-slate-400"
                               }`}
                             />
-                            {isActive ? "Active" : "Inactive"}
+                            {isActive ? t("staff:active") : t("staff:inactive")}
                           </span>
                         </td>
 
@@ -1196,7 +1200,7 @@ export default function StaffPage({
                                 type="button"
                                 onClick={() => onViewStaff(s.id)}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                title="View staff profile"
+                                title={t("staff:viewProfile")}
                               >
                                 {Icon.view}
                               </button>
@@ -1205,7 +1209,7 @@ export default function StaffPage({
                               type="button"
                               onClick={() => setEditingStaff(s)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Edit staff profile"
+                              title={t("staff:editProfile")}
                             >
                               {Icon.edit}
                             </button>
@@ -1217,7 +1221,7 @@ export default function StaffPage({
                                   ? "text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
                                   : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                               }`}
-                              title={isActive ? "Deactivate staff" : "Reactivate staff"}
+                              title={isActive ? t("staff:deactivate") : t("staff:reactivate")}
                             >
                               {isActive ? Icon.deactivate : Icon.reactivate}
                             </button>
@@ -1235,19 +1239,7 @@ export default function StaffPage({
           {filteredStaff.length > 0 && (
             <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/20 flex-wrap gap-3">
               <p className="text-xs text-slate-400">
-                Showing{" "}
-                <span className="font-semibold text-slate-600 dark:text-slate-300">
-                  {(safePage - 1) * PAGE_SIZE + 1}
-                </span>
-                –
-                <span className="font-semibold text-slate-600 dark:text-slate-300">
-                  {Math.min(safePage * PAGE_SIZE, filteredStaff.length)}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-slate-600 dark:text-slate-300">
-                  {filteredStaff.length}
-                </span>{" "}
-                staff members
+                {t("staff:showing", { from: (safePage - 1) * PAGE_SIZE + 1, to: Math.min(safePage * PAGE_SIZE, filteredStaff.length), total: filteredStaff.length })}
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -1257,7 +1249,7 @@ export default function StaffPage({
                   className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 px-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 >
                   {Icon.chevronLeft}
-                  Prev
+                  {t("staff:prev")}
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                   <button
@@ -1279,7 +1271,7 @@ export default function StaffPage({
                   disabled={safePage === totalPages}
                   className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 px-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 >
-                  Next
+                  {t("staff:next")}
                   {Icon.chevronRight}
                 </button>
               </div>

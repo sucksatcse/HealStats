@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { offlineDb, PendingRecord } from "./lib/offlineDb"
 import { syncService } from "./lib/syncService"
 
@@ -99,6 +100,7 @@ const Icon = {
 }
 
 export default function SyncMonitorPage() {
+  const { t } = useTranslation()
   const [records, setRecords] = useState<PendingRecord[]>([])
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true,
@@ -162,9 +164,9 @@ export default function SyncMonitorPage() {
     try {
       await syncService.syncPendingRecords()
       await loadRecords()
-      setToast("Sync process completed.")
+      setToast(t("syncMonitor:toastDone"))
     } catch (err: any) {
-      setToast(err?.message ?? "Sync encountered an error.")
+      setToast(err?.message ?? t("syncMonitor:toastErr"))
     } finally {
       setIsSyncing(false)
       setTimeout(() => setToast(""), 3500)
@@ -187,11 +189,11 @@ export default function SyncMonitorPage() {
   const formatTime = (ms: number) => {
     const diff = Date.now() - ms
     const secs = Math.floor(diff / 1000)
-    if (secs < 60) return "Just now"
+    if (secs < 60) return t("syncMonitor:justNow")
     const mins = Math.floor(secs / 60)
-    if (mins < 60) return `${mins}m ago`
+    if (mins < 60) return t("syncMonitor:minsAgo", { m: mins })
     const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}h ago`
+    if (hours < 24) return t("syncMonitor:hoursAgo", { h: hours })
     return new Date(ms).toLocaleDateString()
   }
 
@@ -201,10 +203,10 @@ export default function SyncMonitorPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            Sync Monitor
+            {t("syncMonitor:title")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            IndexedDB offline queue status · {totalCount} local record{totalCount === 1 ? "" : "s"} waiting for Supabase sync
+            {t("syncMonitor:subtitle", { count: totalCount })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -214,7 +216,7 @@ export default function SyncMonitorPage() {
             className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-teal-600/20 transition-all hover:-translate-y-0.5 disabled:translate-y-0"
           >
             <span className={isSyncing ? "animate-spin" : ""}>{Icon.sync}</span>
-            {isSyncing ? "Syncing queue…" : "Force Sync Queue"}
+            {isSyncing ? t("syncMonitor:syncingQueue") : t("syncMonitor:forceSync")}
           </button>
         </div>
       </div>
@@ -234,10 +236,10 @@ export default function SyncMonitorPage() {
           </div>
           <div>
             <p className="font-display text-base text-teal-950 dark:text-white leading-none">
-              {isOnline ? "Network Connected" : "Offline Mode"}
+              {isOnline ? t("syncMonitor:networkConnected") : t("syncMonitor:offlineMode")}
             </p>
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-              {isOnline ? "Online — Ready to sync" : "Offline — Changes saved locally"}
+              {isOnline ? t("syncMonitor:onlineReady") : t("syncMonitor:offlineSaved")}
             </p>
           </div>
         </div>
@@ -252,7 +254,7 @@ export default function SyncMonitorPage() {
               <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
                 {pendingCount}
               </p>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Pending</p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">{t("syncMonitor:pending")}</p>
             </div>
           </div>
 
@@ -262,7 +264,7 @@ export default function SyncMonitorPage() {
               <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
                 {syncingCount}
               </p>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Syncing</p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">{t("syncMonitor:syncing")}</p>
             </div>
           </div>
 
@@ -272,7 +274,7 @@ export default function SyncMonitorPage() {
               <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
                 {failedCount}
               </p>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Failed</p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">{t("syncMonitor:failed")}</p>
             </div>
           </div>
         </div>
@@ -288,7 +290,7 @@ export default function SyncMonitorPage() {
             <p className="font-display text-xl text-teal-950 dark:text-white leading-none">
               {totalCount}
             </p>
-            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Total in Queue</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">{t("syncMonitor:totalInQueue")}</p>
           </div>
         </div>
 
@@ -304,7 +306,7 @@ export default function SyncMonitorPage() {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
               }`}
             >
-              {f}
+              {t(`syncMonitor:filter_${f}`)}
             </button>
           ))}
         </div>
@@ -317,21 +319,21 @@ export default function SyncMonitorPage() {
             {Icon.check}
           </div>
           <h3 className="font-display text-lg text-teal-950 dark:text-white">
-            Sync Queue is Clear
+            {t("syncMonitor:queueClear")}
           </h3>
           <p className="text-sm text-slate-400 dark:text-slate-500 max-w-md mx-auto mt-1">
             {filter === "all"
-              ? "All offline records are fully synced to Supabase. Any new records created offline will queue here automatically."
-              : `No records currently with status "${filter}".`}
+              ? t("syncMonitor:queueClearAll")
+              : t("syncMonitor:queueClearFilter", { status: t(`syncMonitor:filter_${filter}`) })}
           </p>
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors shadow-sm">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <h3 className="font-semibold text-slate-800 dark:text-white text-sm">
-              Queued Offline Records ({filteredRecords.length})
+              {t("syncMonitor:queuedRecords", { count: filteredRecords.length })}
             </h3>
-            <span className="text-xs text-slate-400">IndexedDB: pendingRecords</span>
+            <span className="text-xs text-slate-400">{t("syncMonitor:indexedDb")}</span>
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -339,12 +341,12 @@ export default function SyncMonitorPage() {
               const isPatient = rec.type === "patient"
               const payload = rec.payload || {}
               const label = isPatient
-                ? payload.name || "Unnamed Patient"
-                : `Visit for patient ${payload.patient_id?.slice(0, 8) ?? "—"}`
+                ? payload.name || t("syncMonitor:unnamedPatient")
+                : t("syncMonitor:visitFor", { id: payload.patient_id?.slice(0, 8) ?? "—" })
 
               const subtitle = isPatient
-                ? `Age: ${payload.age ?? "—"} · Gender: ${payload.sex ?? "—"} · Village: ${payload.village ?? "—"}`
-                : `Urgency: ${payload.urgency_score ?? "—"} · Symptoms: ${payload.symptoms ?? "None recorded"}`
+                ? t("syncMonitor:patientSubtitle", { age: payload.age ?? "—", sex: payload.sex ?? "—", village: payload.village ?? "—" })
+                : t("syncMonitor:visitSubtitle", { score: payload.urgency_score ?? "—", symptoms: payload.symptoms ?? t("syncMonitor:noneRecorded") })
 
               return (
                 <div
@@ -376,14 +378,14 @@ export default function SyncMonitorPage() {
                                 : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:text-rose-400"
                           }`}
                         >
-                          {rec.status}
+                          {t(`syncMonitor:status_${rec.status}`)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
                         {subtitle}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-1">
-                        ID: <code className="font-mono text-[10px]">{rec.id.slice(0, 12)}…</code> · Queued {formatTime(rec.createdAt)}
+                        {t("syncMonitor:idLabel")}: <code className="font-mono text-[10px]">{rec.id.slice(0, 12)}…</code> · {t("syncMonitor:queuedPrefix")} {formatTime(rec.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -394,7 +396,7 @@ export default function SyncMonitorPage() {
                         onClick={() => handleRetryRecord(rec.id)}
                         className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors"
                       >
-                        Retry
+                        {t("syncMonitor:retry")}
                       </button>
                     )}
                   </div>

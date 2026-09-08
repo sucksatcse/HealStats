@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   fetchEmergencyMetrics,
   type EmergencyMetrics,
@@ -173,6 +174,14 @@ const LEVEL_CLS: Record<string, string> = {
 const supplyTone = (v: number) =>
   v < 35 ? "bg-red-500" : v < 60 ? "bg-orange-500" : "bg-emerald-500"
 
+const INCIDENT_KEY: Record<string, string> = {
+  "Monsoon Flash Flood": "it_flood",
+  "Cyclone Warning": "it_cyclone",
+  "Waterborne Outbreak": "it_outbreak",
+  "Medical Supply Shortage": "it_supply",
+  "Mass Casualty Incident": "it_mass",
+}
+
 // ── SOS Broadcast Modal ────────────────────────────────────────────────────────
 function BroadcastModal({
   zones,
@@ -183,10 +192,11 @@ function BroadcastModal({
   onClose: () => void
   onDispatched: (msg: string) => void
 }) {
+  const { t } = useTranslation()
   const [incidentType, setIncidentType] = useState("Monsoon Flash Flood")
   const [targetZone, setTargetZone] = useState(zones[0] || "All District Zones")
-  const [message, setMessage] = useState(
-    "High flood waters rising rapidly. Transition to SOS triage protocol. Prioritize dehydration and hypothermia cases."
+  const [message, setMessage] = useState(() =>
+    t("emergencyDashboard:defaultMessage")
   )
   const [sending, setSending] = useState(false)
 
@@ -212,7 +222,7 @@ function BroadcastModal({
 
     setTimeout(() => {
       setSending(false)
-      onDispatched(`Emergency broadcast sent: ${incidentType} (${targetZone})`)
+      onDispatched(t("emergencyDashboard:broadcastSent", { type: t(`emergencyDashboard:${INCIDENT_KEY[incidentType]}`), zone: targetZone }))
       onClose()
     }, 400)
   }
@@ -228,10 +238,10 @@ function BroadcastModal({
             </span>
             <div>
               <h3 className="font-display text-lg text-red-950 dark:text-red-200">
-                Broadcast SOS Alert
+                {t("emergencyDashboard:broadcastTitle")}
               </h3>
               <p className="text-xs text-red-700/80 dark:text-red-400">
-                Transmit instant crisis advisory to field clinics
+                {t("emergencyDashboard:broadcastSubtitle")}
               </p>
             </div>
           </div>
@@ -247,31 +257,31 @@ function BroadcastModal({
         <form onSubmit={handleBroadcast} className="px-6 py-5 space-y-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Incident Classification
+              {t("emergencyDashboard:incidentClass")}
             </label>
             <select
               value={incidentType}
               onChange={(e) => setIncidentType(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:outline-none"
             >
-              <option value="Monsoon Flash Flood">Monsoon Flash Flood</option>
-              <option value="Cyclone Warning">Cyclone Warning & Evacuation</option>
-              <option value="Waterborne Outbreak">Waterborne Outbreak (Cholera/Diarrhea)</option>
-              <option value="Medical Supply Shortage">Critical Medical Supplies Exhausted</option>
-              <option value="Mass Casualty Incident">Mass Casualty Incident</option>
+              <option value="Monsoon Flash Flood">{t("emergencyDashboard:it_flood")}</option>
+              <option value="Cyclone Warning">{t("emergencyDashboard:it_cyclone")}</option>
+              <option value="Waterborne Outbreak">{t("emergencyDashboard:it_outbreak")}</option>
+              <option value="Medical Supply Shortage">{t("emergencyDashboard:it_supply")}</option>
+              <option value="Mass Casualty Incident">{t("emergencyDashboard:it_mass")}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Target Emergency Zone
+              {t("emergencyDashboard:targetZone")}
             </label>
             <select
               value={targetZone}
               onChange={(e) => setTargetZone(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:outline-none"
             >
-              <option value="All District Zones">All District Zones (Broadcast Wide)</option>
+              <option value="All District Zones">{t("emergencyDashboard:allZonesOption")}</option>
               {zones.map((z) => (
                 <option key={z} value={z}>
                   {z}
@@ -282,7 +292,7 @@ function BroadcastModal({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-              Advisory Directives
+              {t("emergencyDashboard:advisoryDirectives")}
             </label>
             <textarea
               rows={3}
@@ -299,14 +309,14 @@ function BroadcastModal({
               onClick={onClose}
               className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              {t("emergencyDashboard:cancel")}
             </button>
             <button
               type="submit"
               disabled={sending}
               className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-md shadow-red-600/25 transition-all disabled:opacity-60 cursor-pointer"
             >
-              {sending ? "Transmitting…" : "Broadcast Alert"}
+              {sending ? t("emergencyDashboard:transmitting") : t("emergencyDashboard:broadcastAlert")}
             </button>
           </div>
         </form>
@@ -324,6 +334,8 @@ export default function EmergencyDashboard({
   onOpenTriageQueue?: () => void
 } = {}) {
   const { profile } = useAuth()
+  const { t } = useTranslation()
+  const t2 = t
   const [data, setData] = useState<EmergencyMetrics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -347,7 +359,7 @@ export default function EmergencyDashboard({
       }
     } catch (err) {
       console.error("[EmergencyDashboard] Error:", err)
-      setFetchError("Failed to connect to live crisis monitoring service.")
+      setFetchError(t("emergencyDashboard:connectFail"))
     } finally {
       setIsLoading(false)
     }
@@ -383,7 +395,7 @@ export default function EmergencyDashboard({
         <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-5 py-4 flex items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-red-800 dark:text-red-300">
-              Crisis Data Unavailable
+              {t("emergencyDashboard:crisisUnavailable")}
             </p>
             <p className="text-xs text-red-600 dark:text-red-400">{fetchError}</p>
           </div>
@@ -392,7 +404,7 @@ export default function EmergencyDashboard({
             onClick={loadMetrics}
             className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
-            Retry Connection
+            {t("emergencyDashboard:retryConn")}
           </button>
         </div>
       )}
@@ -404,27 +416,27 @@ export default function EmergencyDashboard({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
-                label: "Active Zones",
+                label: t("emergencyDashboard:stat_activeZones"),
                 value: data.activeZonesCount,
-                note: "under crisis response",
+                note: t("emergencyDashboard:stat_activeZonesNote"),
                 icon: Icon.pin,
               },
               {
-                label: "Total Cases (48h)",
+                label: t("emergencyDashboard:stat_totalCases"),
                 value: data.totalCases,
-                note: "acute presentations",
+                note: t("emergencyDashboard:stat_totalCasesNote"),
                 icon: Icon.pulse,
               },
               {
-                label: "Critical in Queue",
+                label: t("emergencyDashboard:stat_critical"),
                 value: data.criticalInQueueCount,
-                note: "awaiting immediate care",
+                note: t("emergencyDashboard:stat_criticalNote"),
                 icon: Icon.clock,
               },
               {
-                label: "Responders Deployed",
+                label: t("emergencyDashboard:stat_responders"),
                 value: data.respondersDeployed,
-                note: "across clinic zones",
+                note: t("emergencyDashboard:stat_respondersNote"),
                 icon: Icon.users,
               },
             ].map(({ label, value, note, icon }) => (
@@ -543,7 +555,7 @@ export default function EmergencyDashboard({
                   <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mx-auto mb-2">
                     {Icon.check}
                   </div>
-                  No high-risk patients currently waiting in the triage queue.
+                  {t("emergencyDashboard:noHighRisk")}
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -562,7 +574,7 @@ export default function EmergencyDashboard({
                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                           {t.name}{" "}
                           <span className="font-normal text-slate-400 text-xs">
-                            · {t.age}y · {t.gender} · {t.zone}
+                            {t2("emergencyDashboard:patientMeta", { age: t.age, gender: t.gender, zone: t.zone })}
                           </span>
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -582,14 +594,14 @@ export default function EmergencyDashboard({
                           LEVEL_CLS[t.level] || "bg-red-500 text-white"
                         }`}
                       >
-                        {t.level}
+                        {t2(`emergencyDashboard:sev_${t.level}`)}
                       </span>
                       <button
                         type="button"
                         onClick={() => onViewPatient?.(t.patientId)}
                         className="flex items-center gap-1 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 px-3 py-2 rounded-xl transition-colors flex-shrink-0 cursor-pointer shadow-sm"
                       >
-                        Dispatch
+                        {t2("emergencyDashboard:dispatch")}
                         {Icon.arrowRight}
                       </button>
                     </div>
@@ -605,7 +617,7 @@ export default function EmergencyDashboard({
                   <div className="flex items-center gap-2">
                     <span className="text-red-600 dark:text-red-400">{Icon.supply}</span>
                     <h2 className="font-semibold text-red-950 dark:text-red-200 text-base">
-                      Resource Deployment
+                      {t("emergencyDashboard:resourceDeployment")}
                     </h2>
                   </div>
                 </div>
@@ -625,14 +637,14 @@ export default function EmergencyDashboard({
                         <div className="mb-2">
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                              {Icon.users} Deployed Staff
+                              {Icon.users} {t("emergencyDashboard:deployedStaff")}
                             </span>
                             <span
                               className={`font-semibold ${
                                 volShort ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
                               }`}
                             >
-                              {r.volunteers}/{r.volNeed} staff
+                              {t("emergencyDashboard:staffCount", { have: r.volunteers, need: r.volNeed })}
                             </span>
                           </div>
                           <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -648,7 +660,7 @@ export default function EmergencyDashboard({
                         <div>
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                              {Icon.supply} Emergency Stock
+                              {Icon.supply} {t("emergencyDashboard:emergencyStock")}
                             </span>
                             <span className="font-semibold text-slate-600 dark:text-slate-300">
                               {r.supplies}%
@@ -674,7 +686,7 @@ export default function EmergencyDashboard({
                   className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 py-2.5 rounded-xl shadow-md shadow-red-600/20 transition-all cursor-pointer"
                 >
                   {Icon.bell}
-                  Broadcast SOS Protocol
+                  {t("emergencyDashboard:broadcastSos")}
                 </button>
               </div>
             </div>

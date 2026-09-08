@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import PatientFormPage, { type PatientRecord } from "./PatientFormPage"
 import { supabase } from "./lib/supabase"
 import { useAuth } from "./AuthContext"
@@ -176,13 +177,16 @@ function Dropdown({
   value,
   options,
   onChange,
+  display,
 }: {
   label: string
   value: string
   options: string[]
   onChange: (v: string) => void
+  display?: (v: string) => string
 }) {
   const [open, setOpen] = useState(false)
+  const show = (v: string) => (display ? display(v) : v)
   return (
     <div className="relative">
       <button
@@ -197,7 +201,7 @@ function Dropdown({
         <span className="text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">
           {label}:
         </span>
-        {value}
+        {show(value)}
         <span className="text-slate-400">{Icon.chevronDown}</span>
       </button>
       {open && (
@@ -217,7 +221,7 @@ function Dropdown({
                     : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
-                <span className="truncate">{opt}</span>
+                <span className="truncate">{show(opt)}</span>
                 {value === opt && (
                   <svg
                     viewBox="0 0 16 16"
@@ -251,6 +255,7 @@ export default function PatientRecordsPage({
   onViewPatient?: (patientId: string) => void
 } = {}) {
   const { profile } = useAuth()
+  const { t } = useTranslation()
   const [patients, setPatients] = useState<PatientRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -324,7 +329,7 @@ export default function PatientRecordsPage({
       const formatted: PatientRow[] = (data || []).map((p: any) => {
         const recentVisit =
           p.visits && p.visits.length > 0 ? p.visits[0] : null
-        let lastVisit = "No visits"
+        let lastVisit = t("records:noVisits")
         let lastVisitSort = Infinity
         let ptUrgency: Urgency = "Stable"
 
@@ -334,9 +339,9 @@ export default function PatientRecordsPage({
             Math.abs(Date.now() - vDate.getTime()) / 86400000,
           )
           lastVisitSort = diffDays
-          if (diffDays === 0) lastVisit = "Today"
-          else if (diffDays === 1) lastVisit = "Yesterday"
-          else lastVisit = `${diffDays} days ago`
+          if (diffDays === 0) lastVisit = t("records:today")
+          else if (diffDays === 1) lastVisit = t("records:yesterday")
+          else lastVisit = t("records:daysAgo", { count: diffDays })
           ptUrgency = getUrgencyFromScore(recentVisit.urgency_score)
         } else {
           const cDate = new Date(p.created_at)
@@ -346,8 +351,8 @@ export default function PatientRecordsPage({
           lastVisitSort = diffDays
           lastVisit =
             diffDays === 0
-              ? "Registered Today"
-              : `Registered ${diffDays} days ago`
+              ? t("records:registeredToday")
+              : t("records:registeredDaysAgo", { count: diffDays })
         }
 
         const parts = p.name.split(" ")
@@ -356,14 +361,14 @@ export default function PatientRecordsPage({
             ? parts[0][0] + (parts[1] ? parts[1][0] : "")
             : p.name.substring(0, 2)
         const cIndex = p.id ? p.id.charCodeAt(0) % colors.length : 0
-        const clinicName = p.clinics?.name || "Unassigned Clinic"
+        const clinicName = p.clinics?.name || t("records:unassignedClinic")
 
         return {
           id: p.id ? p.id.split("-")[0].toUpperCase() : "UNKNOWN",
           name: p.name,
           age: p.age || 0,
           gender: p.sex === "Female" || p.sex === "F" ? "F" : "M",
-          village: p.village || "Unknown",
+          village: p.village || t("records:unknownVillage"),
           clinicName,
           lastVisit,
           lastVisitSort,
@@ -378,7 +383,7 @@ export default function PatientRecordsPage({
       setPatients(formatted)
     } catch (err: any) {
       console.error("[PatientRecordsPage] Fetch error:", err)
-      setError(err.message || "Failed to fetch patient records from Supabase.")
+      setError(err.message || t("records:errFetch"))
     } finally {
       setIsLoading(false)
     }
@@ -398,11 +403,11 @@ export default function PatientRecordsPage({
     Stable: 1,
   }
 
-  const SORT_OPTIONS: { id: "recent" | "urgency-desc" | "urgency-asc" | "name"; label: string }[] = [
-    { id: "recent", label: "Recent Visit" },
-    { id: "urgency-desc", label: "Highest Urgency (Critical first)" },
-    { id: "urgency-asc", label: "Lowest Urgency (Stable first)" },
-    { id: "name", label: "Name (A–Z)" },
+  const SORT_OPTIONS: ("recent" | "urgency-desc" | "urgency-asc" | "name")[] = [
+    "recent",
+    "urgency-desc",
+    "urgency-asc",
+    "name",
   ]
 
   const VILLAGES = Array.from(new Set(patients.map((p) => p.village))).sort()
@@ -522,9 +527,9 @@ export default function PatientRecordsPage({
         onSave={(rec) => {
           setForm(null)
           flash(
-            `${rec.name || "Record"} ${
-              form.mode === "edit" ? "updated" : "created"
-            }`,
+            form.mode === "edit"
+              ? t("records:toastUpdated", { name: rec.name || t("records:recordFallback") })
+              : t("records:toastCreated", { name: rec.name || t("records:recordFallback") }),
           )
           fetchPatients()
         }}
@@ -538,19 +543,22 @@ export default function PatientRecordsPage({
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-            {profile?.role === "admin" ? "Patient Directory (All Clinics)" : "Patients"}
+            {profile?.role === "admin" ? t("records:titleAdmin") : t("records:titleWorker")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {patients.length} records across {VILLAGES.length} villages ·{" "}
-            {criticalCount} flagged critical
+            {t("records:summary", {
+              records: patients.length,
+              villages: VILLAGES.length,
+              critical: criticalCount,
+            })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchPatients()}
             disabled={isLoading}
-            title="Refresh patient list"
-            aria-label="Refresh patient list"
+            title={t("records:refreshTitle")}
+            aria-label={t("records:refreshTitle")}
             className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 hover:text-teal-700 dark:hover:border-teal-700 dark:hover:text-teal-300 bg-white dark:bg-slate-900 px-3.5 py-2.5 rounded-xl transition-all disabled:opacity-40"
           >
             <svg
@@ -562,7 +570,7 @@ export default function PatientRecordsPage({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">{t("records:refresh")}</span>
           </button>
           <button
             onClick={exportCSV}
@@ -570,7 +578,7 @@ export default function PatientRecordsPage({
             className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-teal-300 hover:text-teal-700 dark:hover:border-teal-700 dark:hover:text-teal-300 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {Icon.download}
-            Export CSV
+            {t("records:exportCsv")}
           </button>
           <button
             onClick={() =>
@@ -591,7 +599,7 @@ export default function PatientRecordsPage({
                 d="M8 3v10M3 8h10"
               />
             </svg>
-            New Patient
+            {t("records:newPatient")}
           </button>
         </div>
       </div>
@@ -608,35 +616,35 @@ export default function PatientRecordsPage({
               setQuery(e.target.value)
               resetPage()
             }}
-            placeholder="Search name, ID, UUID, village, clinic…"
+            placeholder={t("records:searchPlaceholder")}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
           />
         </div>
         <Dropdown
-          label="Urgency"
+          label={t("records:filterUrgency")}
           value={urgency}
           options={URGENCY_OPTIONS}
+          display={(v) => (v === "All" ? t("common:all") : t(`urgency:${v}`))}
           onChange={(v) => {
             setUrgency(v)
             resetPage()
           }}
         />
         <Dropdown
-          label="Sort"
-          value={SORT_OPTIONS.find((s) => s.id === sortBy)?.label || "Recent Visit"}
-          options={SORT_OPTIONS.map((s) => s.label)}
-          onChange={(selectedLabel) => {
-            const match = SORT_OPTIONS.find((s) => s.label === selectedLabel)
-            if (match) {
-              setSortBy(match.id)
-              resetPage()
-            }
+          label={t("records:filterSort")}
+          value={sortBy}
+          options={SORT_OPTIONS}
+          display={(id) => t(`records:sort_${id}`)}
+          onChange={(id) => {
+            setSortBy(id as typeof sortBy)
+            resetPage()
           }}
         />
         <Dropdown
-          label="Village"
+          label={t("records:filterVillage")}
           value={village}
           options={VILLAGE_OPTIONS}
+          display={(v) => (v === "All" ? t("common:all") : v)}
           onChange={(v) => {
             setVillage(v)
             resetPage()
@@ -644,9 +652,10 @@ export default function PatientRecordsPage({
         />
         {profile?.role === "admin" && CLINIC_OPTIONS.length > 2 && (
           <Dropdown
-            label="Clinic"
+            label={t("records:filterClinic")}
             value={clinic}
             options={CLINIC_OPTIONS}
+            display={(v) => (v === "All" ? t("common:all") : v)}
             onChange={(v) => {
               setClinic(v)
               resetPage()
@@ -658,7 +667,7 @@ export default function PatientRecordsPage({
             onClick={clearAllFilters}
             className="text-xs font-semibold text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 px-3 py-2.5 transition-colors"
           >
-            Clear filters ({activeFilters})
+            {t("records:clearFilters", { count: activeFilters })}
           </button>
         )}
       </div>
@@ -680,13 +689,13 @@ export default function PatientRecordsPage({
               d="M12 8v4m0 4h.01"
             />
           </svg>
-          <p className="font-semibold text-base">Failed to load patient records</p>
+          <p className="font-semibold text-base">{t("records:errTitle")}</p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">{error}</p>
           <button
             onClick={() => fetchPatients()}
             className="mt-4 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
           >
-            Retry Connection
+            {t("records:retryConn")}
           </button>
         </div>
       )}
@@ -699,30 +708,30 @@ export default function PatientRecordsPage({
               <thead>
                 <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    Patient ID
+                    {t("records:colId")}
                   </th>
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    Name
+                    {t("records:colName")}
                   </th>
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    Age
+                    {t("records:colAge")}
                   </th>
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    Village
+                    {t("records:colVillage")}
                   </th>
                   {profile?.role === "admin" && (
                     <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                      Clinic
+                      {t("records:colClinic")}
                     </th>
                   )}
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    Last Visit
+                    {t("records:colLastVisit")}
                   </th>
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                    Urgency Level
+                    {t("records:colUrgency")}
                   </th>
                   <th className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-right">
-                    Action
+                    {t("records:colAction")}
                   </th>
                 </tr>
               </thead>
@@ -778,7 +787,7 @@ export default function PatientRecordsPage({
                           onClick={() =>
                             onViewPatient ? onViewPatient(r.rawId) : openEdit(r)
                           }
-                          title={`Full UUID: ${r.rawId}`}
+                          title={t("records:fullUuid", { id: r.rawId })}
                         >
                           {r.id}
                         </span>
@@ -791,7 +800,7 @@ export default function PatientRecordsPage({
                             onViewPatient ? onViewPatient(r.rawId) : openEdit(r)
                           }
                           className="flex items-center gap-3 text-left rounded-lg hover:text-teal-700 dark:hover:text-teal-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 cursor-pointer"
-                          title="Open patient record"
+                          title={t("records:openRecord")}
                         >
                           <div
                             className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 ${r.color}`}
@@ -803,7 +812,7 @@ export default function PatientRecordsPage({
                               {r.name}
                             </p>
                             <p className="text-[11px] text-slate-400">
-                              {r.gender === "F" ? "Female" : "Male"}
+                              {r.gender === "F" ? t("records:female") : t("records:male")}
                             </p>
                           </div>
                         </button>
@@ -811,7 +820,7 @@ export default function PatientRecordsPage({
                       {/* Age */}
                       <td className="px-5 py-4">
                         <span className="text-sm text-slate-600 dark:text-slate-300">
-                          {r.age} yrs
+                          {r.age} {t("records:yrs")}
                         </span>
                       </td>
                       {/* Village */}
@@ -842,7 +851,7 @@ export default function PatientRecordsPage({
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${URGENCY_DOT[r.urgency]}`}
                           />
-                          {r.urgency}
+                          {t(`urgency:${r.urgency}`)}
                         </span>
                       </td>
                       {/* View */}
@@ -853,7 +862,7 @@ export default function PatientRecordsPage({
                               onViewPatient ? onViewPatient(r.rawId) : openEdit(r)
                             }
                             className="p-2 rounded-lg text-slate-400 hover:text-teal-700 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors"
-                            title="Open patient history"
+                            title={t("records:viewHistory")}
                           >
                             {Icon.view}
                           </button>
@@ -873,12 +882,12 @@ export default function PatientRecordsPage({
                 {Icon.search}
               </div>
               <h3 className="font-display text-lg text-teal-950 dark:text-white">
-                No patient records found
+                {t("records:noRecordsTitle")}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
                 {profile?.role === "admin"
-                  ? "There are no registered patients in the database across clinics."
-                  : "It looks like there are no patient records for your clinic yet."}
+                  ? t("records:noRecordsAdmin")
+                  : t("records:noRecordsWorker")}
               </p>
               <button
                 onClick={() =>
@@ -886,7 +895,7 @@ export default function PatientRecordsPage({
                 }
                 className="mt-5 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all"
               >
-                Register First Patient
+                {t("records:registerFirst")}
               </button>
             </div>
           )}
@@ -898,16 +907,16 @@ export default function PatientRecordsPage({
                 {Icon.search}
               </div>
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                No patients match your search or filter
+                {t("records:noMatchTitle")}
               </p>
               <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                Try searching a different name, ID, village, or reset your active filters.
+                {t("records:noMatchBody")}
               </p>
               <button
                 onClick={clearAllFilters}
                 className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 hover:bg-teal-100 transition-colors"
               >
-                Clear all filters
+                {t("records:clearAllFilters")}
               </button>
             </div>
           )}
@@ -916,19 +925,11 @@ export default function PatientRecordsPage({
           {!isLoading && filtered.length > 0 && (
             <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/20 flex-wrap gap-3">
               <p className="text-xs text-slate-400">
-                Showing{" "}
-                <span className="font-semibold text-slate-600 dark:text-slate-300">
-                  {(safePage - 1) * PAGE_SIZE + 1}
-                </span>
-                –
-                <span className="font-semibold text-slate-600 dark:text-slate-300">
-                  {Math.min(safePage * PAGE_SIZE, filtered.length)}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-slate-600 dark:text-slate-300">
-                  {filtered.length}
-                </span>{" "}
-                records
+                {t("records:showingRange", {
+                  from: (safePage - 1) * PAGE_SIZE + 1,
+                  to: Math.min(safePage * PAGE_SIZE, filtered.length),
+                  total: filtered.length,
+                })}
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -937,7 +938,7 @@ export default function PatientRecordsPage({
                   className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 px-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                 >
                   {Icon.chevronLeft}
-                  Prev
+                  {t("records:prev")}
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                   <button
@@ -957,7 +958,7 @@ export default function PatientRecordsPage({
                   disabled={safePage === totalPages}
                   className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 px-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                 >
-                  Next
+                  {t("records:next")}
                   {Icon.chevronRight}
                 </button>
               </div>

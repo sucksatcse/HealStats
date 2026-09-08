@@ -19,6 +19,7 @@ import SignUpPage from "./SignUpPage"
 import NurseDashboardPage from "./NurseDashboardPage"
 import ClinicalOfficerPage from "./ClinicalOfficerPage"
 import { useAuth } from "./AuthContext"
+import { useTranslation } from "react-i18next"
 
 /* ══════════════════════════════════════════════════════════════════════════════
    Landing page translations — en / bn
@@ -365,6 +366,7 @@ export default function App() {
 
   /* Global language from context — drives all landing page text */
   const { lang } = useLang()
+  const { t: tr } = useTranslation()
   const t = LANDING[lang]
   const { session, user, profile, loading, profileResolved, signOut } = useAuth()
 
@@ -591,7 +593,11 @@ export default function App() {
             email: registeredEmail,
             station: registeredDesignation === "nurse" ? "nurse" : registeredDesignation === "clinical_officer" ? "clinical_officer" : "auto",
             message: registeredEmail
-              ? `Account created successfully! Please sign in to access the ${registeredDesignation === "nurse" ? "Nurse Station" : registeredDesignation === "clinical_officer" ? "Clinical Station" : "portal"}.`
+              ? registeredDesignation === "nurse"
+                ? tr("auth:registeredNurse")
+                : registeredDesignation === "clinical_officer"
+                ? tr("auth:registeredCO")
+                : tr("auth:registeredPortal")
               : undefined,
           })
           setPage("login")

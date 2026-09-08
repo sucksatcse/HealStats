@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { fetchLiveWeatherAlerts, RegionalWeatherHazard } from "./lib/weatherAlertService"
 import { supabase, supabaseConfigured } from "./lib/supabase"
 
@@ -204,45 +205,44 @@ export interface Alert {
   actionUrl?: string
 }
 
-const BASE_FALLBACK_ALERTS: Alert[] = [
+const makeFallbackAlerts = (t: (k: string, o?: any) => string): Alert[] => [
   {
     id: "fb-1",
     kind: "urgent",
-    title: "High-urgency patient protocol active",
-    message:
-      "Triage radar actively monitors patient intakes for urgency scores 4-5 across all connected rural stations.",
-    time: "Ongoing",
+    title: t("alerts:fb1Title"),
+    message: t("alerts:fb1Msg"),
+    time: t("alerts:fbOngoing"),
     group: "Today",
     read: false,
-    cta: "Open triage queue",
+    cta: t("alerts:fb1Cta"),
     actionUrl: "emergency-triage",
   },
   {
     id: "fb-2",
     kind: "sync",
-    title: "Sync Engine online & resilient",
-    message:
-      "Background sync monitors network connectivity. Queued patient visits in Dexie upload automatically on reconnect.",
-    time: "1 hr ago",
+    title: t("alerts:fb2Title"),
+    message: t("alerts:fb2Msg"),
+    time: t("alerts:fb1hrAgo"),
     group: "Today",
     read: true,
-    cta: "View sync monitor",
+    cta: t("alerts:fb2Cta"),
     actionUrl: "sync-monitor",
   },
 ]
 
-const FILTERS: { key: Kind | "all"; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "urgent", label: "High-Urgency" },
-  { key: "emergency", label: "Disaster & Weather" },
-  { key: "staff", label: "Staff" },
-  { key: "sync", label: "Sync" },
+const FILTERS: { key: Kind | "all"; labelKey: string }[] = [
+  { key: "all", labelKey: "filter_all" },
+  { key: "urgent", labelKey: "filter_urgent" },
+  { key: "emergency", labelKey: "filter_emergency" },
+  { key: "staff", labelKey: "filter_staff" },
+  { key: "sync", labelKey: "filter_sync" },
 ]
 
 const GROUPS: Alert["group"][] = ["Today", "Yesterday", "Earlier"]
 
 export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const [alerts, setAlerts] = useState<Alert[]>(BASE_FALLBACK_ALERTS)
+  const { t } = useTranslation()
+  const [alerts, setAlerts] = useState<Alert[]>(() => makeFallbackAlerts(t))
   const [weatherHazards, setWeatherHazards] = useState<RegionalWeatherHazard[]>([])
   const [filter, setFilter] = useState<Kind | "all">("all")
   const [unreadOnly, setUnreadOnly] = useState(false)
@@ -265,11 +265,11 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
             id: `weather-${h.id}`,
             kind: "emergency",
             title: h.hazardTitle,
-            message: `${h.advisoryText} (Recorded: Wind ${h.windSpeed}km/h, Rain ${h.precipitation}mm, Temp ${h.temperature}°C).`,
-            time: "Live meteorological feed",
+            message: t("alerts:weatherMsg", { advisory: h.advisoryText, wind: h.windSpeed, rain: h.precipitation, temp: h.temperature }),
+            time: t("alerts:weatherTime"),
             group: "Today",
             read: false,
-            cta: "View emergency mode",
+            cta: t("alerts:weatherCta"),
             actionUrl: "emergency-triage",
           })
         }
@@ -289,17 +289,17 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
           if (visits && visits.length > 0) {
             visits.forEach((v: any) => {
               const p = Array.isArray(v.patients) ? v.patients[0] : v.patients
-              const pName = p?.name ?? "Patient"
+              const pName = p?.name ?? t("alerts:patientFallback")
               const village = p?.village ? ` (${p.village})` : ""
               liveAlerts.push({
                 id: `visit-${v.id}`,
                 kind: "urgent",
-                title: `Urgent Case: ${pName}${village} · Urgency ${v.urgency_score}/5`,
-                message: `Symptoms: ${v.symptoms || "High-risk indicator"}. Diagnosis: ${v.diagnosis || "Under clinical evaluation"}. Immediate attention flagged.`,
+                title: t("alerts:urgentTitle", { name: pName, village, score: v.urgency_score }),
+                message: t("alerts:urgentMsg", { symptoms: v.symptoms || t("alerts:urgentSymptomsFallback"), diagnosis: v.diagnosis || t("alerts:urgentDiagnosisFallback") }),
                 time: new Date(v.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
                 group: "Today",
                 read: false,
-                cta: "Review triage queue",
+                cta: t("alerts:urgentCta"),
                 actionUrl: "emergency-triage",
               })
             })
@@ -317,12 +317,12 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
               liveAlerts.push({
                 id: `sync-${s.id}`,
                 kind: "sync",
-                title: `Sync Batch ${s.status === "completed" ? "Successfully Uploaded" : "Reported: " + s.status}`,
-                message: `Device ${s.device_id || "Field station"} completed sync cycle. Records verified in Supabase cluster.`,
+                title: s.status === "completed" ? t("alerts:syncTitleDone") : t("alerts:syncTitleOther", { status: s.status }),
+                message: t("alerts:syncMsg", { device: s.device_id || t("alerts:fieldStation") }),
                 time: new Date(s.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
                 group: "Today",
                 read: true,
-                cta: "View sync monitor",
+                cta: t("alerts:syncCta"),
                 actionUrl: "sync-monitor",
               })
             })
@@ -335,7 +335,7 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
       // Merge with fallback baseline so screen is never blank
       const merged = [
         ...liveAlerts,
-        ...BASE_FALLBACK_ALERTS.filter((fb) => !liveAlerts.some((l) => l.title === fb.title)),
+        ...makeFallbackAlerts(t).filter((fb) => !liveAlerts.some((l) => l.title === fb.title)),
       ]
 
       setAlerts(merged)
@@ -345,7 +345,7 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     loadData()
@@ -386,18 +386,18 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-display text-2xl text-teal-950 dark:text-white leading-tight">
-                Alerts & Notifications
+                {t("alerts:title")}
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                LIVE
+                {t("alerts:live")}
               </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
               {unreadCount > 0
-                ? `${unreadCount} unread alert${unreadCount !== 1 ? "s" : ""}`
-                : "You're all caught up"}
-              {lastRefreshed && ` · Refreshed at ${lastRefreshed}`}
+                ? t("alerts:unread", { count: unreadCount })
+                : t("alerts:allCaughtUp")}
+              {lastRefreshed && t("alerts:refreshedSuffix", { time: lastRefreshed })}
             </p>
           </div>
         </div>
@@ -406,18 +406,18 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
           <button
             onClick={loadData}
             disabled={isLoading}
-            title="Refresh feeds"
+            title={t("alerts:refreshTitle")}
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition-all hover:shadow-sm cursor-pointer disabled:opacity-50"
           >
             <span className={isLoading ? "animate-spin" : ""}>{Icon.refresh}</span>
-            Refresh
+            {t("alerts:refresh")}
           </button>
           <button
             onClick={markAll}
             disabled={unreadCount === 0}
             className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 disabled:text-slate-400 disabled:bg-slate-100 dark:text-teal-300 dark:hover:text-teal-200 dark:bg-teal-950/40 dark:hover:bg-teal-900/40 dark:disabled:text-slate-500 dark:disabled:bg-slate-800 disabled:cursor-not-allowed px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
           >
-            {Icon.check} Mark all as read
+            {Icon.check} {t("alerts:markAllRead")}
           </button>
         </div>
       </div>
@@ -431,10 +431,10 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
             </div>
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-teal-950 dark:text-white">
-                Live Environmental & Climate Hazards Radar
+                {t("alerts:radarTitle")}
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Direct meteorological sensor stream for Bangladesh coastal & riverine clinics
+                {t("alerts:radarSubtitle")}
               </p>
             </div>
           </div>
@@ -445,7 +445,7 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
                 : "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
             }`}
           >
-            {activeHazardsCount > 0 ? `${activeHazardsCount} Active Hazard Advisory` : "All Stations Calm"}
+            {activeHazardsCount > 0 ? t("alerts:activeHazards", { count: activeHazardsCount }) : t("alerts:allCalm")}
           </span>
         </div>
 
@@ -479,8 +479,8 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
                 </div>
                 <div className="flex items-baseline justify-between mt-1 text-xs text-slate-500 dark:text-slate-400">
                   <span>{h.temperature}°C</span>
-                  <span>{h.windSpeed} km/h wind</span>
-                  <span>{h.precipitation} mm rain</span>
+                  <span>{t("alerts:windUnit", { v: h.windSpeed })}</span>
+                  <span>{t("alerts:rainUnit", { v: h.precipitation })}</span>
                 </div>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-1">
                   {h.zone}
@@ -509,7 +509,7 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
                   : "bg-white border-slate-200 text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:border-teal-700 dark:hover:text-teal-300"
               }`}
             >
-              {f.label}
+              {t(`alerts:${f.labelKey}`)}
               <span
                 className={`text-[10px] ${
                   active ? "text-teal-100" : "text-slate-400 dark:text-slate-500"
@@ -531,7 +531,7 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
             <span className="w-9 h-5 rounded-full bg-slate-200 dark:bg-slate-700 peer-checked:bg-teal-500 transition-colors" />
             <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4" />
           </span>
-          Unread only
+          {t("alerts:unreadOnly")}
         </label>
       </div>
 
@@ -541,9 +541,9 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
           <div className="w-14 h-14 rounded-2xl bg-slate-50 text-slate-300 dark:bg-slate-800 dark:text-slate-600 flex items-center justify-center mx-auto mb-3">
             {Icon.inbox}
           </div>
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Nothing here</p>
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("alerts:nothingHere")}</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            No notifications match this filter.
+            {t("alerts:noMatch")}
           </p>
         </div>
       ) : (
@@ -554,7 +554,7 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
             return (
               <div key={group}>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2.5 px-1">
-                  {group}
+                  {t(`alerts:group_${group}`)}
                 </p>
                 <div className="space-y-2.5">
                   {items.map((a) => {
@@ -610,13 +610,13 @@ export default function AlertsCenterPage({ onNavigate }: { onNavigate?: (page: s
                               onClick={() => toggleRead(a.id)}
                               className="text-xs font-medium text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors cursor-pointer"
                             >
-                              {a.read ? "Mark unread" : "Mark read"}
+                              {a.read ? t("alerts:markUnread") : t("alerts:markRead")}
                             </button>
                             <button
                               onClick={() => dismiss(a.id)}
                               className="text-xs font-medium text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                             >
-                              Dismiss
+                              {t("alerts:dismiss")}
                             </button>
                           </div>
                         </div>

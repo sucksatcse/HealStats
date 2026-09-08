@@ -237,7 +237,7 @@ export default function AppNavbar({
       {/* ── Language pill ── */}
       <div
         role="group"
-        aria-label="Select language"
+        aria-label={lang === "bn" ? "ভাষা নির্বাচন করুন" : "Select language"}
         className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-[3px] border border-slate-200 dark:border-slate-700"
       >
         <button
@@ -269,8 +269,8 @@ export default function AppNavbar({
       {/* ── Dark-mode circle ── */}
       <button
         onClick={toggleDark}
-        aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-        title={dark ? "Light mode" : "Dark mode"}
+        aria-label={dark ? (lang === "bn" ? "লাইট মোডে যান" : "Switch to light mode") : (lang === "bn" ? "ডার্ক মোডে যান" : "Switch to dark mode")}
+        title={dark ? (lang === "bn" ? "লাইট মোড" : "Light mode") : (lang === "bn" ? "ডার্ক মোড" : "Dark mode")}
         className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
           dark
             ? "border-amber-400/60 bg-amber-400/10 text-amber-400 hover:bg-amber-400/20 hover:border-amber-400"
@@ -311,7 +311,7 @@ export default function AppNavbar({
             <button
               onClick={onNotifications}
               className="relative text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors p-1 flex-shrink-0 cursor-pointer"
-              aria-label="Notifications"
+              aria-label={lang === "bn" ? "বিজ্ঞপ্তি" : "Notifications"}
             >
               <BellIcon />
               {notificationCount > 0 && (
@@ -324,7 +324,7 @@ export default function AppNavbar({
           <div className="relative" ref={userMenuRef}>
             <button
               className={`${avatarBase} ${avatarColor}`}
-              aria-label="Your profile"
+              aria-label={lang === "bn" ? "আপনার প্রোফাইল" : "Your profile"}
               onClick={() => setUserMenuOpen(!userMenuOpen)}
             >
               {derivedInitials ? (
@@ -555,7 +555,7 @@ export default function AppNavbar({
         <button
           onClick={onSidebarOpen}
           className="lg:hidden text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors flex-shrink-0"
-          aria-label="Open sidebar"
+          aria-label={lang === "bn" ? "সাইডবার খুলুন" : "Open sidebar"}
         >
           <svg
             viewBox="0 0 24 24"
@@ -573,7 +573,7 @@ export default function AppNavbar({
         {breadcrumb && (
           <div className="hidden sm:flex items-center gap-1.5 text-sm flex-shrink-0">
             <span className="text-slate-400 dark:text-slate-500 font-medium">
-              Admin
+              {lang === "bn" ? "অ্যাডমিন" : "Admin"}
             </span>
             <span className="text-slate-300 dark:text-slate-700">/</span>
             <span className="font-semibold text-slate-700 dark:text-slate-200">
@@ -656,7 +656,7 @@ export default function AppNavbar({
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="hs-hamburger-btn border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:border-teal-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
-            aria-label="Toggle navigation menu"
+            aria-label={lang === "bn" ? "নেভিগেশন মেনু টগল করুন" : "Toggle navigation menu"}
             aria-expanded={menuOpen}
             aria-controls="landing-mobile-menu"
           >

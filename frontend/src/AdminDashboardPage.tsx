@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "./AuthContext";
 import { fetchAdminStats, fetchOutbreakAnalysis, type AdminStats, type OutbreakAnalysisResult } from "./lib/adminService";
 import { supabase } from "./lib/supabase";
@@ -118,46 +119,46 @@ const Icon = {
 };
 
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: Icon.dashboard },
-  { id: "patients", label: "Patients", icon: Icon.patients },
-  { id: "staff", label: "Staff", icon: Icon.staff },
-  { id: "sync", label: "Sync Status", icon: Icon.sync },
-  { id: "analytics", label: "Analytics", icon: Icon.analytics },
-  { id: "outbreak", label: "Outbreak Radar", icon: (
+  { id: "dashboard", labelKey: "nav_dashboard", icon: Icon.dashboard },
+  { id: "patients", labelKey: "nav_patients", icon: Icon.patients },
+  { id: "staff", labelKey: "nav_staff", icon: Icon.staff },
+  { id: "sync", labelKey: "nav_sync", icon: Icon.sync },
+  { id: "analytics", labelKey: "nav_analytics", icon: Icon.analytics },
+  { id: "outbreak", labelKey: "nav_outbreak", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
       <circle cx="10" cy="10" r="8" strokeDasharray="2 3" />
       <circle cx="10" cy="10" r="3.5" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18" />
     </svg>
   ) },
-  { id: "resources", label: "Resource Ops", icon: (
+  { id: "resources", labelKey: "nav_resources", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l7-4 7 4v6l-7 4-7-4V7zM3 7l7 4 7-4M10 11v6" />
     </svg>
   ), badge: "SOS" },
-  { id: "ops-map", label: "Ops Map", icon: (
+  { id: "ops-map", labelKey: "nav_opsMap", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 17A8 8 0 109 1a8 8 0 000 16zm0-11v3.5l2.5 2" />
       <circle cx="9" cy="9" r="1" fill="currentColor" />
     </svg>
   ) },
-  { id: "alerts", label: "Notifications", icon: (
+  { id: "alerts", labelKey: "nav_alerts", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M14.86 15.08a20 20 0 004.55-1.09A7.47 7.47 0 0117 8.13V7.5a5 5 0 00-10 0v.63a7.47 7.47 0 01-1.93 5.86 20 20 0 004.55 1.09m5.24 0a20.2 20.2 0 01-5.24 0m5.24 0a2.5 2.5 0 01-5.24 0" />
     </svg>
   ), badge: "3" },
-  { id: "nurse-station", label: "Nurse Station", icon: (
+  { id: "nurse-station", labelKey: "nav_nurseStation", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M10 3.5v13M3.5 10h13" />
       <rect x="2.5" y="2.5" width="15" height="15" rx="3" strokeWidth={1.5} />
     </svg>
   ), badge: "Vitals" },
-  { id: "clinical-station", label: "Clinical Station", icon: (
+  { id: "clinical-station", labelKey: "nav_clinicalStation", icon: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} className="w-4.5 h-4.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ), badge: "Rx" },
-  { id: "settings", label: "Settings", icon: Icon.settings },
+  { id: "settings", labelKey: "nav_settings", icon: Icon.settings },
 ];
 
 // ── Stat card skeleton ────────────────────────────────────────────────────────
@@ -182,6 +183,7 @@ export interface VisitChartPoint {
 
 // ── Dynamic Line chart (Task 10: Supabase-backed) ──────────────────────────────────
 function VisitsLineChart({ data, loading }: { data: VisitChartPoint[]; loading: boolean }) {
+  const { t } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
 
   const W = 720;
@@ -212,7 +214,7 @@ function VisitsLineChart({ data, loading }: { data: VisitChartPoint[]; loading: 
       <div className="h-[260px] flex items-center justify-center">
         <div className="flex items-center gap-2 text-slate-400 text-sm">
           <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-          Loading visit analytics…
+          {t("adminDash:loadingVisits")}
         </div>
       </div>
     );
@@ -221,7 +223,7 @@ function VisitsLineChart({ data, loading }: { data: VisitChartPoint[]; loading: 
   if (data.length === 0) {
     return (
       <div className="h-[260px] flex items-center justify-center text-slate-400 text-sm">
-        No visit data available for this time range.
+        {t("adminDash:noVisitData")}
       </div>
     );
   }
@@ -304,7 +306,7 @@ function VisitsLineChart({ data, loading }: { data: VisitChartPoint[]; loading: 
           }}
         >
           <p className="text-[10px] uppercase tracking-wide text-teal-300 font-semibold whitespace-nowrap">{geometry[hover].date}</p>
-          <p className="font-display text-lg leading-none mt-0.5">{geometry[hover].visits} <span className="text-xs font-sans text-teal-200">visits</span></p>
+          <p className="font-display text-lg leading-none mt-0.5">{geometry[hover].visits} <span className="text-xs font-sans text-teal-200">{t("adminDash:visitsWord")}</span></p>
         </div>
       )}
     </div>
@@ -317,6 +319,7 @@ interface AdminDashboardPageProps {
 }
 
 export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps) {
+  const { t } = useTranslation();
   const [activeNav, setActiveNav] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("7d");
@@ -562,13 +565,13 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           </div>
           <div>
             <p className="font-display text-base text-white leading-none">HealStats</p>
-            <p className="text-[10px] text-teal-400 mt-0.5">Admin Console</p>
+            <p className="text-[10px] text-teal-400 mt-0.5">{t("adminDash:adminConsole")}</p>
           </div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-teal-500 px-3 mb-3">Management</p>
-          {navItems.map(({ id, label, icon, badge }) => {
+          <p className="text-[10px] font-bold uppercase tracking-widest text-teal-500 px-3 mb-3">{t("adminDash:management")}</p>
+          {navItems.map(({ id, labelKey, icon, badge }) => {
             const active = activeNav === id;
             return (
               <button
@@ -579,7 +582,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 }`}
               >
                 <span className={active ? "text-white" : "text-teal-400"}>{icon}</span>
-                {label}
+                {t(`adminDash:${labelKey}`)}
                 {badge && (
                   <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                     badge === "SOS"
@@ -604,15 +607,15 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 : "SA"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{profile?.name ?? "System Admin"}</p>
+              <p className="text-sm font-semibold text-white truncate">{profile?.name ?? t("adminDash:systemAdmin")}</p>
               <p className="text-[10px] text-teal-400">
-                {profile?.role === "admin" ? "Administrator" : "Health Staff"}
+                {profile?.role === "admin" ? t("adminDash:administrator") : t("adminDash:healthStaff")}
               </p>
             </div>
             <button
               onClick={onLogout}
               className="text-teal-400 hover:text-red-400 transition-colors opacity-80 hover:opacity-100 p-1 rounded-lg hover:bg-teal-900/40 cursor-pointer"
-              title="Log out"
+              title={t("adminDash:logout")}
             >
               {Icon.logout}
             </button>
@@ -629,9 +632,9 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           onSidebarOpen={() => setSidebarOpen(true)}
           searchValue={adminSearch}
           onSearchChange={setAdminSearch}
-          searchPlaceholder="Search clinics, staff, records…"
+          searchPlaceholder={t("adminDash:searchPlaceholder")}
           isOnline={typeof navigator !== "undefined" ? navigator.onLine : true}
-          onlineText={typeof navigator !== "undefined" && navigator.onLine ? "System Connected" : "Offline"}
+          onlineText={typeof navigator !== "undefined" && navigator.onLine ? t("adminDash:systemConnected") : t("adminDash:offline")}
           onNotifications={() => setActiveNav("alerts")}
           notificationCount={1}
           userInitials={profile?.name
@@ -641,22 +644,22 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           onProfile={() => setActiveNav("profile")}
           onLogout={onLogout}
           breadcrumb={
-            activeNav === "staff" ? "Staff"
-            : activeNav === "staff-profile" ? "Staff Profile"
-            : activeNav === "patients" ? "Patients"
-            : activeNav === "patient-detail" ? "Patient Details"
-            : activeNav === "sync" ? "Sync Status"
-            : activeNav === "flagged" ? "High-Risk Patients"
-            : activeNav === "analytics" ? "Analytics"
-            : activeNav === "resources" ? "Resource Ops"
-            : activeNav === "alerts" ? "Notifications"
-            : activeNav === "settings" ? "Settings"
-            : activeNav === "profile" ? "My Profile"
-            : activeNav === "ops-map" ? "Ops Map"
-            : activeNav === "outbreak" ? "Outbreak Radar"
-            : activeNav === "nurse-station" ? "Nurse Station & Vitals"
-            : activeNav === "clinical-station" ? "Clinical Station & Prescriptions"
-            : "Overview"
+            activeNav === "staff" ? t("adminDash:bc_staff")
+            : activeNav === "staff-profile" ? t("adminDash:bc_staffProfile")
+            : activeNav === "patients" ? t("adminDash:bc_patients")
+            : activeNav === "patient-detail" ? t("adminDash:bc_patientDetail")
+            : activeNav === "sync" ? t("adminDash:bc_sync")
+            : activeNav === "flagged" ? t("adminDash:bc_flagged")
+            : activeNav === "analytics" ? t("adminDash:bc_analytics")
+            : activeNav === "resources" ? t("adminDash:bc_resources")
+            : activeNav === "alerts" ? t("adminDash:bc_alerts")
+            : activeNav === "settings" ? t("adminDash:bc_settings")
+            : activeNav === "profile" ? t("adminDash:bc_profile")
+            : activeNav === "ops-map" ? t("adminDash:bc_opsMap")
+            : activeNav === "outbreak" ? t("adminDash:bc_outbreak")
+            : activeNav === "nurse-station" ? t("adminDash:bc_nurseStation")
+            : activeNav === "clinical-station" ? t("adminDash:bc_clinicalStation")
+            : t("adminDash:bc_overview")
           }
         />
 
@@ -705,14 +708,14 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 {patientDetailReturnNav === "flagged"
-                  ? "Back to High-Risk Patients"
+                  ? t("adminDash:back_flagged")
                   : patientDetailReturnNav === "emergency"
-                  ? "Back to Emergency Response"
+                  ? t("adminDash:back_emergency")
                   : patientDetailReturnNav === "emergency-triage"
-                  ? "Back to Emergency Triage Queue"
+                  ? t("adminDash:back_emergencyTriage")
                   : patientDetailReturnNav === "outbreak"
-                  ? "Back to Outbreak Radar"
-                  : "Back to Patient Directory"}
+                  ? t("adminDash:back_outbreak")
+                  : t("adminDash:back_patients")}
               </button>
               <PatientDetailPage
                 patientId={selectedPatientId}
@@ -796,18 +799,18 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                      Epidemic Early-Warning Alert: {outbreakAnalysis.clusters[0].syndromeName}
+                      {t("adminDash:outbreakAlert", { syndrome: outbreakAnalysis.clusters[0].syndromeName })}
                     </p>
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         outbreakAnalysis.highestRiskLevel === "critical" ? "bg-red-600 text-white" : "bg-amber-600 text-white"
                       }`}
                     >
-                      {outbreakAnalysis.highestRiskLevel === "critical" ? "CRITICAL OUTBREAK" : "WARNING CLUSTER"}
+                      {outbreakAnalysis.highestRiskLevel === "critical" ? t("adminDash:criticalOutbreak") : t("adminDash:warningCluster")}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    {outbreakAnalysis.clusters.length} active cluster(s) flagged across {outbreakAnalysis.clusters.map((c) => c.zone).filter((v, i, a) => a.indexOf(v) === i).join(", ")}. Primary symptoms: {outbreakAnalysis.clusters[0].dominantSymptoms.slice(0, 3).join(", ")}.
+                    {t("adminDash:outbreakDesc", { count: outbreakAnalysis.clusters.length, zones: outbreakAnalysis.clusters.map((c) => c.zone).filter((v, i, a) => a.indexOf(v) === i).join(", "), symptoms: outbreakAnalysis.clusters[0].dominantSymptoms.slice(0, 3).join(", ") })}
                   </p>
                 </div>
               </div>
@@ -818,7 +821,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   outbreakAnalysis.highestRiskLevel === "critical" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"
                 }`}
               >
-                <span>Investigate in Outbreak Radar</span>
+                <span>{t("adminDash:investigate")}</span>
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
                 </svg>
@@ -846,18 +849,18 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className={`font-semibold text-base ${emergency ? "text-white" : "text-slate-800 dark:text-slate-100"}`}>Emergency Mode</p>
+                <p className={`font-semibold text-base ${emergency ? "text-white" : "text-slate-800 dark:text-slate-100"}`}>{t("adminDash:emergencyMode")}</p>
                 {emergency && (
                   <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-white bg-white/20 px-2 py-0.5 rounded-full">
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    Active
+                    {t("adminDash:active")}
                   </span>
                 )}
               </div>
               <p className={`text-xs mt-0.5 ${emergency ? "text-red-100" : "text-slate-400 dark:text-slate-500"}`}>
                 {emergency
-                  ? "Crisis response view is live — zones, triage queue, and resources shown below."
-                  : "Activate to switch the dashboard to crisis response mode."}
+                  ? t("adminDash:emergencyOn")
+                  : t("adminDash:emergencyOff")}
               </p>
             </div>
             <button
@@ -875,9 +878,9 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
               <h1 className={`font-display text-2xl lg:text-3xl ${emergency ? "text-red-950" : "text-teal-950 dark:text-white"}`}>
-                {emergency ? "Emergency Response" : "Clinic Overview"}
+                {emergency ? t("adminDash:emergencyResponse") : t("adminDash:clinicOverview")}
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{today} · Kayes Health District</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{today} · {t("adminDash:district")}</p>
             </div>
             <button
               type="button"
@@ -910,7 +913,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v8M4.5 6.5L8 10l3.5-3.5M2.5 13.5h11" />
               </svg>
-              {emergency ? "Export Situation Report" : "Export Report"}
+              {emergency ? t("adminDash:exportSituation") : t("adminDash:exportReport")}
             </button>
           </div>
 
@@ -940,7 +943,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-50 text-teal-600">{Icon.usersStat}</div>
-                <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">Live</span>
+                <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">{t("adminDash:statLive")}</span>
               </div>
               {stats?.errors.totalPatients ? (
                 <p className="font-display text-xl text-red-400">—</p>
@@ -949,8 +952,8 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   {(stats?.totalPatients ?? 0).toLocaleString()}
                 </p>
               )}
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">Total Patients</p>
-              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">registered in your clinic</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">{t("adminDash:totalPatients")}</p>
+              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">{t("adminDash:totalPatientsSub")}</p>
             </button>
 
             {/* 2. Records Today */}
@@ -960,7 +963,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-50 text-violet-600">{Icon.fileStat}</div>
-                <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">Today</span>
+                <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">{t("adminDash:statToday")}</span>
               </div>
               {stats?.errors.recordsToday ? (
                 <p className="font-display text-xl text-red-400">—</p>
@@ -969,8 +972,8 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   {(stats?.recordsToday ?? 0).toLocaleString()}
                 </p>
               )}
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">Records Today</p>
-              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">visits created since midnight UTC</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">{t("adminDash:recordsToday")}</p>
+              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">{t("adminDash:recordsTodaySub")}</p>
             </button>
 
             {/* 3. Pending Sync */}
@@ -982,11 +985,11 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600">{Icon.cloudStat}</div>
                 {(stats?.pendingSync ?? 0) > 0 ? (
                   <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-600">
-                    {Icon.arrowUp} Pending
+                    {Icon.arrowUp} {t("adminDash:statPending")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">
-                    {Icon.arrowDown} Synced
+                    {Icon.arrowDown} {t("adminDash:statSynced")}
                   </span>
                 )}
               </div>
@@ -997,8 +1000,8 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   {(stats?.pendingSync ?? 0).toLocaleString()}
                 </p>
               )}
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">Pending Sync</p>
-              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">visits awaiting synchronisation</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">{t("adminDash:pendingSync")}</p>
+              <p className="text-xs mt-0.5 text-slate-400 dark:text-slate-500">{t("adminDash:pendingSyncSub")}</p>
             </button>
 
             {/* 4. High-Risk Flagged — clickable → Flagged Patients view */}
@@ -1011,10 +1014,10 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600">{Icon.alertStat}</div>
                 {(stats?.highRiskFlagged ?? 0) > 0 ? (
                   <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full bg-rose-50 text-rose-600">
-                    {Icon.arrowUp} High
+                    {Icon.arrowUp} {t("adminDash:statHigh")}
                   </span>
                 ) : (
-                  <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">Live</span>
+                  <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full">{t("adminDash:statLive")}</span>
                 )}
               </div>
               {stats?.errors.highRiskFlagged ? (
@@ -1024,8 +1027,8 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   {(stats?.highRiskFlagged ?? 0).toLocaleString()}
                 </p>
               )}
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">High-Risk Flagged</p>
-              <p className="text-xs mt-0.5 text-rose-500 font-medium">View flagged patients →</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1.5">{t("adminDash:highRiskFlagged")}</p>
+              <p className="text-xs mt-0.5 text-rose-500 font-medium">{t("adminDash:viewFlagged")}</p>
             </button>
 
           </div>
@@ -1038,11 +1041,11 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 lg:p-6 transition-colors">
               <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
                 <div>
-                  <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">Patient Visits</h2>
+                  <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">{t("adminDash:patientVisits")}</h2>
                   <div className="flex items-baseline gap-3 mt-1">
                     <span className="font-display text-2xl text-teal-950 dark:text-white">{totalRangeVisits.toLocaleString()}</span>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      total in {range === "7d" ? "past 7 days" : range === "30d" ? "past 30 days" : "past 90 days"} · avg {avgRangeVisits}/day
+                      {t("adminDash:totalInRange", { range: range === "7d" ? t("adminDash:range7") : range === "30d" ? t("adminDash:range30") : t("adminDash:range90"), avg: avgRangeVisits })}
                     </span>
                   </div>
                 </div>
@@ -1055,7 +1058,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                         range === r ? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                       }`}
                     >
-                      {r === "7d" ? "7 days" : r === "30d" ? "30 days" : "90 days"}
+                      {r === "7d" ? t("adminDash:r7") : r === "30d" ? t("adminDash:r30") : t("adminDash:r90")}
                     </button>
                   ))}
                 </div>
@@ -1066,11 +1069,11 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
               <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <span className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                   <span className="w-3 h-0.5 rounded-full bg-teal-600" />
-                  Daily visits ({profile?.clinic_id ? "Assigned clinic" : "All clinics"})
+                  {t("adminDash:dailyVisits", { scope: profile?.clinic_id ? t("adminDash:assignedClinic") : t("adminDash:allClinics") })}
                 </span>
                 {peakDay && peakDay.visits > 0 && (
                   <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
-                    Peak: {peakDay.date}, {peakDay.visits} visits
+                    {t("adminDash:peak", { date: peakDay.date, visits: peakDay.visits })}
                   </span>
                 )}
               </div>
@@ -1079,12 +1082,12 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
             {/* Clinic breakdown */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 lg:p-6 transition-colors">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">Top Clinics Today</h2>
+                <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">{t("adminDash:topClinics")}</h2>
                 <button
                   onClick={() => setActiveNav("ops-map")}
                   className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 flex items-center gap-1 transition-colors"
                 >
-                  Ops Map
+                  {t("adminDash:opsMapLink")}
                   {Icon.chevronRight}
                 </button>
               </div>
@@ -1100,7 +1103,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                   </div>
                 ) : clinicsActivity.length === 0 ? (
                   <div className="py-6 text-center text-xs text-slate-400">
-                    No clinics recorded in system.
+                    {t("adminDash:noClinics")}
                   </div>
                 ) : (
                   clinicsActivity.map((c) => {
@@ -1110,7 +1113,7 @@ export default function AdminDashboardPage({ onLogout }: AdminDashboardPageProps
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{c.name}</p>
                             <span className="text-[11px] text-slate-400 font-medium mt-0.5">
-                              {c.zone ?? "Zone not specified"}
+                              {c.zone ?? t("adminDash:zoneNotSpecified")}
                             </span>
                           </div>
                           <span className="font-display text-lg text-teal-950 dark:text-white flex-shrink-0 ml-3">

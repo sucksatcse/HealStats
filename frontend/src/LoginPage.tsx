@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { supabase } from "./lib/supabase"
 
 interface LoginPageProps {
@@ -30,6 +31,7 @@ export default function LoginPage({
   const [successMessage, setSuccessMessage] = useState<string | null>(initialMessage || null)
   const [resending, setResending] = useState(false)
   const [resendStatus, setResendStatus] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (initialEmail) setEmail(initialEmail)
@@ -51,7 +53,7 @@ export default function LoginPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim() || !password) {
-      setError("Please enter your email and password.")
+      setError(t("auth:errCredentials"))
       return
     }
     setError("")
@@ -123,7 +125,7 @@ export default function LoginPage({
 
       onLogin(targetPage)
     } catch {
-      setError("Unable to reach the server. Check your connection and try again.")
+      setError(t("auth:errServer"))
       setLoading(false)
     }
   }
@@ -146,7 +148,7 @@ export default function LoginPage({
               isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
             }`}
           />
-          {isOnline ? "Online" : "Offline — local login available"}
+          {isOnline ? t("auth:badgeOnline") : t("auth:badgeOffline")}
         </div>
       </div>
 
@@ -167,12 +169,11 @@ export default function LoginPage({
               clipRule="evenodd"
             />
           </svg>
-          Back to home
+          {t("auth:backHome")}
         </button>
       </div>
 
-      {/* ─── Centered card ─── */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      {/* ─── Centered card ─── */}      <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-[420px]">
           {/* Logo + brand */}
           <div className="text-center mb-8">
@@ -180,7 +181,7 @@ export default function LoginPage({
               type="button"
               onClick={onBack}
               className="inline-flex flex-col items-center group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-2xl p-1"
-              aria-label="Back to home"
+              aria-label={t("auth:backHomeAria")}
             >
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-600 shadow-lg shadow-teal-600/25 mb-4 group-hover:bg-teal-700 transition-colors">
                 <svg
@@ -201,18 +202,18 @@ export default function LoginPage({
                 Heal<span className="text-teal-600">Stats</span>
               </h1>
             </button>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Healthcare Worker Portal</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("auth:loginPortal")}</p>
           </div>
 
           {/* Card */}
           <div className="rounded-3xl p-8" style={{background: 'var(--an-glass-bg)', backdropFilter: 'blur(24px)', border: '1px solid var(--an-border)', boxShadow: 'var(--an-glass-shadow-lg)'}}>
             <h2 className="text-lg font-semibold text-teal-950 dark:text-white mb-1">
-              Sign in to your account
+              {t("auth:loginTitle")}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-7">
               {isOnline
-                ? "Enter your credentials to access the portal."
-                : "You're offline. Your local records are still accessible."}
+                ? t("auth:loginSubtitleOnline")
+                : t("auth:loginSubtitleOffline")}
             </p>
 
             {/* Success Notification */}
@@ -246,7 +247,7 @@ export default function LoginPage({
                     <p className="font-semibold">{error}</p>
                     {error.toLowerCase().includes("email not confirmed") && (
                       <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-900/50 text-xs text-red-600 dark:text-red-300">
-                        <p>Your account was registered, but the email address has not been confirmed yet. Please check your inbox or click below to resend the confirmation link.</p>
+                        <p>{t("auth:emailUnconfirmed")}</p>
                         <button
                           type="button"
                           disabled={resending}
@@ -260,19 +261,19 @@ export default function LoginPage({
                                 email: email.trim(),
                               })
                               if (resendErr) {
-                                setResendStatus(`Resend failed: ${resendErr.message}`)
+                                setResendStatus(t("auth:resendFailed", { message: resendErr.message }))
                               } else {
-                                setResendStatus("Confirmation link sent! Check your inbox.")
+                                setResendStatus(t("auth:resendSent"))
                               }
                             } catch {
-                              setResendStatus("Failed to contact the auth server.")
+                              setResendStatus(t("auth:resendError"))
                             } finally {
                               setResending(false)
                             }
                           }}
                           className="mt-2 inline-flex items-center gap-1 font-semibold text-teal-800 dark:text-teal-300 underline hover:no-underline cursor-pointer disabled:opacity-50"
                         >
-                          {resending ? "Sending link…" : "Resend confirmation email"}
+                          {resending ? t("auth:resendSending") : t("auth:resend")}
                         </button>
                         {resendStatus && (
                           <p className="mt-1 font-medium text-slate-700 dark:text-slate-200">
@@ -290,7 +291,7 @@ export default function LoginPage({
               {/* Workstation selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5">
-                  Workstation / কার্যক্ষেত্র
+                  {t("auth:workstation")}
                 </label>
                 <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
                   <button
@@ -302,7 +303,7 @@ export default function LoginPage({
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    Auto
+                    {t("auth:stationAuto")}
                   </button>
                   <button
                     type="button"
@@ -313,7 +314,7 @@ export default function LoginPage({
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    Nurse Station
+                    {t("auth:stationNurse")}
                   </button>
                   <button
                     type="button"
@@ -324,7 +325,7 @@ export default function LoginPage({
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    Clinical Officer
+                    {t("auth:stationClinicalOfficer")}
                   </button>
                 </div>
               </div>
@@ -335,7 +336,7 @@ export default function LoginPage({
                   htmlFor="workerId"
                   className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5"
                 >
-                  Email Address
+                  {t("auth:email")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
@@ -357,7 +358,7 @@ export default function LoginPage({
                     id="workerId"
                     type="email"
                     autoComplete="username"
-                    placeholder="e.g. name@clinic.org"
+                    placeholder={t("auth:emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
@@ -372,13 +373,13 @@ export default function LoginPage({
                     htmlFor="password"
                     className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide"
                   >
-                    Password
+                    {t("auth:password")}
                   </label>
                   <button
                     type="button"
                     className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
                   >
-                    Forgot password?
+                    {t("auth:forgotPassword")}
                   </button>
                 </div>
                 <div className="relative">
@@ -401,7 +402,7 @@ export default function LoginPage({
                     id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    placeholder="Enter your password"
+                    placeholder={t("auth:passwordPlaceholder")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
@@ -411,7 +412,7 @@ export default function LoginPage({
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                     aria-label={
-                      showPassword ? "Hide password" : "Show password"
+                      showPassword ? t("auth:hidePassword") : t("auth:showPassword")
                     }
                   >
                     {showPassword ? (
@@ -472,7 +473,7 @@ export default function LoginPage({
                   </svg>
                 </div>
                 <span className="text-sm text-slate-600 dark:text-slate-300 select-none">
-                  Keep me signed in on this device
+                  {t("auth:keepSignedIn")}
                 </span>
               </label>
 
@@ -503,10 +504,10 @@ export default function LoginPage({
                         d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
                       />
                     </svg>
-                    Signing in…
+                    {t("auth:signingIn")}
                   </>
                 ) : (
-                  "Sign In"
+                  t("auth:signIn")
                 )}
               </button>
             </form>
@@ -526,9 +527,7 @@ export default function LoginPage({
                   />
                 </svg>
                 <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-                  <strong>Offline mode:</strong> Your locally cached records are
-                  accessible after login. Changes will sync when connectivity is
-                  restored.
+                  <strong>{t("auth:offlineNoticeTitle")}</strong> {t("auth:offlineNoticeDesc")}
                 </p>
               </div>
             )}
@@ -546,8 +545,7 @@ export default function LoginPage({
                   <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.536 4.464a5 5 0 010 7.072 5 5 0 01-7.072-7.072A5 5 0 0111.536 5.464zM8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 7a1 1 0 100-2 1 1 0 000 2z" />
                 </svg>
                 256-bit TLS encryption
-              </span>
-              <span className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
+              </span>              <span className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
               <span className="flex items-center gap-1">
                 <svg
                   viewBox="0 0 16 16"
@@ -560,27 +558,27 @@ export default function LoginPage({
                     clipRule="evenodd"
                   />
                 </svg>
-                WHO-certified platform
+                {t("auth:who")}
               </span>
               <span className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
-              <span>Works offline</span>
+              <span>{t("auth:worksOffline")}</span>
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              New to HealStats?{" "}
+              {t("auth:newHere")}{" "}
               {onSignUp ? (
                 <button
                   type="button"
                   onClick={onSignUp}
                   className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
                 >
-                  Create an account
+                  {t("auth:createAccount")}
                 </button>
               ) : (
                 <a
                   href="#"
                   className="text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-medium transition-colors"
                 >
-                  Contact your clinic admin
+                  {t("auth:contactAdmin")}
                 </a>
               )}
             </p>

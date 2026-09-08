@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { supabase } from "./lib/supabase"
 import { useAuth } from "./AuthContext"
 import { offlineDb } from "./lib/offlineDb"
@@ -84,6 +85,23 @@ const CHRONIC_CONDITIONS = [
   "Epilepsy",
   "Malnutrition",
 ]
+
+// Canonical English values map to display translation keys.
+const REL_KEY: Record<string, string> = {
+  Spouse: "rel_spouse", Parent: "rel_parent", Child: "rel_child",
+  Sibling: "rel_sibling", Friend: "rel_friend", Other: "rel_other",
+}
+const COND_KEY: Record<string, string> = {
+  "Hypertension": "cond_hypertension",
+  "Type 2 Diabetes": "cond_diabetes",
+  "Asthma": "cond_asthma",
+  "HIV/AIDS": "cond_hiv",
+  "Tuberculosis": "cond_tb",
+  "Sickle Cell Disease": "cond_sickle",
+  "Malaria (recurrent)": "cond_malaria",
+  "Epilepsy": "cond_epilepsy",
+  "Malnutrition": "cond_malnutrition",
+}
 
 // ── Shared field components ────────────────────────────────────────────────────
 function Label({
@@ -184,6 +202,7 @@ function Step1({
   update: (k: keyof FormData, v: string) => void
   errors: Partial<Record<keyof FormData, string>>
 }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-6">
       <div>
@@ -203,21 +222,21 @@ function Step1({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Identity</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("newPatient:identity")}</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div className="sm:col-span-2">
-            <Label required>Full Name</Label>
+            <Label required>{t("newPatient:fullName")}</Label>
             <FieldInput
               id="fullName"
-              placeholder="e.g. Mariama Kouyaté"
+              placeholder={t("newPatient:fullNamePlaceholder")}
               value={data.fullName}
               onChange={(v) => update("fullName", v)}
               error={errors.fullName}
             />
           </div>
           <div>
-            <Label required>Date of Birth</Label>
+            <Label required>{t("newPatient:dob")}</Label>
             <FieldInput
               id="dob"
               type="date"
@@ -227,18 +246,18 @@ function Step1({
             />
           </div>
           <div>
-            <Label required>Age (years)</Label>
+            <Label required>{t("newPatient:age")}</Label>
             <FieldInput
               id="age"
               type="number"
-              placeholder="e.g. 34"
+              placeholder={t("newPatient:agePlaceholder")}
               value={data.age}
               onChange={(v) => update("age", v)}
               error={errors.age}
             />
           </div>
           <div>
-            <Label required>Sex</Label>
+            <Label required>{t("newPatient:sex")}</Label>
             <FieldSelect
               id="sex"
               value={data.sex}
@@ -246,15 +265,15 @@ function Step1({
               error={errors.sex}
             >
               <option value="" disabled>
-                Select sex
+                {t("newPatient:selectSex")}
               </option>
-              <option value="F">Female</option>
-              <option value="M">Male</option>
-              <option value="O">Other / Prefer not to say</option>
+              <option value="F">{t("newPatient:female")}</option>
+              <option value="M">{t("newPatient:male")}</option>
+              <option value="O">{t("newPatient:otherSex")}</option>
             </FieldSelect>
           </div>
           <div>
-            <Label required>Village / Zone</Label>
+            <Label required>{t("newPatient:villageZone")}</Label>
             <FieldSelect
               id="village"
               value={data.village}
@@ -262,7 +281,7 @@ function Step1({
               error={errors.village}
             >
               <option value="" disabled>
-                Select village or zone
+                {t("newPatient:selectVillage")}
               </option>
               {VILLAGES.map((v) => (
                 <option key={v} value={v}>
@@ -291,21 +310,21 @@ function Step1({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Contact</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("newPatient:contact")}</h3>
           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-            (Phone optional)
+            {t("newPatient:phoneOptional")}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
-            <Label>Phone Number</Label>
+            <Label>{t("newPatient:phoneNumber")}</Label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">
                 +223
               </span>
               <input
                 type="tel"
-                placeholder="XX XX XX XX"
+                placeholder={t("newPatient:phonePlaceholder")}
                 value={data.phone}
                 onChange={(e) => update("phone", e.target.value)}
                 className="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
@@ -334,25 +353,25 @@ function Step1({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Emergency Contact
+            {t("newPatient:emergencyContact")}
           </h3>
           <span className="text-[10px] text-red-400 font-semibold uppercase tracking-wide bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
-            Required
+            {t("newPatient:required")}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
-            <Label required>Contact Full Name</Label>
+            <Label required>{t("newPatient:contactFullName")}</Label>
             <FieldInput
               id="emergencyName"
-              placeholder="e.g. Amadou Kouyaté"
+              placeholder={t("newPatient:contactNamePlaceholder")}
               value={data.emergencyName}
               onChange={(v) => update("emergencyName", v)}
               error={errors.emergencyName}
             />
           </div>
           <div>
-            <Label required>Relationship</Label>
+            <Label required>{t("newPatient:relationship")}</Label>
             <FieldSelect
               id="emergencyRelation"
               value={data.emergencyRelation}
@@ -360,24 +379,24 @@ function Step1({
               error={errors.emergencyRelation}
             >
               <option value="" disabled>
-                Select relationship
+                {t("newPatient:selectRelationship")}
               </option>
               {RELATIONS.map((r) => (
                 <option key={r} value={r}>
-                  {r}
+                  {t(`newPatient:${REL_KEY[r]}`)}
                 </option>
               ))}
             </FieldSelect>
           </div>
           <div>
-            <Label required>Emergency Phone</Label>
+            <Label required>{t("newPatient:emergencyPhone")}</Label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">
                 +223
               </span>
               <input
                 type="tel"
-                placeholder="XX XX XX XX"
+                placeholder={t("newPatient:phonePlaceholder")}
                 value={data.emergencyPhone}
                 onChange={(e) => update("emergencyPhone", e.target.value)}
                 className={`w-full pl-12 pr-3.5 py-2.5 rounded-xl border text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
@@ -408,6 +427,7 @@ function Step2({
   update: (k: keyof FormData, v: string | string[]) => void
   errors: Partial<Record<keyof FormData, string>>
 }) {
+  const { t } = useTranslation()
   const toggleCondition = (c: string) => {
     const cur = data.conditions
     update(
@@ -436,19 +456,19 @@ function Step2({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Clinical Basics
+            {t("newPatient:clinicalBasics")}
           </h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
-            <Label>Blood Type</Label>
+            <Label>{t("newPatient:bloodType")}</Label>
             <FieldSelect
               id="bloodType"
               value={data.bloodType}
               onChange={(v) => update("bloodType", v)}
             >
               <option value="" disabled>
-                Select blood type
+                {t("newPatient:selectBloodType")}
               </option>
               {BLOOD_TYPES.map((b) => (
                 <option key={b} value={b}>
@@ -458,19 +478,19 @@ function Step2({
             </FieldSelect>
           </div>
           <div>
-            <Label>Pregnancy Status</Label>
+            <Label>{t("newPatient:pregnancyStatus")}</Label>
             <FieldSelect
               id="pregnancyStatus"
               value={data.pregnancyStatus}
               onChange={(v) => update("pregnancyStatus", v)}
             >
               <option value="" disabled>
-                Select if applicable
+                {t("newPatient:selectIfApplicable")}
               </option>
-              <option value="not-applicable">Not applicable</option>
-              <option value="pregnant">Currently pregnant</option>
-              <option value="postpartum">Postpartum ({"<"} 6 months)</option>
-              <option value="unknown">Unknown</option>
+              <option value="not-applicable">{t("newPatient:preg_na")}</option>
+              <option value="pregnant">{t("newPatient:preg_pregnant")}</option>
+              <option value="postpartum">{t("newPatient:preg_postpartum")}</option>
+              <option value="unknown">{t("newPatient:preg_unknown")}</option>
             </FieldSelect>
           </div>
         </div>
@@ -494,13 +514,13 @@ function Step2({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Known Allergies
+            {t("newPatient:knownAllergies")}
           </h3>
         </div>
         <div>
-          <Label>Allergies (drugs, foods, or other)</Label>
+          <Label>{t("newPatient:allergiesLabel")}</Label>
           <textarea
-            placeholder="e.g. Penicillin (rash), Sulfonamides. Leave blank if none known."
+            placeholder={t("newPatient:allergiesPlaceholder")}
             value={data.allergies}
             onChange={(e) => update("allergies", e.target.value)}
             rows={2}
@@ -527,13 +547,13 @@ function Step2({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Current Medications
+            {t("newPatient:currentMeds")}
           </h3>
         </div>
         <div>
-          <Label>Medications (name + dose if known)</Label>
+          <Label>{t("newPatient:medsLabel")}</Label>
           <textarea
-            placeholder="e.g. Metformin 500mg twice daily, Lisinopril 10mg once daily. Leave blank if none."
+            placeholder={t("newPatient:medsPlaceholder")}
             value={data.medications}
             onChange={(e) => update("medications", e.target.value)}
             rows={2}
@@ -560,10 +580,10 @@ function Step2({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Chronic Conditions
+            {t("newPatient:chronicConditions")}
           </h3>
           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-            (select all that apply)
+            {t("newPatient:selectAllApply")}
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -581,7 +601,7 @@ function Step2({
                 }`}
               >
                 {selected && <span className="mr-1">✓</span>}
-                {c}
+                {t(`newPatient:${COND_KEY[c]}`)}
               </button>
             )
           })}
@@ -607,13 +627,13 @@ function Step2({
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Vaccination Notes
+            {t("newPatient:vaccinationNotes")}
           </h3>
         </div>
         <div>
-          <Label>Known vaccinations (if documented)</Label>
+          <Label>{t("newPatient:vaccLabel")}</Label>
           <textarea
-            placeholder="e.g. Yellow fever 2021, BCG (birth). Leave blank if no records available."
+            placeholder={t("newPatient:vaccPlaceholder")}
             value={data.vaccinations}
             onChange={(e) => update("vaccinations", e.target.value)}
             rows={2}
@@ -626,6 +646,7 @@ function Step2({
 }
 
 function Step3({ data }: { data: FormData }) {
+  const { t } = useTranslation()
   const ReviewField = ({
     label,
     value,
@@ -642,7 +663,7 @@ function Step3({ data }: { data: FormData }) {
       <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
         {value || (
           <span className="text-slate-400 dark:text-slate-500 italic font-normal">
-            Not provided
+            {t("newPatient:notProvided")}
           </span>
         )}
       </p>
@@ -664,13 +685,13 @@ function Step3({ data }: { data: FormData }) {
         </div>
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-0.5">
-            Patient Assignment
+            {t("newPatient:patientAssignment")}
           </p>
           <p className="font-display text-xl text-teal-950 dark:text-white">
-            To be auto-generated
+            {t("newPatient:autoGenerated")}
           </p>
           <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
-            Will be registered to your assigned clinic
+            {t("newPatient:willBeRegistered")}
           </p>
         </div>
       </div>
@@ -678,25 +699,25 @@ function Step3({ data }: { data: FormData }) {
       {/* Section: Personal */}
       <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-4">
-          Personal Information
+          {t("newPatient:personalInformation")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-          <ReviewField label="Full Name" value={data.fullName} span />
-          <ReviewField label="Date of Birth" value={data.dob} />
+          <ReviewField label={t("newPatient:reviewFullName")} value={data.fullName} span />
+          <ReviewField label={t("newPatient:reviewDob")} value={data.dob} />
           <ReviewField
-            label="Age"
-            value={data.age ? `${data.age} years` : ""}
+            label={t("newPatient:reviewAge")}
+            value={data.age ? t("newPatient:ageYears", { age: data.age }) : ""}
           />
           <ReviewField
-            label="Sex"
+            label={t("newPatient:reviewSex")}
             value={
-              data.sex === "F" ? "Female" : data.sex === "M" ? "Male" : data.sex
+              data.sex === "F" ? t("newPatient:female") : data.sex === "M" ? t("newPatient:male") : data.sex
             }
           />
-          <ReviewField label="Village / Zone" value={data.village} />
+          <ReviewField label={t("newPatient:reviewVillage")} value={data.village} />
           <ReviewField
-            label="Phone Number"
-            value={data.phone ? `+223 ${data.phone}` : "Not provided"}
+            label={t("newPatient:reviewPhone")}
+            value={data.phone ? `+223 ${data.phone}` : t("newPatient:notProvided")}
           />
         </div>
       </div>
@@ -704,13 +725,13 @@ function Step3({ data }: { data: FormData }) {
       {/* Section: Emergency */}
       <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-4">
-          Emergency Contact
+          {t("newPatient:emergencyContact")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-          <ReviewField label="Contact Name" value={data.emergencyName} />
-          <ReviewField label="Relationship" value={data.emergencyRelation} />
+          <ReviewField label={t("newPatient:reviewContactName")} value={data.emergencyName} />
+          <ReviewField label={t("newPatient:reviewRelationship")} value={data.emergencyRelation ? t(`newPatient:${REL_KEY[data.emergencyRelation]}`) : ""} />
           <ReviewField
-            label="Emergency Phone"
+            label={t("newPatient:reviewEmergencyPhone")}
             value={data.emergencyPhone ? `+223 ${data.emergencyPhone}` : ""}
           />
         </div>
@@ -719,22 +740,22 @@ function Step3({ data }: { data: FormData }) {
       {/* Section: Medical */}
       <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-4">
-          Medical History
+          {t("newPatient:medicalHistory")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-          <ReviewField label="Blood Type" value={data.bloodType} />
+          <ReviewField label={t("newPatient:reviewBloodType")} value={data.bloodType} />
           <ReviewField
-            label="Pregnancy Status"
+            label={t("newPatient:reviewPregnancy")}
             value={data.pregnancyStatus.replace(/-/g, " ")}
           />
-          <ReviewField label="Known Allergies" value={data.allergies} span />
+          <ReviewField label={t("newPatient:reviewAllergies")} value={data.allergies} span />
           <ReviewField
-            label="Current Medications"
+            label={t("newPatient:reviewMeds")}
             value={data.medications}
             span
           />
           <ReviewField
-            label="Vaccination Notes"
+            label={t("newPatient:reviewVacc")}
             value={data.vaccinations}
             span
           />
@@ -742,7 +763,7 @@ function Step3({ data }: { data: FormData }) {
         {data.conditions.length > 0 && (
           <div className="mt-3">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">
-              Chronic Conditions
+              {t("newPatient:chronicConditions")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {data.conditions.map((c) => (
@@ -750,7 +771,7 @@ function Step3({ data }: { data: FormData }) {
                   key={c}
                   className="text-xs bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 font-medium px-2.5 py-1 rounded-xl"
                 >
-                  {c}
+                  {t(`newPatient:${COND_KEY[c]}`)}
                 </span>
               ))}
             </div>
@@ -772,9 +793,7 @@ function Step3({ data }: { data: FormData }) {
           />
         </svg>
         <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-          By submitting, you confirm that verbal consent has been obtained from
-          the patient or their guardian and that all information is accurate to
-          the best of your knowledge.
+          {t("newPatient:consentNote")}
         </p>
       </div>
     </div>
@@ -785,21 +804,22 @@ function Step3({ data }: { data: FormData }) {
 function validateStep(
   step: number,
   data: FormData,
+  t: (key: string) => string,
 ): Partial<Record<keyof FormData, string>> {
   const e: Partial<Record<keyof FormData, string>> = {}
   if (step === 1) {
-    if (!data.fullName.trim()) e.fullName = "Full name is required"
-    if (!data.dob) e.dob = "Date of birth is required"
+    if (!data.fullName.trim()) e.fullName = t("newPatient:errFullName")
+    if (!data.dob) e.dob = t("newPatient:errDob")
     if (!data.age || isNaN(Number(data.age)) || Number(data.age) < 0)
-      e.age = "Enter a valid age"
-    if (!data.sex) e.sex = "Please select a sex"
-    if (!data.village) e.village = "Please select a village or zone"
+      e.age = t("newPatient:errAge")
+    if (!data.sex) e.sex = t("newPatient:errSex")
+    if (!data.village) e.village = t("newPatient:errVillage")
     if (!data.emergencyName.trim())
-      e.emergencyName = "Emergency contact name is required"
+      e.emergencyName = t("newPatient:errEmergencyName")
     if (!data.emergencyRelation)
-      e.emergencyRelation = "Please select a relationship"
+      e.emergencyRelation = t("newPatient:errEmergencyRelation")
     if (!data.emergencyPhone.trim())
-      e.emergencyPhone = "Emergency phone number is required"
+      e.emergencyPhone = t("newPatient:errEmergencyPhone")
   }
   return e
 }
@@ -811,6 +831,7 @@ export default function NewPatientPage({
   onSuccess?: (id: string) => void
 }) {
   const { profile } = useAuth()
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [data, setData] = useState<FormData>(INITIAL)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>(
@@ -834,7 +855,7 @@ export default function NewPatientPage({
   }
 
   const handleNext = async () => {
-    const e = validateStep(step, data)
+    const e = validateStep(step, data, t)
     if (Object.keys(e).length > 0) {
       setErrors(e)
       return
@@ -846,7 +867,7 @@ export default function NewPatientPage({
     } else {
       if (!profile?.clinic_id) {
         setSubmitError(
-          "No clinic ID associated with your profile. Please contact administrator.",
+          t("newPatient:errNoClinic"),
         )
         return
       }
@@ -903,7 +924,7 @@ export default function NewPatientPage({
       } catch (err: any) {
         setSubmitError(
           err.message ||
-            "Failed to register patient. Please check your connection and try again.",
+            t("newPatient:errRegister"),
         )
       } finally {
         setIsSubmitting(false)
@@ -938,15 +959,14 @@ export default function NewPatientPage({
         </div>
         <div>
           <h2 className="font-display text-3xl text-teal-950 dark:text-white mb-2">
-            Patient Registered!
+            {t("newPatient:successTitle")}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mx-auto leading-relaxed">
-            <strong className="text-teal-700 dark:text-teal-300">{data.fullName}</strong> has been
-            added to your clinic records with ID{" "}
-            <span className="font-mono bg-teal-50 dark:bg-teal-950/40 px-1 rounded">
-              {createdPatientId}
-            </span>
-            . {savedOffline ? "Saved offline. Will sync automatically when connected." : "Record synced successfully."}
+            {t("newPatient:successSentence", {
+              name: data.fullName,
+              id: createdPatientId,
+              mode: savedOffline ? t("newPatient:savedOfflineText") : t("newPatient:syncedText"),
+            })}
           </p>
         </div>
         <div className="flex gap-3">
@@ -960,13 +980,13 @@ export default function NewPatientPage({
             }}
             className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
           >
-            Register Another
+            {t("newPatient:registerAnother")}
           </button>
           <button
             onClick={() => onSuccess?.(createdPatientId)}
             className="text-sm font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:border-teal-400 dark:hover:border-teal-700 px-5 py-2.5 rounded-xl transition-colors"
           >
-            View Patient Record
+            {t("newPatient:viewRecord")}
           </button>
         </div>
       </div>
@@ -978,17 +998,17 @@ export default function NewPatientPage({
       {/* ── Page header ── */}
       <div>
         <h1 className="font-display text-2xl lg:text-3xl text-teal-950 dark:text-white">
-          New Patient Registration
+          {t("newPatient:pageTitle")}
         </h1>
         <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
-          Complete all required fields. Record is saved locally until synced.
+          {t("newPatient:pageSub")}
         </p>
       </div>
 
       {/* ── Step indicator ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-5">
         <div className="flex items-start gap-3">
-          {STEPS.map(({ n, title, sub }) => {
+          {STEPS.map(({ n }) => {
             const done = n < step
             const active = n === step
             return (
@@ -1041,10 +1061,10 @@ export default function NewPatientPage({
                           : "text-slate-400 dark:text-slate-500"
                     }`}
                   >
-                    {title}
+                    {t(`newPatient:step${n}Title`)}
                   </p>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 hidden sm:block">
-                    {sub}
+                    {t(`newPatient:step${n}Sub`)}
                   </p>
                 </div>
               </div>
@@ -1058,7 +1078,7 @@ export default function NewPatientPage({
           />
         </div>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 text-right">
-          Step {step} of 3
+          {t("newPatient:stepOf", { step })}
         </p>
       </div>
 
@@ -1066,9 +1086,9 @@ export default function NewPatientPage({
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-6 py-7">
         <div className="mb-6 pb-5 border-b border-slate-100 dark:border-slate-800">
           <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-base">
-            {STEPS[step - 1].title}
+            {t(`newPatient:step${step}Title`)}
           </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{STEPS[step - 1].sub}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t(`newPatient:step${step}Sub`)}</p>
         </div>
 
         {step === 1 && (
@@ -1119,12 +1139,12 @@ export default function NewPatientPage({
                 d="M10 4L6 8l4 4"
               />
             </svg>
-            Back
+            {t("newPatient:back")}
           </button>
 
           {step < 3 && (
             <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">
-              <span className="text-red-400">*</span> Required fields
+              <span className="text-red-400">*</span> {t("newPatient:requiredFields")}
             </p>
           )}
 
@@ -1159,11 +1179,11 @@ export default function NewPatientPage({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Registering...
+                {t("newPatient:registering")}
               </>
             ) : (
               <>
-                {step === 3 ? "Register Patient" : "Next"}
+                {step === 3 ? t("newPatient:registerPatient") : t("newPatient:next")}
                 <svg
                   viewBox="0 0 16 16"
                   fill="none"
